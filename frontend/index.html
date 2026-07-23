@@ -38,41 +38,34 @@
 
     <script>
         // === إعدادات الاتصال بالخادم ===
-        // سيتم تغيير هذا الرابط لاحقاً إلى عنوان الـ IP الخاص بسيرفر Contabo الخاص بك
-        // مثال: const API_BASE_URL = 'http://123.456.78.90:3000/api';
-        const API_BASE_URL = 'http://localhost:3000/api'; 
+// تم تعديل الرابط ليتجه تلقائياً إلى Vercel Rewrites ثم إلى سيرفر Contabo
+const API_BASE_URL = '/api'; 
 
-        let currentUser = null;
-        
-        // عند استخدام API حقيقي، لا نستخدم LocalStorage لحفظ البيانات الأساسية،
-        // بل نجلبها من السيرفر عند بداية تشغيل التطبيق.
-        // وضعنا LocalStorage هنا فقط لحفظ "حالة تسجيل الدخول" لكي لا يسجل الدخول كل مرة.
-        try {
-            currentUser = JSON.parse(localStorage.getItem('oracle_auth_user') || 'null');
-        } catch (e) { console.error(e); }
+let currentUser = null;
 
-        // === دوال الاتصال بالسيرفر (API Calls) ===
+try {
+    currentUser = JSON.parse(localStorage.getItem('oracle_auth_user') || 'null');
+} catch (e) { console.error(e); }
+
+// === دوال الاتصال بالسيرفر (API Calls) ===
+
+async function apiLogin(username, pin) {
+    try {
+        // تم تفعيل الاتصال الحقيقي بالسيرفر
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, pin })
+        });
         
-        async function apiLogin(username, pin) {
-            try {
-                // محاكاة إرسال طلب للسيرفر
-                /* 
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, pin })
-                });
-                const data = await response.json();
-                return data;
-                */
-                
-                // (مؤقتاً لحين برمجة السيرفر الحقيقي)
-                return { success: true, user: { username: username, role: username.toLowerCase() === 'red army' ? 'admin' : 'user' } };
-            } catch (error) {
-                console.error('API Error:', error);
-                return { success: false, message: 'خطأ في الاتصال بالخادم' };
-            }
-        }
+        const data = await response.json();
+        return data;
+        
+    } catch (error) {
+        console.error('API Error:', error);
+        return { success: false, message: 'خطأ في الاتصال بالخادم' };
+    }
+}
 
         async function apiSavePrediction(matchId, h, a, powerup) {
             // كود إرسال التوقع لسيرفر Contabo
