@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>عرّاف الدوري - نظام التوقعات الذكي</title>
+    
+    <!-- Tailwind CSS & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: { extend: { fontFamily: { sans: ['Cairo', 'sans-serif'] } } }
+        }
+    </script>
+    
+    <style>
+        body { background-color: #0a0e17; color: #f8fafc; }
+        .glass { background: rgba(19, 27, 46, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; }
+        .score-input { width: 48px; height: 48px; text-align: center; font-size: 1.2rem; font-weight: bold; background: #0a0e17; border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 12px; outline: none; }
+        .bottom-nav-pb { padding-bottom: calc(95px + env(safe-area-inset-bottom)); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bottom-nav-pb">
+
+    <div id="app" class="flex-1 flex flex-col">
+        <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500"></i>
+            <span>جاري الاتصال بخوادم Contabo...</span>
+        </div>
+    </div>
+    <div id="modal-container"></div>
+    <div id="dialog-container"></div>
+
+    <script>
+        // === إعدادات الاتصال بالخادم ===
+        // سيتم تغيير هذا الرابط لاحقاً إلى عنوان الـ IP الخاص بسيرفر Contabo الخاص بك
+        // مثال: const API_BASE_URL = 'http://123.456.78.90:3000/api';
+        const API_BASE_URL = 'http://localhost:3000/api'; 
+
+        let currentUser = null;
+        
+        // عند استخدام API حقيقي، لا نستخدم LocalStorage لحفظ البيانات الأساسية،
+        // بل نجلبها من السيرفر عند بداية تشغيل التطبيق.
+        // وضعنا LocalStorage هنا فقط لحفظ "حالة تسجيل الدخول" لكي لا يسجل الدخول كل مرة.
+        try {
+            currentUser = JSON.parse(localStorage.getItem('oracle_auth_user') || 'null');
+        } catch (e) { console.error(e); }
+
+        // === دوال الاتصال بالسيرفر (API Calls) ===
+        
+        async function apiLogin(username, pin) {
+            try {
+                // محاكاة إرسال طلب للسيرفر
+                /* 
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, pin })
+                });
+                const data = await response.json();
+                return data;
+                */
+                
+                // (مؤقتاً لحين برمجة السيرفر الحقيقي)
+                return { success: true, user: { username: username, role: username.toLowerCase() === 'red army' ? 'admin' : 'user' } };
+            } catch (error) {
+                console.error('API Error:', error);
+                return { success: false, message: 'خطأ في الاتصال بالخادم' };
+            }
+        }
+
+        async function apiSavePrediction(matchId, h, a, powerup) {
+            // كود إرسال التوقع لسيرفر Contabo
+            console.log(`تم إرسال التوقع للسيرفر: مباراة ${matchId}, النتيجة ${h}-${a}, البطاقة: ${powerup}`);
+            // await fetch(`${API_BASE_URL}/predictions`, {...})
+        }
+
+        // === واجهة المستخدم ===
+
+        let authMode = 'login';
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const name = document.getElementById('auth-name').value.trim();
+            const pin = document.getElementById('auth-pin').value.trim();
+            
+            if (!name || pin.length < 4) {
+                alert('البيانات غير مكتملة'); return;
+            }
+
+            // عرض حالة التحميل
+            const btn = document.getElementById('auth-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاتصال...';
+            btn.disabled = true;
+
+            // الاتصال بالـ API
+            const result = await apiLogin(name, pin);
+            
+            if (result.success) {
+                currentUser = result.user;
+                localStorage.setItem('oracle_auth_user', JSON.stringify(currentUser));
+                renderDashboard(); // الانتقال للوحة الرئيسية بعد نجاح الاتصال بـ Contabo
+            } else {
+                alert(result.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function renderAuthScreen() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <div class="min-h-screen flex items-center justify-center p-4 w-full">
+                    <div class="glass max-w-md w-full p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up">
+                        <div class="text-center mb-6">
+                            <h1 class="text-2xl font-black text-blue-400">عرّاف الدوري</h1>
+                            <p class="text-slate-400 text-xs mt-1">متصل بخوادم Contabo الآمنة <i class="fa-solid fa-server text-emerald-400 ml-1"></i></p>
+                        </div>
+                        <form onsubmit="handleAuth(event)" class="space-y-4">
+                            <div>
+                                <input type="text" id="auth-name" placeholder="اسم المستخدم" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" required />
+                            </div>
+                            <div>
+                                <input type="password" id="auth-pin" placeholder="كلمة المرور" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" required />
+                            </div>
+                            <button id="auth-btn" type="submit" class="w-full py-3.5 bg-blue-600 text-white font-bold rounded-xl transition-all">دخول</button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDashboard() {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <header class="p-4 glass flex justify-between items-center">
+                    <div>
+                        <h1 class="text-sm font-bold text-slate-200">مرحباً، ${currentUser.username}</h1>
+                        <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[8px]"></i> متصل بقاعدة البيانات</span>
+                    </div>
+                    <button onclick="localStorage.removeItem('oracle_auth_user'); window.location.reload();" class="text-rose-400 text-xs font-bold">خروج</button>
+                </header>
+                <main class="p-4 text-center mt-10">
+                    <h2 class="text-xl text-slate-300">الواجهة جاهزة لجلب البيانات من الـ API!</h2>
+                    <p class="text-xs text-slate-500 mt-2">عند تشغيل سيرفر Contabo، سنقوم باستبدال هذه الشاشة ببيانات المباريات الحقيقية القادمة من قاعدة البيانات.</p>
+                </main>
+            `;
+        }
+
+        window.onload = () => {
+            if (currentUser) renderDashboard();
+            else renderAuthScreen();
+        };
+    </script>
+</body>
+</html>
