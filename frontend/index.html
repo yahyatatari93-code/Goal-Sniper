@@ -132,7 +132,7 @@ async function apiLogin(username, pin) {
         async function renderDashboard() {
     const app = document.getElementById('app');
     
-    // 1. عرض الهيدر الثابت مع رسالة تحميل مؤقتة في المنتصف
+    // 1. عرض الهيدر الثابت مع رسالة تحميل مؤقتة
     app.innerHTML = `
         <header class="p-4 glass flex justify-between items-center">
             <div>
@@ -143,51 +143,75 @@ async function apiLogin(username, pin) {
         </header>
         <main id="dashboard-content" class="p-4 text-center mt-10">
             <p class="text-emerald-400 text-sm">
-                <i class="fa-solid fa-spinner fa-spin mr-2"></i> جاري جلب البيانات من السيرفر...
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> جاري جلب المستخدمين والتوقعات...
             </p>
         </main>
     `;
 
     try {
-        // 2. الاتصال بالسيرفر لجلب البيانات الحقيقية
-        // ملاحظة: تأكد من أن الرابط /api/matches يتطابق مع المسار البرمجي المخصص في كود الـ Backend لديك
-        const response = await fetch('/api/matches'); 
+        // 2. الاتصال بالسيرفر لجلب المستخدمين والتوقعات معاً (بشكل متوازٍ لتسريع التحميل)
+        const [usersResponse, predictionsResponse] = await Promise.all([
+            fetch('/api/users'),
+            fetch('/api/predictions')
+        ]);
         
-        if (!response.ok) throw new Error('فشل في جلب البيانات من السيرفر');
+        // التحقق من نجاح كلا الطلبين
+        if (!usersResponse.ok || !predictionsResponse.ok) {
+            throw new Error('المسارات غير موجودة أو السيرفر يرفض الطلب');
+        }
         
-        const data = await response.json();
+        // تحويل البيانات القادمة إلى مصفوفات
+        const usersData = await usersResponse.json();
+        const predictionsData = await predictionsResponse.json();
+        
         const contentDiv = document.getElementById('dashboard-content');
 
-        // 3. التحقق مما إذا كانت قاعدة البيانات فارغة
-        if (!data || data.length === 0) {
-            contentDiv.innerHTML = `
-                <div class="mt-10">
-                    <i class="fa-solid fa-folder-open text-slate-600 text-4xl mb-3"></i>
-                    <p class="text-slate-400 text-sm">لا توجد بيانات لعرضها حالياً في قاعدة البيانات.</p>
-                </div>
-            `;
-            return;
-        }
-
-        // 4. بناء واجهة عرض البيانات (البطاقات)
-        let htmlContent = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right mt-4">`;
+        // 3. بناء واجهة عرض البيانات (قسم للمستخدمين وقسم للتوقعات)
+        let htmlContent = `<div class="text-right mt-4 max-w-4xl mx-auto">`;
         
-        data.forEach(item => {
-            // قم بتغيير item.teamA و item.teamB لتتطابق مع أسماء الحقول الفعلية التي يرسلها السيرفر
-            htmlContent += `
-                <div class="glass p-4 rounded-lg bg-slate-800 border border-slate-700">
-                    <h3 class="text-slate-200 font-bold mb-2">${item.teamA || 'الفريق الأول'} vs ${item.teamB || 'الفريق الثاني'}</h3>
-                    <div class="flex justify-between items-center text-xs text-slate-400">
-                        <span>النتيجة: ${item.score || '-'}</span>
-                        <span class="text-emerald-400">${item.status || 'مجدولة'}</span>
+        // --- قسم المستخدمين ---
+        htmlContent += `<h2 class="text-lg text-emerald-400 mb-3 border-b border-slate-700 pb-1">المستخدمون المسجلون</h2>`;
+        htmlContent += `<div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">`;
+        
+        if (usersData && usersData.length > 0) {
+            usersData.forEach(user => {
+                htmlContent += `
+                    <div class="glass p-2 rounded bg-slate-800 border border-slate-700 text-sm text-slate-200 flex items-center">
+                        <i class="fa-solid fa-user text-slate-400 ml-2"></i> ${user.username || 'مستخدم'}
                     </div>
-                </div>
-            `;
-        });
-        
+                `;
+            });
+        } else {
+            htmlContent += `<p class="text-xs text-slate-500 col-span-full">لا يوجد مستخدمون في قاعدة البيانات حتى الآن.</p>`;
+        }
         htmlContent += `</div>`;
+
+        // --- قسم التوقعات ---
+        htmlContent += `<h2 class="text-lg text-emerald-400 mb-3 border-b border-slate-700 pb-1">أحدث التوقعات</h2>`;
+        htmlContent += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
         
-        // استبدال شاشة التحميل بالبيانات النهائية
+        if (predictionsData && predictionsData.length > 0) {
+            predictionsData.forEach(pred => {
+                // ملاحظة: استبدل matchId و username و prediction بأسماء الحقول الفعلية القادمة من قاعدة بياناتك
+                htmlContent += `
+                    <div class="glass p-3 rounded-lg bg-slate-800 border border-slate-700">
+                        <div class="flex justify-between items-center mb-2 border-b border-slate-600/50 pb-1">
+                            <h3 class="text-slate-200 font-bold text-sm">المباراة: ${pred.matchId || '-'}</h3>
+                            <span class="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">بواسطة: ${pred.username || '-'}</span>
+                        </div>
+                        <div class="text-sm text-slate-400 flex justify-between">
+                            <span>التوقع المسجل:</span>
+                            <span class="text-emerald-400 font-bold">${pred.prediction || '-'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            htmlContent += `<p class="text-xs text-slate-500 col-span-full">لا توجد توقعات مسجلة حتى الآن.</p>`;
+        }
+        htmlContent += `</div></div>`;
+        
+        // 4. استبدال شاشة التحميل بالبيانات النهائية
         contentDiv.innerHTML = htmlContent;
 
     } catch (error) {
@@ -195,8 +219,8 @@ async function apiLogin(username, pin) {
         document.getElementById('dashboard-content').innerHTML = `
             <div class="mt-10 text-rose-400 bg-rose-950/30 p-4 rounded-lg border border-rose-900 inline-block">
                 <i class="fa-solid fa-triangle-exclamation mb-2 text-2xl"></i>
-                <p class="text-sm font-bold">عذراً، حدث خطأ أثناء الاتصال بالخلفية (Backend).</p>
-                <p class="text-xs text-rose-300/70 mt-1">يرجى التأكد من أن السيرفر يعمل وتفقد شاشة (Console) للمزيد من التفاصيل.</p>
+                <p class="text-sm font-bold">عذراً، حدث خطأ أثناء الاتصال بالخلفية.</p>
+                <p class="text-xs text-rose-300/70 mt-1">تأكد من أن السيرفر يحتوي فعلياً على المسارين <b>/api/users</b> و <b>/api/predictions</b>.</p>
             </div>
         `;
     }
