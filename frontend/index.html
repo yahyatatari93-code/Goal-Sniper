@@ -129,23 +129,78 @@ async function apiLogin(username, pin) {
             `;
         }
 
-        function renderDashboard() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <header class="p-4 glass flex justify-between items-center">
-                    <div>
-                        <h1 class="text-sm font-bold text-slate-200">مرحباً، ${currentUser.username}</h1>
-                        <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[8px]"></i> متصل بقاعدة البيانات</span>
-                    </div>
-                    <button onclick="localStorage.removeItem('oracle_auth_user'); window.location.reload();" class="text-rose-400 text-xs font-bold">خروج</button>
-                </header>
-                <main class="p-4 text-center mt-10">
-                    <h2 class="text-xl text-slate-300">الواجهة جاهزة لجلب البيانات من الـ API!</h2>
-                    <p class="text-xs text-slate-500 mt-2">عند تشغيل سيرفر Contabo، سنقوم باستبدال هذه الشاشة ببيانات المباريات الحقيقية القادمة من قاعدة البيانات.</p>
-                </main>
+        async function renderDashboard() {
+    const app = document.getElementById('app');
+    
+    // 1. عرض الهيدر الثابت مع رسالة تحميل مؤقتة في المنتصف
+    app.innerHTML = `
+        <header class="p-4 glass flex justify-between items-center">
+            <div>
+                <h1 class="text-sm font-bold text-slate-200">مرحباً، ${currentUser.username}</h1>
+                <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[8px]"></i> متصل بقاعدة البيانات</span>
+            </div>
+            <button onclick="localStorage.removeItem('oracle_auth_user'); window.location.reload();" class="text-rose-400 text-xs font-bold">خروج</button>
+        </header>
+        <main id="dashboard-content" class="p-4 text-center mt-10">
+            <p class="text-emerald-400 text-sm">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i> جاري جلب البيانات من السيرفر...
+            </p>
+        </main>
+    `;
+
+    try {
+        // 2. الاتصال بالسيرفر لجلب البيانات الحقيقية
+        // ملاحظة: تأكد من أن الرابط /api/matches يتطابق مع المسار البرمجي المخصص في كود الـ Backend لديك
+        const response = await fetch('/api/matches'); 
+        
+        if (!response.ok) throw new Error('فشل في جلب البيانات من السيرفر');
+        
+        const data = await response.json();
+        const contentDiv = document.getElementById('dashboard-content');
+
+        // 3. التحقق مما إذا كانت قاعدة البيانات فارغة
+        if (!data || data.length === 0) {
+            contentDiv.innerHTML = `
+                <div class="mt-10">
+                    <i class="fa-solid fa-folder-open text-slate-600 text-4xl mb-3"></i>
+                    <p class="text-slate-400 text-sm">لا توجد بيانات لعرضها حالياً في قاعدة البيانات.</p>
+                </div>
             `;
+            return;
         }
 
+        // 4. بناء واجهة عرض البيانات (البطاقات)
+        let htmlContent = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-right mt-4">`;
+        
+        data.forEach(item => {
+            // قم بتغيير item.teamA و item.teamB لتتطابق مع أسماء الحقول الفعلية التي يرسلها السيرفر
+            htmlContent += `
+                <div class="glass p-4 rounded-lg bg-slate-800 border border-slate-700">
+                    <h3 class="text-slate-200 font-bold mb-2">${item.teamA || 'الفريق الأول'} vs ${item.teamB || 'الفريق الثاني'}</h3>
+                    <div class="flex justify-between items-center text-xs text-slate-400">
+                        <span>النتيجة: ${item.score || '-'}</span>
+                        <span class="text-emerald-400">${item.status || 'مجدولة'}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        htmlContent += `</div>`;
+        
+        // استبدال شاشة التحميل بالبيانات النهائية
+        contentDiv.innerHTML = htmlContent;
+
+    } catch (error) {
+        console.error('API Error:', error);
+        document.getElementById('dashboard-content').innerHTML = `
+            <div class="mt-10 text-rose-400 bg-rose-950/30 p-4 rounded-lg border border-rose-900 inline-block">
+                <i class="fa-solid fa-triangle-exclamation mb-2 text-2xl"></i>
+                <p class="text-sm font-bold">عذراً، حدث خطأ أثناء الاتصال بالخلفية (Backend).</p>
+                <p class="text-xs text-rose-300/70 mt-1">يرجى التأكد من أن السيرفر يعمل وتفقد شاشة (Console) للمزيد من التفاصيل.</p>
+            </div>
+        `;
+    }
+}
         window.onload = () => {
             if (currentUser) renderDashboard();
             else renderAuthScreen();
