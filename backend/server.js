@@ -70,7 +70,26 @@ app.post('/api/predictions', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// 4. مسار جلب المستخدمين
+app.get('/api/users', async (req, res) => {
+    try {
+        // نجلب اسم المستخدم فقط لدواعي الأمان (بدون كلمة المرور/الـ pin)
+        const [rows] = await pool.query('SELECT username FROM users');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
+// 5. مسار جلب التوقعات
+app.get('/api/predictions', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM predictions');
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
