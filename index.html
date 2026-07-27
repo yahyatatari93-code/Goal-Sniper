@@ -597,15 +597,25 @@
         }
 
         // 👇 اتصال حقيقي بخادم CONTABO للمصادقة 👇
+        function setAuthMode(mode) {
+            authMode = mode;
+            render();
+        }
+
+        // 👇=== استبدل دالة handleAuth القديمة بهذه الدالة الجديدة ===👇
         async function handleAuth(e) {
             e.preventDefault();
             const name = document.getElementById('auth-name').value.trim();
             const pin = document.getElementById('auth-pin').value.trim();
-            if (!name || pin.length < 4) { showCustomDialog('أدخل اسم مستخدم وكلمة مرور من 4 أرقام على الأقل'); return; }
+            if (!name || pin.length < 4) {
+                showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.');
+                return;
+            }
 
             const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
             try {
+                // محاولة إرسال الطلب إلى سيرفر Contabo
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -616,17 +626,40 @@
 
                 if (data.success) {
                     currentUser = data.user;
-                    saveState(); // الحفظ المحلي لتشغيل باقي الواجهات مؤقتاً
+                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     render();
                 } else {
-                    showCustomDialog(data.message || 'حدث خطأ في التسجيل.');
+                    showCustomDialog(data.message || 'حدث خطأ في العملية.');
                 }
             } catch (error) {
                 console.error("API Error:", error);
-                showCustomDialog('لا يمكن الاتصال بالسيرفر. يرجى التأكد من أن سيرفر Contabo يعمل والرقم صحيح.');
+                
+                // 👇 نظام الطوارئ: تفعيل الوضع المحلي في حال فشل الاتصال بالسيرفر
+                console.warn("تعذر الاتصال بالسيرفر. تم تفعيل الوضع المحلي مؤقتاً للتجربة.");
+                
+                if (authMode === 'register') {
+                    if (users.some(u => u.username.toLowerCase() === name.toLowerCase())) {
+                        showCustomDialog('اسم المستخدم مستخدم مسبقاً (وضع محلي).');
+                        return;
+                    }
+                    const newUser = { username: name, pin: pin };
+                    users.push(newUser);
+                    currentUser = newUser;
+                    saveState();
+                    render();
+                    showCustomDialog('تم إنشاء الحساب محلياً لتتمكن من تجربة التطبيق!');
+                } else {
+                    const found = users.find(u => u.username.toLowerCase() === name.toLowerCase() && u.pin === pin);
+                    if (found) {
+                        currentUser = found;
+                        localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                        render();
+                    } else {
+                        showCustomDialog('بيانات الدخول غير صحيحة، أو السيرفر لا يستجيب.');
+                    }
+                }
             }
         }
-
         function renderAuthScreen() {
             return `
                 <div class="min-h-screen flex items-center justify-center p-4 w-full">
