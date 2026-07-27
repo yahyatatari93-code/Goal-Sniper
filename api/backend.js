@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   // التأكد من جلب المسار بشكل صحيح
   const path = req.query.path || '/';
-  const url = `http://5.189.138.161:3000${path}`;
+  const url = `http://5.189.138.161:5000${path}`;
   
   try {
     const options = {
