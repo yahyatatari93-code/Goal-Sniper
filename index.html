@@ -53,6 +53,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
+        
+        /* تجميل حقول اختيار التاريخ والوقت في متصفحات Webkit */
+        ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bottom-nav-pb">
@@ -68,8 +71,8 @@
     <div id="dialog-container"></div>
 
     <script>
-        // 👇=== ضع رقم الـ IP الخاص بسيرفر Contabo هنا ===👇
-        const API_BASE_URL = 'http://5.189.138.161:5000/api'; // قم بتعديل الرقم للآي بي الخاص بك
+        // الـ IP الخاص بك ثابت هنا
+        const API_BASE_URL = 'http://5.189.138.161:5000/api';
 
         const TEAMS = [
             { code: 'ARS', name: 'آرسنال' }, { code: 'MCI', name: 'مانشستر سيتي' },
@@ -95,41 +98,15 @@
         };
 
         const INITIAL_MATCHES = [];
-        // الجولة 1 و 2 (مباريات ثابتة لتجربة القمم)
-        const gw1_2 = [
-            { id: 'm1_1', gw: 1, home: 'ARS', away: 'COV', date: '2026/08/21', time: '10:00 م', actualH: null, actualA: null },
-            { id: 'm1_2', gw: 1, home: 'HUL', away: 'MUN', date: '2026/08/22', time: '2:30 م', actualH: null, actualA: null },
-            { id: 'm1_3', gw: 1, home: 'NFO', away: 'LEE', date: '2026/08/22', time: '5:00 م', actualH: null, actualA: null },
-            { id: 'm1_4', gw: 1, home: 'IPS', away: 'SUN', date: '2026/08/22', time: '5:00 م', actualH: null, actualA: null },
-            { id: 'm1_5', gw: 1, home: 'EVE', away: 'CRY', date: '2026/08/22', time: '5:00 م', actualH: null, actualA: null },
-            { id: 'm1_6', gw: 1, home: 'BRE', away: 'TOT', date: '2026/08/22', time: '7:30 م', actualH: null, actualA: null },
-            { id: 'm1_7', gw: 1, home: 'MCI', away: 'BOU', date: '2026/08/23', time: '4:00 م', actualH: null, actualA: null },
-            { id: 'm1_8', gw: 1, home: 'BHA', away: 'AVL', date: '2026/08/23', time: '4:00 م', actualH: null, actualA: null },
-            { id: 'm1_9', gw: 1, home: 'NEW', away: 'LIV', date: '2026/08/23', time: '6:30 م', actualH: null, actualA: null },
-            { id: 'm1_10', gw: 1, home: 'FUL', away: 'CHE', date: '2026/08/24', time: '10:00 م', actualH: null, actualA: null },
-            
-            { id: 'm2_1', gw: 2, home: 'CRY', away: 'MCI', date: '2026/08/28', time: '10:00 م', actualH: null, actualA: null },
-            { id: 'm2_2', gw: 2, home: 'LIV', away: 'NFO', date: '2026/08/29', time: '2:30 م', actualH: null, actualA: null },
-            { id: 'm2_3', gw: 2, home: 'COV', away: 'HUL', date: '2026/08/29', time: '5:00 م', actualH: null, actualA: null },
-            { id: 'm2_4', gw: 2, home: 'BOU', away: 'EVE', date: '2026/08/29', time: '5:00 م', actualH: null, actualA: null },
-            { id: 'm2_5', gw: 2, home: 'TOT', away: 'NEW', date: '2026/08/29', time: '7:30 م', actualH: null, actualA: null },
-            { id: 'm2_6', gw: 2, home: 'SUN', away: 'FUL', date: '2026/08/30', time: '4:00 م', actualH: null, actualA: null },
-            { id: 'm2_7', gw: 2, home: 'LEE', away: 'BRE', date: '2026/08/30', time: '4:00 م', actualH: null, actualA: null },
-            { id: 'm2_8', gw: 2, home: 'CHE', away: 'BHA', date: '2026/08/30', time: '4:00 م', actualH: null, actualA: null },
-            { id: 'm2_9', gw: 2, home: 'MUN', away: 'IPS', date: '2026/08/30', time: '6:30 م', actualH: null, actualA: null },
-            { id: 'm2_10', gw: 2, home: 'AVL', away: 'ARS', date: '2026/08/31', time: '10:00 م', actualH: null, actualA: null }
-        ];
-        INITIAL_MATCHES.push(...gw1_2);
-
-        // توليد آلي للجولات من 3 إلى 38 لضمان وجود الموسم بالكامل
-        for (let gw = 3; gw <= 38; gw++) {
+        // مولد الجولات آلياً للـ 38 جولة لتختبر التطبيق (لحين وضع الجدول الرسمي)
+        for (let gw = 1; gw <= 38; gw++) {
             for (let i = 0; i < 10; i++) {
                 INITIAL_MATCHES.push({
                     id: `m${gw}_${i+1}`,
                     gw: gw,
                     home: TEAMS[i].code,
-                    away: TEAMS[(i + gw) % 20].code, // تدوير بسيط للفرق
-                    date: `2026/${String(Math.floor(gw/4) + 9).padStart(2, '0')}/${String((i*2)%28 + 1).padStart(2, '0')}`,
+                    away: TEAMS[(i + gw) % 20].code,
+                    date: `2026/${String(Math.floor(gw/4) + 8).padStart(2, '0')}/${String((i*2)%28 + 1).padStart(2, '0')}`,
                     time: '5:00 م',
                     actualH: null,
                     actualA: null
@@ -144,9 +121,7 @@
             matches = JSON.parse(localStorage.getItem('oracle_matches_v8') || 'null') || INITIAL_MATCHES;
             predictions = JSON.parse(localStorage.getItem('oracle_predictions_v8') || 'null') || {};
             miniLeagues = JSON.parse(localStorage.getItem('oracle_minileagues_v8') || 'null') || [];
-        } catch (e) {
-            console.error('Storage error:', e);
-        }
+        } catch (e) { console.error('Storage error:', e); }
 
         let currentTab = 'home';
         let authMode = 'login';
@@ -162,18 +137,16 @@
                 localStorage.setItem('oracle_matches_v8', JSON.stringify(matches));
                 localStorage.setItem('oracle_predictions_v8', JSON.stringify(predictions));
                 localStorage.setItem('oracle_minileagues_v8', JSON.stringify(miniLeagues));
-            } catch (e) {
-                console.error('Save state error:', e);
-            }
+            } catch (e) { console.error('Save state error:', e); }
         }
 
-        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false, isShield = false) => {
+        // تم إزالة Shield نهائياً
+        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
             const ph = Number(predH), pa = Number(predA);
             const homeIsBig = BIG_TEAMS.includes(homeCode);
             const awayIsBig = BIG_TEAMS.includes(awayCode);
 
-            // للحاسبة الديناميكية، إذا لم تسجل نتيجة، نعتبر التوقع هو النتيجة الصحيحة
             let ah = actualH !== null ? Number(actualH) : ph;
             let aa = actualA !== null ? Number(actualA) : pa;
 
@@ -185,13 +158,13 @@
             let pts = 0;
 
             if (isOutcomeCorrect || isExact) {
-                if (!homeIsBig && !awayIsBig) {
+                if (!homeIsBig && !awayIsBig) { // عادي ضد عادي
                     if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 4 : 3;
                     else if (isOutcomeCorrect) pts = 1;
-                } else if (homeIsBig && awayIsBig) {
+                } else if (homeIsBig && awayIsBig) { // قمة الكبار
                     if (isDraw) pts = isExact ? 3 : 2;
                     else pts = isExact ? 5 : 3;
-                } else {
+                } else { // كبار ضد عاديين
                     const bigWon = (homeIsBig && ah > aa) || (awayIsBig && aa > ah);
                     const bigLost = (homeIsBig && ah < aa) || (awayIsBig && aa < ah);
                     if (isDraw) pts = isExact ? 3 : 2;
@@ -200,7 +173,6 @@
                 }
             }
 
-            if (pts === 0 && isShield) return 1; 
             if (isTripleCaptain) return pts * 3; 
             if (isCaptain) return pts * 2; 
             
@@ -227,7 +199,7 @@
                         userStats.predictedCount++;
                         if (isPlayed) {
                             userStats.playedMatches++;
-                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain, p.isShield);
+                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain);
                             userStats.totalPts += pts;
                             
                             const isOutcomeCorrect = (p.home > p.away && m.actualH > m.actualA) || (p.home < p.away && m.actualH < m.actualA) || (p.home === p.away && m.actualH === m.actualA);
@@ -308,7 +280,6 @@
             const standings = getGlobalStandings();
             const myStats = standings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {} };
             const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
-            
             const motw = prevGw ? standings.find(u => u.badges.motw) : null;
 
             return `
@@ -345,7 +316,6 @@
                                 <span class="text-lg md:text-xl font-black text-amber-400">#${myRank}</span>
                             </div>
                         </div>
-
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-3">
                             <div class="bg-slate-900/60 p-3 rounded-2xl border border-white/5">
                                 <span class="text-[10px] text-slate-400 block mb-1">المجموع الكلي</span>
@@ -371,17 +341,15 @@
                                 عرض كل الجولات <i class="fa-solid fa-arrow-left mr-1"></i>
                             </button>
                         </div>
-
                         <div class="space-y-3">
                             ${gwMatches.map(match => {
-                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                                 const matchType = getMatchType(match.home, match.away);
                                 const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                                 const isLocked = isMatchLocked(match);
                                 
                                 let badgeHtml = '';
                                 if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
-                                else if (pred.isShield) badgeHtml = `<div class="absolute top-3 left-3 bg-sky-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-shield"></i></div>`;
                                 else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
 
                                 return `
@@ -428,13 +396,12 @@
                                 </div>
                                 <div class="space-y-2">
                                     ${gwMatches.map(match => {
-                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                                         const isLocked = isMatchLocked(match);
                                         
                                         let bMini = '';
                                         if(pred.isTripleCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-fuchsia-600 text-white w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                        else if(pred.isShield) bMini = `<div class="absolute -top-1 -left-1 bg-sky-500 text-white w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-shield"></i></div>`;
                                         else if(pred.isCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-amber-500 text-black w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]">C</div>`;
 
                                         return `
@@ -466,7 +433,7 @@
                         <div>
                             <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-trophy text-amber-400"></i> لوحة الشرف</h2>
                         </div>
-                        <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">الإجمالي: ${standings.length} مشارك</span>
+                        <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">الإجمالي: ${standings.length}</span>
                     </div>
                     <div class="space-y-2">
                         ${standings.map((user, idx) => {
@@ -482,7 +449,6 @@
                                                 ${user.badges.sniper ? '<span title="القناص" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
                                                 ${user.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
                                             </h4>
-                                            <span class="text-[10px] text-slate-400">دقة: ${user.hitRate}% | مفضل: ${user.favTeam}</span>
                                         </div>
                                     </div>
                                     <div class="text-left">
@@ -515,7 +481,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="space-y-4">
                         ${myLeagues.map(ml => `
                             <div class="glass p-5 rounded-2xl space-y-3">
@@ -542,28 +507,75 @@
 
         function renderRulesTab() {
             return `
-                <div class="glass p-6 rounded-3xl space-y-4">
-                    <h2 class="text-xl font-bold flex items-center gap-2 text-amber-400"><i class="fa-solid fa-book-bookmark"></i> قوانين Goal Sniper</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                        <div class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl">
-                            <div class="text-amber-400 text-2xl"><i class="fa-solid fa-clock"></i></div>
-                            <div>
-                                <h3 class="text-sm font-bold text-amber-400">قفل التوقعات</h3>
-                                <p class="text-[10px] text-slate-300 leading-tight">يتم الإغلاق قبل ساعة من موعد الانطلاق.</p>
+                <div class="glass p-6 rounded-3xl space-y-5">
+                    <div class="border-b border-white/10 pb-3">
+                        <h2 class="text-xl font-black flex items-center gap-2 text-amber-400"><i class="fa-solid fa-book-bookmark"></i> دليل قوانين Goal Sniper</h2>
+                        <p class="text-xs text-slate-400 mt-1">القواعد الشاملة وآلية حساب النقاط التفصيلية للموسم.</p>
+                    </div>
+
+                    <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex gap-4 items-start">
+                        <i class="fa-solid fa-clock text-3xl text-amber-400"></i>
+                        <div>
+                            <h3 class="font-bold text-amber-400">نظام الإغلاق (القفل)</h3>
+                            <p class="text-xs text-slate-300 mt-1 leading-relaxed">تُقفل التوقعات تلقائياً <span class="font-bold text-white">قبل 60 دقيقة</span> من موعد انطلاق صافرة البداية لكل مباراة، ولا يُمكن التعديل بعدها أبداً.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-black text-base text-blue-400 mb-3"><i class="fa-solid fa-calculator"></i> آلية حساب النقاط التفصيلية</h3>
+                        
+                        <!-- القسم الأول -->
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/5 mb-3">
+                            <h4 class="font-bold text-sm text-slate-200 mb-2 border-b border-slate-700 pb-1">1. الفرق المتكافئة (عادي ضد عادي)</h4>
+                            <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                                <li>توقع دقيق للنتيجة الرقمية: <span class="font-bold text-amber-400">3 نقاط</span></li>
+                                <li>توقع دقيق (لمباراة فيها 5 أهداف أو أكثر، أو 0-0): <span class="font-bold text-emerald-400">4 نقاط</span></li>
+                                <li>توقع اتجاه المباراة الصحيح (فوز أو تعادل) دون النتيجة الرقمية: <span class="font-bold text-white">1 نقطة</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- القسم الثاني -->
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/5 mb-3">
+                            <h4 class="font-bold text-sm text-slate-200 mb-2 border-b border-slate-700 pb-1">2. الكبار ضد الفرق الطموحة (كبير ضد عادي)</h4>
+                            <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                                <li>توقع دقيق بفوز الكبير: <span class="font-bold text-amber-400">2 نقطة</span> | فوز دون دقة: <span class="font-bold text-white">1 نقطة</span></li>
+                                <li>توقع دقيق بالتعادل: <span class="font-bold text-amber-400">3 نقاط</span> | تعادل دون دقة: <span class="font-bold text-white">2 نقطة</span></li>
+                                <li><span class="text-rose-400 font-bold">مفاجأة خسارة الكبير:</span> توقع دقيق: <span class="font-bold text-emerald-400">6 نقاط</span> | اتجاه فقط: <span class="font-bold text-white">4 نقاط</span></li>
+                            </ul>
+                        </div>
+
+                        <!-- القسم الثالث -->
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-white/5">
+                            <h4 class="font-bold text-sm text-slate-200 mb-2 border-b border-slate-700 pb-1">3. قمم الكبار (كبير ضد كبير)</h4>
+                            <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                                <li>توقع دقيق بفوز أحدهما: <span class="font-bold text-emerald-400">5 نقاط</span> | فوز دون دقة: <span class="font-bold text-amber-400">3 نقاط</span></li>
+                                <li>توقع دقيق بالتعادل: <span class="font-bold text-amber-400">3 نقاط</span> | تعادل دون دقة: <span class="font-bold text-white">2 نقطة</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-black text-base text-fuchsia-400 mb-3"><i class="fa-solid fa-bolt"></i> بطاقات القوة (الميزات الإضافية)</h3>
+                        <div class="space-y-3">
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-white/5 flex gap-3">
+                                <div class="bg-amber-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0">C</div>
+                                <div>
+                                    <h4 class="font-bold text-xs text-amber-400 mb-1">الكابتن (x2)</h4>
+                                    <p class="text-[10px] text-slate-300">يُضاعف نقاط مباراة واحدة (ضرب 2). يُسمح باستخدام الكابتن <span class="font-bold text-white">مرة واحدة فقط في كل جولة</span>.</p>
+                                </div>
+                            </div>
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-white/5 flex gap-3">
+                                <div class="bg-fuchsia-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"><i class="fa-solid fa-bolt"></i></div>
+                                <div>
+                                    <h4 class="font-bold text-xs text-fuchsia-400 mb-1">الجوكر الخطير (x3)</h4>
+                                    <p class="text-[10px] text-slate-300">يُضاعف النقاط بشكل جنوني (ضرب 3). يُسمح باستخدامه <span class="font-bold text-white">مرتين فقط في الموسم كاملاً:</span> مرة من الجولة 1 للـ 18، ومرة من الجولة 19 للـ 38.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="space-y-3 pt-2">
-                        <div class="bg-slate-900/80 p-4 rounded-2xl border border-white/5">
-                            <h3 class="font-bold text-sm text-slate-200 mb-2">كيفية حساب النقاط:</h3>
-                            <ul class="text-xs text-slate-400 space-y-1.5 list-disc list-inside">
-                                <li>التوقع الدقيق (النتيجة الرقمية): <span class="text-emerald-400 font-bold">نقاط كاملة (تصل لـ 6 حسب قوة الفريق)</span></li>
-                                <li>توقع الفائز الصحيح (لكن نتيجة مختلفة): <span class="text-amber-400 font-bold">نقاط جزئية (1-4 حسب القوة)</span></li>
-                                <li>استخدام بطاقة الكابتن C يضاعف نقاط المباراة (x2).</li>
-                                <li>الجوكر الخطير يضاعف (x3) ودرع التأمين يحميك من الصفر.</li>
-                            </ul>
-                        </div>
+                    
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 text-center">
+                        <p class="text-xs text-slate-400">الأندية "الكبار" في النظام هي: (آرسنال، مانشستر سيتي، ليفربول، مانشستر يونايتد، تشيلسي، توتنهام).</p>
                     </div>
                 </div>
             `;
@@ -573,41 +585,54 @@
             const sortedMatches = [...matches].sort((a, b) => a.gw - b.gw);
             return `
                 <div class="space-y-6">
-                    <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4">
-                        <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> لوحة التحكم</h2>
+                    <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة جديدة</h2>
                         
-                        <!-- إضافة مباراة جديدة -->
-                        <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-3">
-                            <h3 class="font-bold text-sm text-blue-400 border-b border-white/10 pb-2 mb-2">إضافة مباراة جديدة للجدول</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- اختيار الفرق -->
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">الجولة (1-38)</label>
-                                    <input type="number" id="adm-gw" min="1" max="38" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-xs text-white" />
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف (الأساسي)</label>
+                                    <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white outline-none focus:border-rose-500">
+                                        <option value="" disabled selected>-- اختر المضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">المضيف</label>
-                                    <select id="adm-home" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-xs text-white">${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}</select>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">الضيف</label>
-                                    <select id="adm-away" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-xs text-white">${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}</select>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">التاريخ (مثال: 2026/08/25)</label>
-                                    <input type="text" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-xs text-white" />
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] text-slate-400 mb-1">التوقيت (مثال: 5:00 م)</label>
-                                    <input type="text" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-xs text-white" />
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
+                                    <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white outline-none focus:border-rose-500">
+                                        <option value="" disabled selected>-- اختر الضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
                                 </div>
                             </div>
-                            <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-all">إضافة المباراة</button>
+                            
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة</label>
+                                    <select id="adm-gw" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white outline-none focus:border-rose-500">
+                                        <option value="" disabled selected>-</option>
+                                        ${Array.from({length: 38}, (_, i) => `<option value="${i+1}">${i+1}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label>
+                                    <!-- حقل اختيار تاريخ جاهز لتجنب أخطاء التنسيق -->
+                                    <input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white outline-none focus:border-rose-500" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label>
+                                    <!-- حقل اختيار وقت جاهز -->
+                                    <input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white outline-none focus:border-rose-500" />
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-rose-600/30">إضافة المباراة للجدول</button>
                         </form>
                     </div>
 
-                    <!-- إدخال النتائج وإدارة المباريات الحالية -->
                     <div class="glass p-6 rounded-3xl space-y-4">
-                        <h3 class="font-bold text-sm text-slate-200">إدارة المباريات وتسجيل النتائج الحقيقية</h3>
+                        <h3 class="font-bold text-sm text-slate-200">إدارة المباريات الحالية وتسجيل النتائج</h3>
                         <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                             ${sortedMatches.map(m => `
                                 <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap relative">
@@ -615,8 +640,8 @@
                                         <div class="text-[10px] font-bold text-blue-400 bg-blue-900/30 rounded px-2 py-1">الجولة ${m.gw}</div>
                                         <div class="text-[10px] text-slate-400">${m.date} - ${m.time}</div>
                                         
-                                        <!-- زر الحذف -->
-                                        <button onclick="deleteMatch('${m.id}')" class="text-rose-500 hover:text-rose-400 p-1.5 ml-2 transition-all" title="حذف المباراة من الجدول">
+                                        <!-- زر الحذف المحسن -->
+                                        <button onclick="deleteMatch('${m.id}')" class="text-rose-500 hover:text-rose-400 bg-rose-500/10 p-1.5 rounded-lg ml-2 transition-all" title="حذف المباراة من الجدول">
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
@@ -644,7 +669,6 @@
             activeMatchModal = matches.find(m => m.id === matchId);
             renderModal();
         }
-
         function closeModal() {
             activeMatchModal = null;
             renderModal();
@@ -653,22 +677,42 @@
         function renderModal() {
             const container = document.getElementById('modal-container');
             if (!activeMatchModal) { container.innerHTML = ''; return; }
-            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
             const hVal = pred.home !== undefined ? pred.home : '';
             const aVal = pred.away !== undefined ? pred.away : '';
             
-            // حساب النقاط الافتراضي بناء على ما هو مسجل
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, null, null, pred.isCaptain, pred.isTripleCaptain, pred.isShield);
+            // تحقق من قيود الكابتن (مباراة واحدة في الجولة)
+            const currentGw = activeMatchModal.gw;
+            const userPreds = predictions[currentUser.username] || {};
+            let captainUsedInGw = false;
+            
+            // تحقق من قيود الجوكر (النصف الأول 1-18، النصف الثاني 19-38)
+            const isFirstHalf = currentGw <= 18;
+            let tcUsedInFirstHalf = false;
+            let tcUsedInSecondHalf = false;
+            
+            Object.entries(userPreds).forEach(([mId, p]) => {
+                if (mId === activeMatchModal.id) return; // تخطي المباراة الحالية
+                const m = matches.find(x => x.id === mId);
+                if (m) {
+                    if (m.gw === currentGw && p.isCaptain) { captainUsedInGw = true; }
+                    if (m.gw <= 18 && p.isTripleCaptain) { tcUsedInFirstHalf = true; }
+                    if (m.gw >= 19 && p.isTripleCaptain) { tcUsedInSecondHalf = true; }
+                }
+            });
+
+            const tcUsedInCurrentHalf = isFirstHalf ? tcUsedInFirstHalf : tcUsedInSecondHalf;
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, null, null, pred.isCaptain, pred.isTripleCaptain);
 
             container.innerHTML = `
                 <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up relative">
                         <div class="text-center">
-                            <span class="text-[10px] text-blue-400 font-bold bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">نافذة Goal Sniper الذكية</span>
+                            <span class="text-[10px] text-blue-400 font-bold bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">نافذة التوقع الذكية</span>
                             <h3 class="text-base font-bold text-white mt-2">${getTeamName(activeMatchModal.home)} ضد ${getTeamName(activeMatchModal.away)}</h3>
                         </div>
                         
-                        <!-- الإدخالات مع استدعاء updateModalCalc() عند التعديل -->
+                        <!-- إدخالات النتيجة -->
                         <div class="flex items-center justify-center gap-4">
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-1">${getTeamName(activeMatchModal.home)}</span>
@@ -681,22 +725,34 @@
                             </div>
                         </div>
                         
-                        <!-- خيارات البطاقات -->
+                        <!-- خيارات الميزات الإضافية تظهر هنا أسفل التوقع كما طلبت -->
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <label class="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-slate-800 transition-all">
-                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} class="w-4 h-4 accent-amber-500 bg-slate-950" />
-                                <div class="flex-1"><span class="text-xs font-bold text-amber-400 block">C كابتن عادي (x2)</span></div>
+                            <label class="flex items-center gap-3 p-2 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-800'}">
+                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500 bg-slate-950" />
+                                <div class="flex-1">
+                                    <span class="text-xs font-bold text-amber-400 block">C كابتن (مضاعفة x2)</span>
+                                    <span class="text-[9px] text-slate-400">${captainUsedInGw && !pred.isCaptain ? 'مستخدمة في هذه الجولة!' : 'متاحة (مرة واحدة في الجولة)'}</span>
+                                </div>
                             </label>
+
+                            <label class="flex items-center gap-3 p-2 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-slate-800'}">
+                                <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500 bg-slate-950" />
+                                <div class="flex-1">
+                                    <span class="text-xs font-bold text-fuchsia-400 block"><i class="fa-solid fa-bolt mr-1"></i> الجوكر (مضاعفة x3)</span>
+                                    <span class="text-[9px] text-slate-400">${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'استخدمت في هذا النصف!' : `متاحة (من جولة ${isFirstHalf ? '1 إلى 18' : '19 إلى 38'})`}</span>
+                                </div>
+                            </label>
+                            
                             <label class="flex items-center gap-3 p-2 rounded-xl cursor-pointer hover:bg-slate-800 transition-all border-t border-white/5">
-                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain && !pred.isShield ? 'checked' : ''} class="w-4 h-4 accent-slate-400 bg-slate-950" />
-                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">بدون بطاقات</span></div>
+                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-slate-400 bg-slate-950" />
+                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون ميزات)</span></div>
                             </label>
                         </div>
 
                         <!-- عرض النقاط الديناميكي -->
                         <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-emerald-500/30 text-center">
-                            <span class="text-[10px] text-slate-400 block mb-1">النقاط المحتملة (إذا أصبت النتيجة بدقة):</span>
-                            <span id="modal-pts-display" class="text-xl font-black text-emerald-400">${pts} نقطة</span>
+                            <span class="text-[10px] text-slate-400 block mb-1">النقاط التي ستحققها (إذا أصبت النتيجة بدقة):</span>
+                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400">${pts} نقطة</span>
                         </div>
                         
                         <div class="flex gap-2">
@@ -714,9 +770,9 @@
             const a = document.getElementById('modal-pred-a').value;
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             const isCap = powerup === 'captain';
+            const isTC = powerup === 'triple';
 
-            // نفترض أن النتيجة الفعلية هي نفسها المدخلة للحصول على أقصى نقاط محتملة
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, null, null, isCap, false, false);
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, null, null, isCap, isTC);
             document.getElementById('modal-pts-display').innerText = pts + ' نقطة';
         }
 
@@ -729,7 +785,7 @@
             
             predictions[currentUser.username][activeMatchModal.id] = { 
                 home: Number(h), away: Number(a),
-                isCaptain: powerup === 'captain', isTripleCaptain: powerup === 'triple', isShield: powerup === 'shield'
+                isCaptain: powerup === 'captain', isTripleCaptain: powerup === 'triple'
             };
             saveState();
             closeModal();
@@ -738,7 +794,7 @@
 
         function setAuthMode(mode) { authMode = mode; render(); }
 
-        // نظام الطوارئ للتسجيل في حال عدم استجابة السيرفر بسبب مشكلة Vercel https
+        // نظام الطوارئ للتسجيل
         async function handleAuth(e) {
             e.preventDefault();
             const name = document.getElementById('auth-name').value.trim();
@@ -760,7 +816,6 @@
                 } else { showCustomDialog(data.message || 'حدث خطأ في العملية.'); }
             } catch (error) {
                 console.warn("API Error (Fallback to Local):", error);
-                // الدخول بنظام الذاكرة المحلية لتخطي مشكلة السيرفر وتجربة التطبيق
                 let localUsers = JSON.parse(localStorage.getItem('oracle_users_v8') || '[]');
                 if (authMode === 'register') {
                     if (localUsers.find(u => u.username === name)) { showCustomDialog('الاسم مستخدم مسبقاً (محلياً).'); } 
@@ -770,14 +825,14 @@
                         users = localUsers;
                         currentUser = newUser;
                         saveState();
-                        showCustomDialog('تم إنشاء الحساب محلياً لتتمكن من تجربة التطبيق (السيرفر غير متصل حالياً).', 'alert', () => { render(); });
+                        showCustomDialog('تم إنشاء الحساب محلياً لتتمكن من تجربة التطبيق.', 'alert', () => { render(); });
                     }
                 } else {
                     const existing = localUsers.find(u => u.username === name && u.pin === pin);
                     if (existing) {
                         currentUser = existing;
                         saveState();
-                        showCustomDialog('تم الدخول بالوضع المحلي بنجاح.', 'alert', () => { render(); });
+                        render();
                     } else { showCustomDialog('بيانات الدخول غير صحيحة.'); }
                 }
             }
@@ -804,18 +859,43 @@
         // إضافة مباراة في لوحة الإدارة
         function addMatch(e) {
             e.preventDefault();
-            const gw = Number(document.getElementById('adm-gw').value);
-            const home = document.getElementById('adm-home').value;
-            const away = document.getElementById('adm-away').value;
-            const date = document.getElementById('adm-date').value;
-            const time = document.getElementById('adm-time').value;
-            matches.push({ id: 'm_custom_' + Date.now(), gw, home, away, date, time, actualH: null, actualA: null });
+            const gwSelect = document.getElementById('adm-gw').value;
+            const homeSelect = document.getElementById('adm-home').value;
+            const awaySelect = document.getElementById('adm-away').value;
+            const dateInput = document.getElementById('adm-date').value;
+            const timeInput = document.getElementById('adm-time').value;
+            
+            if(!gwSelect || !homeSelect || !awaySelect || !dateInput || !timeInput) {
+                showCustomDialog('الرجاء تعبئة جميع الحقول بشكل صحيح.');
+                return;
+            }
+
+            // تحويل التاريخ من YYYY-MM-DD إلى YYYY/MM/DD
+            const formattedDate = dateInput.replace(/-/g, '/');
+            
+            // تحويل التوقيت من HH:MM (نظام 24) لـ 12 ساعة
+            let [hours, minutes] = timeInput.split(':');
+            hours = parseInt(hours, 10);
+            let period = hours >= 12 ? 'م' : 'ص';
+            hours = hours % 12 || 12; // تحويل الصفر إلى 12
+            const formattedTime = `${hours}:${minutes} ${period}`;
+
+            matches.push({ 
+                id: 'm_custom_' + Date.now(), 
+                gw: Number(gwSelect), 
+                home: homeSelect, 
+                away: awaySelect, 
+                date: formattedDate, 
+                time: formattedTime, 
+                actualH: null, 
+                actualA: null 
+            });
             saveState();
-            showCustomDialog(`تمت إضافة المباراة بنجاح للجولة ${gw}!`);
+            showCustomDialog(`تمت إضافة المباراة بنجاح للجولة ${gwSelect}!`);
             render();
         }
 
-        // حذف مباراة في لوحة الإدارة
+        // حذف مباراة في لوحة الإدارة (رسالة مخصصة مع ألوان الأزرار)
         function deleteMatch(id) {
             showCustomDialog('هل أنت متأكد من حذف هذه المباراة من الجدول نهائياً؟', 'confirm', () => {
                 matches = matches.filter(m => m.id !== id);
@@ -832,6 +912,7 @@
             if (m) { m.actualH = parseInt(hVal, 10); m.actualA = parseInt(aVal, 10); saveState(); render(); }
         }
 
+        // تم تعديل الألوان هنا لزر التأكيد (أحمر نعم، أخضر لا)
         function showCustomDialog(message, type = 'alert', onConfirm = null) {
             const container = document.getElementById('dialog-container');
             container.innerHTML = `
@@ -840,8 +921,8 @@
                         <div class="text-4xl mb-4 text-amber-400"><i class="fa-solid fa-${type === 'alert' ? 'circle-exclamation' : 'circle-question'}"></i></div>
                         <h3 class="text-sm font-bold text-white mb-6 leading-relaxed">${message}</h3>
                         <div class="flex gap-3">
-                            ${type === 'confirm' ? `<button id="diag-yes" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-all">نعم، متأكد</button>` : ''}
-                            <button id="diag-close" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">حسناً</button>
+                            ${type === 'confirm' ? `<button id="diag-yes" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-rose-600/30">نعم، متأكد</button>` : ''}
+                            <button id="diag-close" class="flex-1 py-2.5 ${type === 'confirm' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/30' : 'bg-slate-800 hover:bg-slate-700'} text-white font-bold text-xs rounded-xl transition-all">${type === 'confirm' ? 'لا' : 'حسناً'}</button>
                         </div>
                     </div>
                 </div>
@@ -906,7 +987,7 @@
                     </div>
                 </header>
 
-                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up">
+                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
                     ${currentTab === 'home' ? renderHomeTab() : ''}
                     ${currentTab === 'matches' ? renderMatchesTab() : ''}
                     ${currentTab === 'standings' ? renderStandingsTab() : ''}
