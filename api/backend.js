@@ -22,6 +22,9 @@ export default async function handler(req, res) {
     // إعادة البيانات لتطبيقك
     res.status(response.status).json(data);
   } catch (error) {
-    res.status(500).json({ error: 'حدث خطأ في جسر الاتصال' });
+    res.status(500).json({ 
+      error: 'حدث خطأ في جسر الاتصال', 
+      details: error.message 
+    });
   }
 }
