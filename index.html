@@ -95,28 +95,34 @@ async function apiLogin(username, pin) {
             e.preventDefault();
             const name = document.getElementById('auth-name').value.trim();
             const pin = document.getElementById('auth-pin').value.trim();
-            
             if (!name || pin.length < 4) {
-                alert('البيانات غير مكتملة'); return;
+                showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.');
+                return;
             }
 
-            // عرض حالة التحميل
-            const btn = document.getElementById('auth-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الاتصال...';
-            btn.disabled = true;
+            const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
-            // الاتصال بالـ API
-            const result = await apiLogin(name, pin);
-            
-            if (result.success) {
-                currentUser = result.user;
-                localStorage.setItem('oracle_auth_user', JSON.stringify(currentUser));
-                renderDashboard(); // الانتقال للوحة الرئيسية بعد نجاح الاتصال بـ Contabo
-            } else {
-                alert(result.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+            try {
+                // إرسال الطلب إلى سيرفر Contabo
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: name, pin: pin })
+                });
+                
+                const data = await response.json();
+
+                if (data.success) {
+                    // إذا نجح الدخول أو التسجيل، نحفظ الجلسة في المتصفح ونحدث الواجهة
+                    currentUser = data.user;
+                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                    render();
+                } else {
+                    showCustomDialog(data.message || 'حدث خطأ في التسجيل.');
+                }
+            } catch (error) {
+                console.error("API Error:", error);
+                showCustomDialog('لا يمكن الاتصال بالسيرفر. يرجى التأكد من أن سيرفر Contabo يعمل.');
             }
         }
 
