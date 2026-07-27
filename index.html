@@ -51,7 +51,7 @@ try {
 
 async function apiLogin(username, pin) {
     try {
-        // تم تفعيل الاتصال الحقيقي بالسيرفر
+        // الاتصال الحقيقي بالسيرفر عبر الجسر
         const response = await fetch('/api/backend?path=/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -59,7 +59,21 @@ async function apiLogin(username, pin) {
         });
         
         const data = await response.json();
-        return data;
+        
+        // فحص ما إذا كان السيرفر قد أرجع خطأ (مثل 401 أو 400)
+        if (!response.ok) {
+            return { 
+                success: false, 
+                // جلب رسالة الخطأ سواء كان اسمها error أو message
+                message: data.error || data.message || 'بيانات الدخول غير صحيحة' 
+            };
+        }
+
+        // في حال النجاح، نعيد البيانات كما هي مع تأكيد النجاح
+        return {
+            success: true,
+            ...data
+        };
         
     } catch (error) {
         console.error('API Error:', error);
