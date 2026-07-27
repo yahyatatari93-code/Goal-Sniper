@@ -1,24 +1,17 @@
-// هذا الملف سيعمل على سيرفر Contabo الخاص بك
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const app = express();
-
-// إعداد CORS للسماح لتطبيقك المرفوع على Vercel بالتحدث مع هذا السيرفر
-app.use(cors({
-    origin: '*', // في مرحلة الإطلاق الحقيقية، ضع رابط Vercel الخاص بك هنا
-    methods: ['GET', 'POST', 'PUT', 'DELETE']
-}));
-
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// إعداد الاتصال بقاعدة بيانات MySQL الموجودة على Contabo
+// إعداد الاتصال بقاعدة بيانات MySQL
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    password: process.env.DB_PASSWORD || '', // ضع كلمة مرور قاعدة البيانات الخاصة بك هنا إذا لزم الأمر
     database: process.env.DB_NAME || 'league_oracle'
 });
 
@@ -27,9 +20,7 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'Server is running securely on Contabo!' });
 });
 
-// --- أمثلة للواجهات البرمجية (API Endpoints) ---
-
-// 1. مسار تسجيل الدخول
+// 1. مسار تسجيل الدخول (Login)
 app.post('/api/auth/login', async (req, res) => {
     const { username, pin } = req.body;
     try {
@@ -40,57 +31,29 @@ app.post('/api/auth/login', async (req, res) => {
             res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
         }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// 2. مسار جلب المباريات
-app.get('/api/matches', async (req, res) => {
+// 2. مسار إنشاء حساب جديد (Register) - تمت إضافته!
+app.post('/api/auth/register', async (req, res) => {
+    const { username, pin } = req.body;
     try {
-        const [rows] = await pool.query('SELECT * FROM matches ORDER BY gw ASC');
-        res.json(rows);
+        // التحقق مما إذا كان الاسم موجوداً مسبقاً
+        const [existing] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر.' });
+        }
+        
+        // إنشاء الحساب الجديد
+        await pool.query('INSERT INTO users (username, pin) VALUES (?, ?)', [username, pin]);
+        res.json({ success: true, user: { username, pin } });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// 3. مسار حفظ التوقع
-app.post('/api/predictions', async (req, res) => {
-    const { username, matchId, homeScore, awayScore, powerup } = req.body;
-    try {
-        // يتم استخدام ON DUPLICATE KEY UPDATE لتعديل التوقع إذا كان موجوداً مسبقاً
-        await pool.query(
-            `INSERT INTO predictions (username, match_id, home_score, away_score, powerup) 
-             VALUES (?, ?, ?, ?, ?) 
-             ON DUPLICATE KEY UPDATE home_score = ?, away_score = ?, powerup = ?`,
-            [username, matchId, homeScore, awayScore, powerup, homeScore, awayScore, powerup]
-        );
-        res.json({ success: true, message: 'تم حفظ التوقع' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-// 4. مسار جلب المستخدمين
-app.get('/api/users', async (req, res) => {
-    try {
-        // نجلب اسم المستخدم فقط لدواعي الأمان (بدون كلمة المرور/الـ pin)
-        const [rows] = await pool.query('SELECT username FROM users');
-        res.json(rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 5. مسار جلب التوقعات
-app.get('/api/predictions', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT * FROM predictions');
-        res.json(rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
