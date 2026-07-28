@@ -76,7 +76,9 @@
 <body class="min-h-screen flex flex-col bottom-nav-pb">
 
     <div id="app" class="flex-1 flex flex-col">
-        <div class="flex items-center justify-center min-h-screen text-slate-400">جاري تحميل Goal Sniper...</div>
+        <div class="flex items-center justify-center min-h-screen text-slate-400 gap-2 font-bold">
+            <i class="fa-solid fa-spinner fa-spin text-blue-500 text-xl"></i> جاري الاتصال بالسيرفر...
+        </div>
     </div>
 
     <!-- Modal Container -->
@@ -86,7 +88,7 @@
     <div id="dialog-container"></div>
 
     <script>
-        // الـ IP الخاص بك ثابت هنا
+        // الـ IP الخاص بك ثابت هنا للاتصال بالسيرفر
         const API_BASE_URL = 'http://5.189.138.161:5000/api';
 
         const TEAMS = [
@@ -130,28 +132,49 @@
         }
 
         let users = [], currentUser = null, matches = INITIAL_MATCHES, predictions = {}, miniLeagues = [];
+        
+        // قراءة المستخدم الحالي فقط من الذاكرة المحلية
         try {
-            users = JSON.parse(localStorage.getItem('oracle_users_v8') || 'null') || [];
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
-            matches = JSON.parse(localStorage.getItem('oracle_matches_v8') || 'null') || INITIAL_MATCHES;
-            predictions = JSON.parse(localStorage.getItem('oracle_predictions_v8') || 'null') || {};
-            miniLeagues = JSON.parse(localStorage.getItem('oracle_minileagues_v8') || 'null') || [];
         } catch (e) { console.error('Storage error:', e); }
 
         let currentTab = 'home';
         let authMode = 'login';
         let activeMatchModal = null;
 
-        function saveState() {
+        // دالة المزامنة السحرية لجلب كل شيء من السيرفر
+        async function syncData() {
             try {
-                if (currentUser && !users.find(u => u.username === currentUser.username)) {
-                    users.push(currentUser);
+                const res = await fetch(`${API_BASE_URL}/sync`);
+                const json = await res.json();
+                if (json.success) {
+                    users = json.data.users;
+                    predictions = json.data.predictions;
+                    miniLeagues = json.data.miniLeagues;
+                    
+                    // دمج ذكي: نظهر الـ 38 جولة، ونستبدل أي مباراة تم تعديلها في السيرفر
+                    let mergedMatches = [...INITIAL_MATCHES];
+                    json.data.matches.forEach(dbMatch => {
+                        const idx = mergedMatches.findIndex(m => m.id === dbMatch.id);
+                        if (idx !== -1) {
+                            mergedMatches[idx] = dbMatch; // تحديث بالنتيجة الفعلية من السيرفر
+                        } else {
+                            mergedMatches.push(dbMatch); // إضافة أي مباراة جديدة أضافها الإدمن
+                        }
+                    });
+                    matches = mergedMatches;
                 }
-                localStorage.setItem('oracle_users_v8', JSON.stringify(users));
+            } catch (e) {
+                console.warn("Failed to sync with Contabo Server:", e);
+                // إذا فشل الاتصال بالسيرفر، نُبقي الجولات الـ 38 لكي لا تنهار الواجهة
+                matches = INITIAL_MATCHES;
+            }
+        }
+
+        function saveState() {
+            // الآن نحفظ فقط بيانات الدخول (لكي لا يخرج من الحساب)، باقي البيانات من السيرفر
+            try {
                 localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
-                localStorage.setItem('oracle_matches_v8', JSON.stringify(matches));
-                localStorage.setItem('oracle_predictions_v8', JSON.stringify(predictions));
-                localStorage.setItem('oracle_minileagues_v8', JSON.stringify(miniLeagues));
             } catch (e) { console.error('Save state error:', e); }
         }
 
@@ -648,8 +671,6 @@
 
                     <div class="glass p-6 rounded-3xl space-y-4">
                         <h3 class="font-bold text-sm text-slate-200">إدارة المباريات الحالية وتسجيل النتائج</h3>
-                        <div class="glass p-6 rounded-3xl space-y-4">
-                        <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات (لحساب النقاط)</h3>
                         <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                             ${sortedMatches.map(m => `
                                 <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap">
@@ -789,88 +810,107 @@
             document.getElementById('modal-pts-display').innerText = pts + ' نقطة';
         }
 
-        function saveModalPrediction() {
+        async function saveModalPrediction() {
             const h = document.getElementById('modal-pred-h').value;
             const a = document.getElementById('modal-pred-a').value;
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
-            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             
-            predictions[currentUser.username][activeMatchModal.id] = { 
-                home: Number(h), away: Number(a),
-                isCaptain: powerup === 'captain', isTripleCaptain: powerup === 'triple'
+            const payload = {
+                username: currentUser.username,
+                matchId: activeMatchModal.id,
+                predH: Number(h),
+                predA: Number(a),
+                isCaptain: powerup === 'captain',
+                isTripleCaptain: powerup === 'triple'
             };
-            saveState();
-            closeModal();
-            render();
+
+            try {
+                await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                await syncData(); // جلب البيانات المحدثة من السيرفر
+                closeModal();
+                render();
+            } catch (error) {
+                showCustomDialog('حدث خطأ في الاتصال بالسيرفر. تأكد من أن السيرفر يعمل.');
+            }
         }
 
         function setAuthMode(mode) { authMode = mode; render(); }
 
-        // نظام الطوارئ للتسجيل
+        // الاتصال بالسيرفر لتسجيل الدخول / إنشاء حساب
         async function handleAuth(e) {
             e.preventDefault();
             const name = document.getElementById('auth-name').value.trim();
             const pin = document.getElementById('auth-pin').value.trim();
             if (!name || pin.length < 4) { showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.'); return; }
 
-            const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
-
             try {
-                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: name, pin: pin })
                 });
                 const data = await response.json();
+                
                 if (data.success) {
                     currentUser = data.user;
                     saveState();
+                    await syncData(); // جلب الداتا الجديدة من السيرفر بمجرد الدخول
                     render();
-                } else { showCustomDialog(data.message || 'حدث خطأ في العملية.'); }
-            } catch (error) {
-                console.warn("API Error (Fallback to Local):", error);
-                let localUsers = JSON.parse(localStorage.getItem('oracle_users_v8') || '[]');
-                if (authMode === 'register') {
-                    if (localUsers.find(u => u.username === name)) { showCustomDialog('الاسم مستخدم مسبقاً (محلياً).'); } 
-                    else {
-                        const newUser = { username: name, pin: pin };
-                        localUsers.push(newUser);
-                        users = localUsers;
-                        currentUser = newUser;
-                        saveState();
-                        showCustomDialog('تم إنشاء الحساب محلياً لتتمكن من تجربة التطبيق.', 'alert', () => { render(); });
-                    }
-                } else {
-                    const existing = localUsers.find(u => u.username === name && u.pin === pin);
-                    if (existing) {
-                        currentUser = existing;
-                        saveState();
-                        render();
-                    } else { showCustomDialog('بيانات الدخول غير صحيحة.'); }
+                } else { 
+                    showCustomDialog(data.message || 'حدث خطأ في العملية.'); 
                 }
+            } catch (error) {
+                showCustomDialog('تعذر الاتصال بالسيرفر في Contabo. تأكد من أن الـ IP صحيح والسيرفر يعمل.');
             }
         }
 
         function logout() { currentUser = null; saveState(); render(); }
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-        function createMiniLeague() {
+        async function createMiniLeague() {
             const name = document.getElementById('new-ml-name').value.trim();
             if (!name) return;
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            miniLeagues.push({ id: 'ml_' + Date.now(), name, code, creator: currentUser.username, members: [currentUser.username] });
-            saveState(); showCustomDialog('تم إنشاء الدوري بنجاح! كود: ' + code); render();
+            
+            try {
+                await fetch(`${API_BASE_URL}/leagues`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: 'ml_' + Date.now(), name, code, creator: currentUser.username })
+                });
+                await syncData();
+                showCustomDialog('تم إنشاء الدوري بنجاح! كود: ' + code); 
+                render();
+            } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
         }
 
-        function joinMiniLeague() {
+        async function joinMiniLeague() {
             const code = document.getElementById('join-ml-code').value.trim().toUpperCase();
-            const ml = miniLeagues.find(l => l.code === code);
-            if (!ml) { showCustomDialog('الكود غير صحيح!'); return; }
-            if (!ml.members.includes(currentUser.username)) { ml.members.push(currentUser.username); saveState(); showCustomDialog('تم الانضمام!'); render(); }
+            if (!code) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/leagues/join`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code, username: currentUser.username })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    await syncData();
+                    showCustomDialog('تم الانضمام بنجاح!'); 
+                    render();
+                } else {
+                    showCustomDialog(data.message || 'الكود غير صحيح أو أنك منضم مسبقاً.');
+                }
+            } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
         }
 
-        // إضافة مباراة في لوحة الإدارة
-        function addMatch(e) {
+        async function addMatch(e) {
             e.preventDefault();
             const gwSelect = document.getElementById('adm-gw').value;
             const homeSelect = document.getElementById('adm-home').value;
@@ -883,65 +923,75 @@
                 return;
             }
 
-            // تحويل التاريخ من YYYY-MM-DD إلى YYYY/MM/DD
+            // تحويل التاريخ والوقت
             const formattedDate = dateInput.replace(/-/g, '/');
-            
-            // تحويل التوقيت من HH:MM (نظام 24) لـ 12 ساعة
             let [hours, minutes] = timeInput.split(':');
             hours = parseInt(hours, 10);
             let period = hours >= 12 ? 'م' : 'ص';
             hours = hours % 12 || 12; // تحويل الصفر إلى 12
             const formattedTime = `${hours}:${minutes} ${period}`;
 
-            matches.push({ 
+            const payload = { 
                 id: 'm_custom_' + Date.now(), 
                 gw: Number(gwSelect), 
                 home: homeSelect, 
                 away: awaySelect, 
                 date: formattedDate, 
-                time: formattedTime, 
-                actualH: null, 
-                actualA: null 
-            });
-            saveState();
-            showCustomDialog(`تمت إضافة المباراة بنجاح للجولة ${gwSelect}!`);
-            render();
-        }
+                time: formattedTime
+            };
 
-        // حذف مباراة في لوحة الإدارة (رسالة مخصصة مع ألوان الأزرار)
-        function deleteMatch(id) {
-            showCustomDialog('هل أنت متأكد من حذف هذه المباراة من الجدول نهائياً؟', 'confirm', () => {
-                matches = matches.filter(m => m.id !== id);
-                saveState();
+            try {
+                await fetch(`${API_BASE_URL}/admin/match`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                await syncData();
+                showCustomDialog(`تمت إضافة المباراة بنجاح للجولة ${gwSelect}!`);
                 render();
+            } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
+        }
+
+        function deleteMatch(id) {
+            showCustomDialog('هل أنت متأكد من حذف هذه المباراة من الجدول نهائياً؟', 'confirm', async () => {
+                try {
+                    await fetch(`${API_BASE_URL}/admin/match/${id}`, { method: 'DELETE' });
+                    await syncData();
+                    render();
+                } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
             });
         }
 
-        function saveActual(id) {
+        async function saveActual(id) {
             const hVal = document.getElementById(`actual-h-${id}`).value;
             const aVal = document.getElementById(`actual-a-${id}`).value;
             if (hVal === '' || aVal === '') { showCustomDialog('الرجاء إدخال أهداف كلا الفريقين لتثبيت النتيجة.'); return; }
-            const m = matches.find(item => item.id === id);
-            if (m) { 
-                m.actualH = parseInt(hVal, 10); 
-                m.actualA = parseInt(aVal, 10); 
-                saveState(); 
-                render();
+            
+            try {
+                await fetch(`${API_BASE_URL}/admin/result`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ matchId: id, actualH: parseInt(hVal, 10), actualA: parseInt(aVal, 10) })
+                });
+                await syncData();
                 showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
-            }
-        }
-        function clearActual(id) {
-            const m = matches.find(item => item.id === id);
-            if (m) {
-                m.actualH = null;
-                m.actualA = null;
-                saveState();
                 render();
+            } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
+        }
+
+        async function clearActual(id) {
+            try {
+                await fetch(`${API_BASE_URL}/admin/result`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ matchId: id, actualH: null, actualA: null })
+                });
+                await syncData();
                 showCustomDialog('تم إلغاء النتيجة بنجاح.', 'alert');
-            }
+                render();
+            } catch (e) { showCustomDialog('خطأ في الاتصال بالسيرفر.'); }
         }
         
-        // تم تعديل الألوان هنا لزر التأكيد (أحمر نعم، أخضر لا)
         function showCustomDialog(message, type = 'alert', onConfirm = null) {
             const container = document.getElementById('dialog-container');
             container.innerHTML = `
@@ -1005,7 +1055,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        ${currentUser.username.toLowerCase() === 'red army' ? `
+                        ${currentUser.role === 'admin' ? `
                             <button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold transition-all">
                                 <i class="fa-solid fa-shield-halved"></i> للإدارة
                             </button>
@@ -1022,7 +1072,7 @@
                     ${currentTab === 'standings' ? renderStandingsTab() : ''}
                     ${currentTab === 'minileagues' ? renderMiniLeaguesTab() : ''}
                     ${currentTab === 'rules' ? renderRulesTab() : ''}
-                    ${currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army' ? renderAdminTab() : ''}
+                    ${currentTab === 'admin' && currentUser.role === 'admin' ? renderAdminTab() : ''}
                 </main>
 
                 <!-- شريط التنقل السفلي يتضمن القوانين -->
@@ -1037,7 +1087,13 @@
             renderModal();
         }
 
-        window.onload = function() { render(); };
+        window.onload = async function() { 
+            // إذا كان المستخدم قد سجل دخوله مسبقاً، نجلب التحديثات فوراً قبل رسم الواجهة
+            if (currentUser) {
+                await syncData();
+            }
+            render(); 
+        };
     </script>
 </body>
 </html>
