@@ -66,7 +66,6 @@
     <div id="dialog-container"></div>
 
     <script>
-        // رابط السيرفر الخاص بك
         const API_BASE_URL = 'https://5.189.138.161.nip.io/api';
 
         const TEAMS = [
@@ -102,7 +101,6 @@
                 if (json.success) {
                     users = json.data.users || [];
                     
-                    // إصلاح مشكلة قفل المباريات: مطابقة أسماء الأعمدة القادمة من قاعدة البيانات
                     matches = (json.data.matches || []).map(m => ({
                         id: m.id,
                         gw: m.gw,
@@ -123,7 +121,7 @@
             }
         }
 
-        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false, isShield = false) => {
+        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
             const ph = Number(predH), pa = Number(predA);
             const homeIsBig = BIG_TEAMS.includes(homeCode), awayIsBig = BIG_TEAMS.includes(awayCode);
@@ -152,7 +150,6 @@
                 }
             }
 
-            if (pts === 0 && isShield) return 1;
             if (isTripleCaptain) return pts * 3; 
             if (isCaptain) return pts * 2; 
             return pts;
@@ -176,7 +173,7 @@
                         userStats.predictedCount++;
                         if (isPlayed) {
                             userStats.playedMatches++;
-                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain, p.isShield);
+                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain);
                             userStats.totalPts += pts;
                             
                             const isOutcomeCorrect = (p.home > p.away && m.actualH > m.actualA) || (p.home < p.away && m.actualH < m.actualA) || (p.home === p.away && m.actualH === m.actualA);
@@ -221,19 +218,52 @@
             return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
         }
 
-        function isMatchLocked(match) {
+        function formatMatchDate(dateStr) {
+            if (!dateStr) return '';
+            let str = String(dateStr);
+            const arabicMonths = {
+                'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
+                'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
+                'مايو': '5', 'أيار': '5', 'ايار': '5', 'يونيو': '6', 'حزيران': '6',
+                'يوليو': '7', 'تموز': '7', 'أغسطس': '8', 'اغسطس': '8', 'آب': '8',
+                'سبتمبر': '9', 'أيلول': '9', 'ايلول': '9', 'أكتوبر': '10', 'اكتوبر': '10', 'تشرين الأول': '10',
+                'نوفمبر': '11', 'تشرين الثاني': '11', 'ديسمبر': '12', 'كانون الأول': '12'
+            };
+            for (const [name, num] of Object.entries(arabicMonths)) {
+                if (str.includes(name)) {
+                    str = str.replace(new RegExp(name, 'g'), num);
+                }
+            }
+            return str.replace(/\s+/g, '/').replace(/\/+/g, '/');
+        }
+
+        function parseMatchDate(dateStr, timeStr) {
             try {
-                if (match.actualH !== null && match.actualA !== null) return true;
-                const [year, month, day] = match.date.split('/');
-                let [timeStr, period] = match.time.split(' ');
-                let [hours, minutes] = timeStr.split(':');
-                hours = parseInt(hours, 10);
+                let dStr = formatMatchDate(dateStr);
+                let [time, period] = (timeStr || '').split(' ');
+                let [hours, minutes] = (time || '0:0').split(':');
+                hours = parseInt(hours, 10) || 0;
+                minutes = parseInt(minutes, 10) || 0;
                 if (period === 'م' && hours !== 12) hours += 12;
                 if (period === 'ص' && hours === 12) hours = 0;
                 
-                const matchDate = new Date(year, month - 1, day, hours, minutes);
-                const now = new Date();
-                return (matchDate - now) <= 60 * 60 * 1000;
+                let parts = dStr.match(/\d+/g);
+                let y = 2026, m = 0, d = 1;
+                if (parts) {
+                    if (parts.length >= 3 && parts[0].length === 4) { y = parseInt(parts[0]); m = parseInt(parts[1]) - 1; d = parseInt(parts[2]); } 
+                    else if (parts.length >= 2) { d = parseInt(parts[0]); m = parseInt(parts[1]) - 1; if (parts[2]) y = parseInt(parts[2]); }
+                }
+                return new Date(y, m, d, hours, minutes).getTime();
+            } catch(e) { return 0; }
+        }
+
+        function isMatchLocked(match) {
+            try {
+                if (match.actualH !== null && match.actualA !== null) return true;
+                const matchTimeMs = parseMatchDate(match.date, match.time);
+                if (!matchTimeMs) return false;
+                const now = new Date().getTime();
+                return (matchTimeMs - now) <= 60 * 60 * 1000;
             } catch(e) { return false; }
         }
 
@@ -249,7 +279,11 @@
         function renderHomeTab() {
             const activeGw = getCurrentActiveGw();
             const prevGw = activeGw > 1 ? activeGw - 1 : null;
-            const gwMatches = matches.filter(m => Number(m.gw) === activeGw);
+            let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
+            
+            // ترتيب المباريات حسب الوقت (الأقرب فالأبعد)
+            gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+            
             const userPreds = predictions[currentUser.username] || {};
             
             const standings = getGlobalStandings();
@@ -318,14 +352,14 @@
                         </div>
                         <div class="space-y-3">
                             ${gwMatches.map(match => {
-                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                                 const matchType = getMatchType(match.home, match.away);
                                 const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                                 const isLocked = isMatchLocked(match);
+                                const displayDate = formatMatchDate(match.date);
                                 
                                 let badgeHtml = '';
                                 if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
-                                else if (pred.isShield) badgeHtml = `<div class="absolute top-3 left-3 bg-sky-500 text-white w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-shield"></i></div>`;
                                 else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
 
                                 return `
@@ -333,7 +367,7 @@
                                         ${badgeHtml}
                                         <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
                                             <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                            <span class="${isLocked ? 'text-rose-400' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${match.date} - ${match.time}`}</span>
+                                            <span class="${isLocked ? 'text-rose-400' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
                                         </div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1 text-left font-bold text-sm md:text-base text-slate-200">${getTeamName(match.home)}</div>
@@ -362,8 +396,12 @@
                         <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-blue-400"></i> جدول مباريات الدوري الرسمي</h2>
                     </div>
                     ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
-                        const gwMatches = matches.filter(m => Number(m.gw) === gw);
+                        let gwMatches = matches.filter(m => Number(m.gw) === gw);
                         if (gwMatches.length === 0) return '';
+                        
+                        // ترتيب المباريات حسب الوقت (الأقرب فالأبعد)
+                        gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                        
                         return `
                             <div class="glass p-4 rounded-2xl space-y-3">
                                 <div class="border-b border-white/10 pb-2 flex justify-between items-center">
@@ -372,13 +410,12 @@
                                 </div>
                                 <div class="space-y-2">
                                     ${gwMatches.map(match => {
-                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                                         const isLocked = isMatchLocked(match);
                                         
                                         let bMini = '';
                                         if(pred.isTripleCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-fuchsia-600 text-white w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                        else if (pred.isShield) bMini = `<div class="absolute -top-1 -left-1 bg-sky-500 text-white w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-shield"></i></div>`;
                                         else if(pred.isCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-amber-500 text-black w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]">C</div>`;
 
                                         return `
@@ -488,13 +525,50 @@
                     <div class="border-b border-white/10 pb-3">
                         <h2 class="text-xl font-black flex items-center gap-2 text-amber-400"><i class="fa-solid fa-book-bookmark"></i> قوانين Goal Sniper</h2>
                     </div>
-                    <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-2xl flex gap-3 items-center">
-                        <i class="fa-solid fa-clock text-2xl text-amber-400"></i>
-                        <div><h3 class="font-bold text-sm text-amber-400">نظام الإغلاق (القفل)</h3><p class="text-[10px] text-slate-300 mt-0.5">تُقفل التوقعات قبل 60 دقيقة من الانطلاق.</p></div>
-                    </div>
-                    <div class="bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-2xl flex gap-3 items-center">
-                        <i class="fa-solid fa-shield text-2xl text-emerald-400"></i>
-                        <div><h3 class="font-bold text-sm text-emerald-400">بطاقات القوة (Power-ups)</h3><p class="text-[10px] text-slate-300 mt-0.5">الكابتن (x2)، الجوكر (x3)، ودرع التأمين. (قريباً: رصاصة القناص!).</p></div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5">
+                            <h3 class="font-bold text-blue-400 mb-2 border-b border-white/10 pb-2"><i class="fa-solid fa-calculator"></i> نظام حساب النقاط</h3>
+                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside leading-relaxed">
+                                <li><span class="text-emerald-400 font-bold">قمة الكبار (مباراة بين فريقين من الستة الكبار):</span> 
+                                    <br><span class="text-xs text-slate-400">- التوقع المثالي بالنتيجة: (5 نقاط)</span>
+                                    <br><span class="text-xs text-slate-400">- توقع الفائز الصحيح: (3 نقاط)</span>
+                                    <br><span class="text-xs text-slate-400">- التوقع المثالي للتعادل: (3 نقاط)، التوقع العادي للتعادل: (نقطتين)</span>
+                                </li>
+                                <li><span class="text-blue-400 font-bold">الكبار ضد الطموحين (فريق كبير ضد فريق عادي):</span> 
+                                    <br><span class="text-xs text-slate-400">- فوز الكبير: توقع مثالي (نقطتين) / صحيح (نقطة واحدة).</span>
+                                    <br><span class="text-xs text-slate-400">- مفاجأة (تعثر أو خسارة الكبير): توقع مثالي (6 نقاط) / صحيح (4 نقاط).</span>
+                                    <br><span class="text-xs text-slate-400">- التعادل: مثالي (3 نقاط) / عادي (نقطتين).</span>
+                                </li>
+                                <li><span class="text-slate-400 font-bold">المباريات المتكافئة (باقي الفرق):</span>
+                                    <br><span class="text-xs text-slate-400">- التوقع المثالي: (3 نقاط) </span>
+                                    <br><span class="text-xs text-slate-400">- مباراة مجنونة (+5 أهداف بالمباراة) أو تعادل سلبي (0-0) بالتوقع المثالي: (4 نقاط).</span>
+                                    <br><span class="text-xs text-slate-400">- التوقع الصحيح للفائز: (نقطة واحدة).</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl">
+                            <h3 class="font-bold text-amber-400 mb-2 border-b border-amber-500/20 pb-2"><i class="fa-solid fa-clock"></i> نظام الإغلاق (القفل)</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed">يُقفل التوقع تلقائياً قبل <span class="font-bold text-amber-400">60 دقيقة</span> من صافرة البداية للمباراة. لا يمكن إضافة أو تعديل أي توقع بعد دخول المباراة في فترة القفل.</p>
+                        </div>
+
+                        <div class="bg-fuchsia-500/10 border border-fuchsia-500/30 p-4 rounded-2xl">
+                            <h3 class="font-bold text-fuchsia-400 mb-2 border-b border-fuchsia-500/20 pb-2"><i class="fa-solid fa-bolt"></i> بطاقات القوة (Power-ups)</h3>
+                            <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
+                                <li><span class="text-amber-400 font-bold">الكابتن (C):</span> مضاعفة نقاط المباراة (x2). متاح للاستخدام <span class="font-bold text-white">مرة واحدة فقط في كل جولة</span>.</li>
+                                <li><span class="text-fuchsia-400 font-bold">الجوكر (x3):</span> مضاعفة نقاط المباراة (x3). متاح <span class="font-bold text-white">مرتين فقط في الموسم كاملاً</span> (مرة في النصف الأول ومرة في النصف الثاني).</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl">
+                            <h3 class="font-bold text-emerald-400 mb-2 border-b border-emerald-500/20 pb-2"><i class="fa-solid fa-medal"></i> الأوسمة والإنجازات</h3>
+                            <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
+                                <li><i class="fa-solid fa-fire text-amber-400"></i> <span class="font-bold text-amber-400">عراف الأسبوع:</span> وسام يحصل عليه أعلى شخص نقاطاً في الجولة السابقة مباشرة.</li>
+                                <li><i class="fa-solid fa-crosshairs text-emerald-400"></i> <span class="font-bold text-emerald-400">القناص:</span> وسام يظهر بجانب اسمك إذا تمكنت من توقع 3 نتائج مثالية بالرقم في جولة واحدة.</li>
+                                <li><i class="fa-solid fa-shield-halved text-rose-400"></i> <span class="font-bold text-rose-400">قاهر الكبار:</span> وسام يظهر عند توقعك لخسارة فريق كبير بـ شكل صحيح ومطابق للواقع.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             `;
@@ -570,7 +644,7 @@
         function renderModal() {
             const container = document.getElementById('modal-container');
             if (!activeMatchModal) { container.innerHTML = ''; return; }
-            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isShield: false };
+            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
             const hVal = pred.home !== undefined ? pred.home : '';
             const aVal = pred.away !== undefined ? pred.away : '';
             
@@ -588,7 +662,7 @@
                 }
             });
 
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, null, null, pred.isCaptain, pred.isTripleCaptain, pred.isShield);
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, null, null, pred.isCaptain, pred.isTripleCaptain);
 
             container.innerHTML = `
                 <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -618,11 +692,7 @@
                                 <div class="flex-1"><span class="text-xs font-bold text-fuchsia-400 block">الجوكر (مضاعفة x3)</span></div>
                             </label>
                             <label class="flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all border-t border-white/5">
-                                <input type="radio" name="powerup" value="shield" onchange="updateModalCalc()" ${pred.isShield ? 'checked' : ''} class="w-4 h-4 accent-sky-500" />
-                                <div class="flex-1"><span class="text-xs font-bold text-sky-400 block">درع التأمين (نقطة مضمونة)</span></div>
-                            </label>
-                            <label class="flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all border-t border-white/5">
-                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain && !pred.isShield ? 'checked' : ''} class="w-4 h-4 accent-slate-400" />
+                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-slate-400" />
                                 <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون ميزات)</span></div>
                             </label>
                         </div>
@@ -642,7 +712,7 @@
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            document.getElementById('modal-pts-display').innerText = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, null, null, p==='captain', p==='triple', p==='shield') + ' نقطة';
+            document.getElementById('modal-pts-display').innerText = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, null, null, p==='captain', p==='triple') + ' نقطة';
         }
 
         async function saveModalPrediction() {
@@ -650,14 +720,12 @@
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
-            // التحديث الشكلي الفوري للواجهة
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             predictions[currentUser.username][activeMatchModal.id] = { 
                 home: Number(h), 
                 away: Number(a), 
                 isCaptain: powerup === 'captain', 
-                isTripleCaptain: powerup === 'triple',
-                isShield: powerup === 'shield'
+                isTripleCaptain: powerup === 'triple'
             };
             
             const reqMatchId = activeMatchModal.id;
@@ -665,7 +733,6 @@
             render();
 
             try {
-                // الإرسال لقاعدة البيانات السحابية
                 await fetch(`${API_BASE_URL}/predict`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -675,10 +742,9 @@
                         predA: a, 
                         isCaptain: powerup === 'captain', 
                         isTripleCaptain: powerup === 'triple'
-                        // (ملاحظة: سيتم إضافة إرسال Shield و Sniper قريباً عند تحديث قاعدة البيانات)
                     })
                 });
-                await syncData(); // جلب البيانات المحدثة
+                await syncData(); 
             } catch(e) {
                 console.error("Predict error:", e);
                 showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر.");
@@ -798,7 +864,6 @@
             const name = document.getElementById('auth-name').value.trim();
             const pin = document.getElementById('auth-pin').value.trim();
             
-            // إضافة التحقق من تطابق كلمة المرور في حالة إنشاء حساب جديد
             if (authMode === 'register') {
                 const pinConfirm = document.getElementById('auth-pin-confirm').value.trim();
                 if (pin !== pinConfirm) {
@@ -922,7 +987,6 @@
         window.onload = async function() {
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
             if (currentUser) {
-                // إظهار رسالة جلب 380 مباراة للمستخدم ليعرف أن التطبيق أونلاين
                 document.getElementById('app').innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                         <i class="fa-solid fa-crosshairs fa-spin text-4xl text-blue-500"></i>
