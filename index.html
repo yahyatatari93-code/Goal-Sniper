@@ -843,31 +843,38 @@
 
         // الاتصال بالسيرفر لتسجيل الدخول / إنشاء حساب
         async function handleAuth(e) {
-            e.preventDefault();
-            const name = document.getElementById('auth-name').value.trim();
-            const pin = document.getElementById('auth-pin').value.trim();
-            if (!name || pin.length < 4) { showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.'); return; }
+    e.preventDefault();
+    const name = document.getElementById('auth-name').value.trim();
+    const pin = document.getElementById('auth-pin').value.trim();
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: name, pin: pin })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentUser = data.user;
-                    saveState();
-                    await syncData(); // جلب الداتا الجديدة من السيرفر بمجرد الدخول
-                    render();
-                } else { 
-                    showCustomDialog(data.message || 'حدث خطأ في العملية.'); 
-                }
-            } catch (error) {
-                showCustomDialog('تعذر الاتصال بالسيرفر في Contabo. تأكد من أن الـ IP صحيح والسيرفر يعمل.');
-            }
+    if (!name || pin.length < 4) {
+        showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.');
+        return;
+    }
+
+    try {
+        // نرسل الطلب دائماً إلى مسار /auth/login
+        // السيرفر مبرمج بذكاء لإنشاء حساب جديد إذا لم يجد المستخدم
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: name, pin: pin })
+        });
+        
+        const data = await response.json();
+
+        if (data.success) {
+            currentUser = data.user;
+            saveState(); // تحديث الـ LocalStorage
+            render();    // الانتقال للواجهة الرئيسية
+        } else {
+            showCustomDialog(data.message || 'خطأ في الدخول.');
         }
+    } catch (error) {
+        console.error("Auth Error:", error);
+        showCustomDialog('تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت.');
+    }
+}
 
         function logout() { currentUser = null; saveState(); render(); }
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
