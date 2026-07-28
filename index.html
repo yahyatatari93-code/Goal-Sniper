@@ -58,7 +58,7 @@
         <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
             <i class="fa-solid fa-crosshairs fa-spin text-4xl text-blue-500"></i>
             <span class="font-bold text-lg text-white">Goal Sniper</span>
-            <span class="font-bold text-sm">جاري جلب المباريات من السيرفر...</span>
+            <span class="font-bold text-sm">جاري التحميل...</span>
         </div>
     </div>
 
@@ -66,7 +66,14 @@
     <div id="dialog-container"></div>
 
     <script>
+        // ==========================================
+        // الإعدادات العامة (يمكنك تغييرها بسهولة)
+        // ==========================================
         const API_BASE_URL = 'https://5.189.138.161.nip.io/api';
+        
+        // رابط الشعار (ارفع صورتك على imgur.com مثلاً وضع الرابط هنا)
+        const APP_LOGO_URL = 'https://placehold.co/150x150/060b19/0ea5e9?text=GS'; 
+        // ==========================================
 
         const TEAMS = [
             { code: 'ARS', name: 'آرسنال' }, { code: 'MCI', name: 'مانشستر سيتي' },
@@ -221,6 +228,7 @@
         function formatMatchDate(dateStr) {
             if (!dateStr) return '';
             let str = String(dateStr);
+            // تحويل أسماء الأشهر العربية إلى أرقام
             const arabicMonths = {
                 'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
                 'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
@@ -263,11 +271,12 @@
                 const matchTimeMs = parseMatchDate(match.date, match.time);
                 if (!matchTimeMs) return false;
                 const now = new Date().getTime();
-                return (matchTimeMs - now) <= 60 * 60 * 1000;
+                return (matchTimeMs - now) <= 60 * 60 * 1000; // قفل قبل ساعة
             } catch(e) { return false; }
         }
 
         function getCurrentActiveGw() {
+            // يبحث عن أول جولة تحتوي على مباريات غير ملعوبة (actualH و actualA تساوي null)
             for (let gw = 1; gw <= 38; gw++) {
                 const gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) continue;
@@ -281,7 +290,7 @@
             const prevGw = activeGw > 1 ? activeGw - 1 : null;
             let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
             
-            // ترتيب المباريات حسب الوقت (الأقرب فالأبعد)
+            // ترتيب المباريات زمنياً (الأقرب فالأبعد)
             gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
             
             const userPreds = predictions[currentUser.username] || {};
@@ -293,6 +302,13 @@
 
             return `
                 <div class="space-y-6">
+                    <!-- رأس الصفحة (الشعار واسم التطبيق) -->
+                    <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
+                        <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
+                        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
+                        <span class="text-xs text-slate-400 mt-1">توقع. نافس. سيطر.</span>
+                    </div>
+
                     ${motw ? `
                         <div class="glass p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                             <div class="flex items-center gap-3">
@@ -309,34 +325,35 @@
                         </div>
                     ` : ''}
 
-                    <div class="glass p-5 md:p-6 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
-                        <div class="flex justify-between items-start mb-6">
+                    <!-- البطاقة الشخصية (تم تصغيرها وتنسيقها) -->
+                    <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
+                        <div class="flex justify-between items-start mb-4">
                             <div>
-                                <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">بطاقة القناص الشخصية</span>
-                                <h2 class="text-xl md:text-2xl font-black mt-2 text-white flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">بطاقة القناص</span>
+                                <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
                                     ${currentUser.username}
-                                    ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-lg"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                    ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-lg"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                    ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-lg"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
+                                    ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>' : ''}
+                                    ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
+                                    ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
                                 </h2>
                             </div>
                             <div class="text-left">
                                 <span class="text-[10px] text-slate-400 block">الترتيب العام</span>
-                                <span class="text-lg md:text-xl font-black text-amber-400">#${myRank}</span>
+                                <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center mb-3">
-                            <div class="bg-slate-900/60 p-3 rounded-2xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block mb-1">المجموع الكلي</span>
-                                <span class="text-lg font-black text-amber-400">${myStats.totalPts}</span>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
+                                <span class="text-[9px] text-slate-400 block mb-0.5">النقاط</span>
+                                <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
                             </div>
-                            <div class="bg-slate-900/60 p-3 rounded-2xl border border-white/5">
-                                <span class="text-[10px] text-slate-400 block mb-1">معدل الدقة</span>
-                                <span class="text-lg font-black text-emerald-400">${myStats.hitRate}%</span>
+                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
+                                <span class="text-[9px] text-slate-400 block mb-0.5">الدقة</span>
+                                <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
                             </div>
-                            <div class="bg-slate-900/60 p-3 rounded-2xl border border-white/5 col-span-2">
-                                <span class="text-[10px] text-slate-400 block mb-1">الفريق المفضل للتوقع</span>
-                                <span class="text-base font-black text-blue-300 truncate block">${myStats.favTeam}</span>
+                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
+                                <span class="text-[9px] text-slate-400 block mb-0.5">المفضل</span>
+                                <span class="text-sm font-black text-blue-300 truncate block">${myStats.favTeam}</span>
                             </div>
                         </div>
                     </div>
@@ -367,12 +384,12 @@
                                         ${badgeHtml}
                                         <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
                                             <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                            <span class="${isLocked ? 'text-rose-400' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
+                                            <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
                                         </div>
                                         <div class="flex items-center justify-between">
                                             <div class="flex-1 text-left font-bold text-sm md:text-base text-slate-200">${getTeamName(match.home)}</div>
                                             <div class="px-3">
-                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800' : ''} font-bold text-xs rounded-xl transition-all">
+                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
                                                     ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> انتهى الوقت' : 'أضف توقعك')}
                                                 </button>
                                             </div>
@@ -399,7 +416,7 @@
                         let gwMatches = matches.filter(m => Number(m.gw) === gw);
                         if (gwMatches.length === 0) return '';
                         
-                        // ترتيب المباريات حسب الوقت (الأقرب فالأبعد)
+                        // ترتيب المباريات زمنياً (الأقرب فالأبعد)
                         gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
                         
                         return `
@@ -413,21 +430,27 @@
                                         const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                                         const isLocked = isMatchLocked(match);
+                                        const displayDate = formatMatchDate(match.date);
                                         
                                         let bMini = '';
-                                        if(pred.isTripleCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-fuchsia-600 text-white w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                        else if(pred.isCaptain) bMini = `<div class="absolute -top-1 -left-1 bg-amber-500 text-black w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px]">C</div>`;
+                                        if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 left-2 bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
+                                        else if(pred.isCaptain) bMini = `<div class="absolute top-2 left-2 bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
 
                                         return `
-                                            <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
+                                            <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
                                                 ${bMini}
-                                                <div class="flex-1 text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
-                                                <div class="px-2">
-                                                    <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                        ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> مقفلة' : 'توقع الآن')}
-                                                    </button>
+                                                <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
+                                                    <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}
                                                 </div>
-                                                <div class="flex-1 text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
+                                                <div class="flex items-center justify-between">
+                                                    <div class="flex-1 text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
+                                                    <div class="px-2">
+                                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : 'توقع الآن')}
+                                                        </button>
+                                                    </div>
+                                                    <div class="flex-1 text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
+                                                </div>
                                             </div>
                                         `;
                                     }).join('')}
@@ -455,7 +478,7 @@
                             return `
                                 <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
                                     <div class="flex items-center gap-3">
-                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">#${idx + 1}</span>
+                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">#${idx + 1}</span>
                                         <div>
                                             <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
                                                 ${user.username} ${isMe ? '(أنت)' : ''}
@@ -487,11 +510,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
                                 <input type="text" id="new-ml-name" placeholder="اسم الدوري (مثال: أصدقاء الحي)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
-                                <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all">إنشاء وتوليد الكود</button>
+                                <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">إنشاء وتوليد الكود</button>
                             </div>
                             <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
                                 <input type="text" id="join-ml-code" placeholder="أدخل كود الدوري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
-                                <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all">الانضمام الآن</button>
+                                <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">الانضمام الآن</button>
                             </div>
                         </div>
                     </div>
@@ -499,15 +522,18 @@
                         ${myLeagues.map(ml => `
                             <div class="glass p-5 rounded-2xl space-y-3">
                                 <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                                    <h4 class="font-bold text-base text-white">${ml.name}</h4>
+                                    <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
                                     <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
                                 </div>
                                 <div class="space-y-2">
                                     ${ml.members.map(mName => standings.find(s => s.username === mName) || { username: mName, totalPts: 0 })
                                         .sort((a, b) => b.totalPts - a.totalPts)
                                         .map((mem, idx) => `
-                                            <div class="py-2 flex justify-between items-center text-xs">
-                                                <div class="flex items-center gap-2"><span class="font-bold text-slate-400 w-5">#${idx + 1}</span><span class="font-bold text-slate-200">${mem.username}</span></div>
+                                            <div class="py-2.5 px-3 rounded-xl flex justify-between items-center text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
+                                                    <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
+                                                </div>
                                                 <span class="font-black text-amber-400">${mem.totalPts} نقطة</span>
                                             </div>
                                         `).join('')}
@@ -521,52 +547,73 @@
 
         function renderRulesTab() {
             return `
-                <div class="glass p-5 md:p-6 rounded-3xl space-y-5">
-                    <div class="border-b border-white/10 pb-3">
-                        <h2 class="text-xl font-black flex items-center gap-2 text-amber-400"><i class="fa-solid fa-book-bookmark"></i> قوانين Goal Sniper</h2>
+                <div class="glass p-5 md:p-6 rounded-3xl space-y-6">
+                    <div class="border-b border-white/10 pb-4 text-center">
+                        <i class="fa-solid fa-scale-balanced text-4xl text-amber-400 mb-3"></i>
+                        <h2 class="text-xl font-black text-white tracking-wide">دليل القوانين الشامل</h2>
+                        <p class="text-xs text-slate-400 mt-2">افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش</p>
                     </div>
                     
-                    <div class="space-y-4">
-                        <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5">
-                            <h3 class="font-bold text-blue-400 mb-2 border-b border-white/10 pb-2"><i class="fa-solid fa-calculator"></i> نظام حساب النقاط</h3>
-                            <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside leading-relaxed">
-                                <li><span class="text-emerald-400 font-bold">قمة الكبار (مباراة بين فريقين من الستة الكبار):</span> 
-                                    <br><span class="text-xs text-slate-400">- التوقع المثالي بالنتيجة: (5 نقاط)</span>
-                                    <br><span class="text-xs text-slate-400">- توقع الفائز الصحيح: (3 نقاط)</span>
-                                    <br><span class="text-xs text-slate-400">- التوقع المثالي للتعادل: (3 نقاط)، التوقع العادي للتعادل: (نقطتين)</span>
-                                </li>
-                                <li><span class="text-blue-400 font-bold">الكبار ضد الطموحين (فريق كبير ضد فريق عادي):</span> 
-                                    <br><span class="text-xs text-slate-400">- فوز الكبير: توقع مثالي (نقطتين) / صحيح (نقطة واحدة).</span>
-                                    <br><span class="text-xs text-slate-400">- مفاجأة (تعثر أو خسارة الكبير): توقع مثالي (6 نقاط) / صحيح (4 نقاط).</span>
-                                    <br><span class="text-xs text-slate-400">- التعادل: مثالي (3 نقاط) / عادي (نقطتين).</span>
-                                </li>
-                                <li><span class="text-slate-400 font-bold">المباريات المتكافئة (باقي الفرق):</span>
-                                    <br><span class="text-xs text-slate-400">- التوقع المثالي: (3 نقاط) </span>
-                                    <br><span class="text-xs text-slate-400">- مباراة مجنونة (+5 أهداف بالمباراة) أو تعادل سلبي (0-0) بالتوقع المثالي: (4 نقاط).</span>
-                                    <br><span class="text-xs text-slate-400">- التوقع الصحيح للفائز: (نقطة واحدة).</span>
-                                </li>
-                            </ul>
+                    <div class="space-y-5">
+                        
+                        <!-- نظام حساب النقاط الأساسي -->
+                        <div class="bg-slate-900/80 p-5 rounded-2xl border-l-4 border-l-blue-500 border border-white/5 shadow-lg">
+                            <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-calculator"></i> 1. نظام حساب النقاط التفصيلي</h3>
+                            <div class="space-y-4">
+                                
+                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                                    <h4 class="font-bold text-amber-400 text-sm mb-1">👑 قمة الكبار (مواجهات التوب 6)</h4>
+                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                        <li><span class="text-emerald-400">5 نقاط:</span> التوقع المثالي بالرقم (مثال: توقعت 2-1 وانتهت 2-1).</li>
+                                        <li><span class="text-blue-400">3 نقاط:</span> توقع الفائز الصحيح (مثال: توقعت فوز المضيف 1-0 وانتهت بفوزه 3-0).</li>
+                                        <li><span class="text-yellow-400">3 نقاط:</span> التوقع المثالي للتعادل (مثال: 1-1 وانتهت 1-1).</li>
+                                        <li><span class="text-slate-400">نقطتين:</span> توقع التعادل بنتيجة مختلفة (مثال: توقعت 0-0 وانتهت 2-2).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                                    <h4 class="font-bold text-blue-400 text-sm mb-1">🌟 الكبار ضد الطموحين (فريق كبير ضد فريق عادي)</h4>
+                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                        <li><strong class="text-white">في حال فوز الكبير:</strong> توقع مثالي (نقطتين) / توقع صحيح (نقطة واحدة).</li>
+                                        <li><strong class="text-rose-400">في حال المفاجأة (خسارة الكبير):</strong> توقع مثالي (6 نقاط) / توقع صحيح للفائز (4 نقاط).</li>
+                                        <li><strong class="text-slate-200">في حال التعادل:</strong> توقع مثالي (3 نقاط) / توقع عادي (نقطتين).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                                    <h4 class="font-bold text-slate-300 text-sm mb-1">⚽ المباريات المتكافئة (باقي الفرق)</h4>
+                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                        <li><span class="text-emerald-400">3 نقاط:</span> التوقع المثالي.</li>
+                                        <li><span class="text-amber-400">4 نقاط (بونص):</span> إذا كانت المباراة مجنونة (5 أهداف أو أكثر) أو تعادل سلبي (0-0) وأصبت التوقع بدقة!</li>
+                                        <li><span class="text-blue-400">نقطة واحدة:</span> التوقع الصحيح للفائز.</li>
+                                    </ul>
+                                </div>
+
+                            </div>
                         </div>
 
-                        <div class="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl">
-                            <h3 class="font-bold text-amber-400 mb-2 border-b border-amber-500/20 pb-2"><i class="fa-solid fa-clock"></i> نظام الإغلاق (القفل)</h3>
-                            <p class="text-xs text-slate-300 leading-relaxed">يُقفل التوقع تلقائياً قبل <span class="font-bold text-amber-400">60 دقيقة</span> من صافرة البداية للمباراة. لا يمكن إضافة أو تعديل أي توقع بعد دخول المباراة في فترة القفل.</p>
-                        </div>
-
-                        <div class="bg-fuchsia-500/10 border border-fuchsia-500/30 p-4 rounded-2xl">
-                            <h3 class="font-bold text-fuchsia-400 mb-2 border-b border-fuchsia-500/20 pb-2"><i class="fa-solid fa-bolt"></i> بطاقات القوة (Power-ups)</h3>
-                            <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
-                                <li><span class="text-amber-400 font-bold">الكابتن (C):</span> مضاعفة نقاط المباراة (x2). متاح للاستخدام <span class="font-bold text-white">مرة واحدة فقط في كل جولة</span>.</li>
-                                <li><span class="text-fuchsia-400 font-bold">الجوكر (x3):</span> مضاعفة نقاط المباراة (x3). متاح <span class="font-bold text-white">مرتين فقط في الموسم كاملاً</span> (مرة في النصف الأول ومرة في النصف الثاني).</li>
+                        <!-- بطاقات القوة -->
+                        <div class="bg-gradient-to-br from-fuchsia-900/30 to-indigo-900/30 p-5 rounded-2xl border-l-4 border-l-fuchsia-500 border border-fuchsia-500/20 shadow-lg">
+                            <h3 class="font-bold text-fuchsia-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-bolt"></i> 2. بطاقات القوة المضاعفة</h3>
+                            <ul class="text-xs text-slate-200 space-y-3 leading-relaxed">
+                                <li class="flex gap-3"><span class="w-6 h-6 bg-amber-500 text-black rounded-full flex items-center justify-center font-black shrink-0">C</span> <div><strong class="text-amber-400">الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرة واحدة فقط</span> في كل جولة.</div></li>
+                                <li class="flex gap-3"><span class="w-6 h-6 bg-fuchsia-600 text-white rounded-full flex items-center justify-center font-black shrink-0">x3</span> <div><strong class="text-fuchsia-400">الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرتين فقط في الموسم</span> (مرة في النصف الأول ومرة في النصف الثاني).</div></li>
                             </ul>
                         </div>
                         
-                        <div class="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl">
-                            <h3 class="font-bold text-emerald-400 mb-2 border-b border-emerald-500/20 pb-2"><i class="fa-solid fa-medal"></i> الأوسمة والإنجازات</h3>
-                            <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
-                                <li><i class="fa-solid fa-fire text-amber-400"></i> <span class="font-bold text-amber-400">عراف الأسبوع:</span> وسام يحصل عليه أعلى شخص نقاطاً في الجولة السابقة مباشرة.</li>
-                                <li><i class="fa-solid fa-crosshairs text-emerald-400"></i> <span class="font-bold text-emerald-400">القناص:</span> وسام يظهر بجانب اسمك إذا تمكنت من توقع 3 نتائج مثالية بالرقم في جولة واحدة.</li>
-                                <li><i class="fa-solid fa-shield-halved text-rose-400"></i> <span class="font-bold text-rose-400">قاهر الكبار:</span> وسام يظهر عند توقعك لخسارة فريق كبير بـ شكل صحيح ومطابق للواقع.</li>
+                        <!-- نظام الإغلاق -->
+                        <div class="bg-amber-900/20 p-5 rounded-2xl border-l-4 border-l-amber-500 border border-amber-500/20 shadow-lg">
+                            <h3 class="font-bold text-amber-400 mb-2 flex items-center gap-2 text-base"><i class="fa-solid fa-lock"></i> 3. نظام الإغلاق الصارم</h3>
+                            <p class="text-xs text-slate-300 leading-relaxed text-justify">حفاظاً على نزاهة التوقعات، يقوم السيرفر <strong class="text-rose-400">بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور أيقونة القفل (<i class="fa-solid fa-lock text-rose-400"></i>)، لا يمكنك إضافة أو تعديل توقعك لتلك المباراة نهائياً.</p>
+                        </div>
+
+                        <!-- الأوسمة -->
+                        <div class="bg-emerald-900/20 p-5 rounded-2xl border-l-4 border-l-emerald-500 border border-emerald-500/20 shadow-lg">
+                            <h3 class="font-bold text-emerald-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-medal"></i> 4. الأوسمة والإنجازات الشخصية</h3>
+                            <ul class="text-xs text-slate-300 space-y-3 leading-relaxed">
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-fire text-amber-400 text-lg w-5 text-center"></i> <div><strong class="text-amber-400">عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.</div></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-crosshairs text-emerald-400 text-lg w-5 text-center"></i> <div><strong class="text-emerald-400">القناص:</strong> وسام دائم تحصل عليه إذا توقعت 3 نتائج مثالية بالرقم في جولة واحدة.</div></li>
+                                <li class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-rose-400 text-lg w-5 text-center"></i> <div><strong class="text-rose-400">قاهر الكبار:</strong> وسام دائم يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) وتحدث بالفعل!</div></li>
                             </ul>
                         </div>
                     </div>
@@ -604,7 +651,7 @@
                                 <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label><input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
                                 <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label><input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
                             </div>
-                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all">إضافة للجدول</button>
+                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-rose-600/30">إضافة للجدول</button>
                         </form>
                     </div>
 
@@ -614,21 +661,21 @@
                             ${sortedMatches.map(m => `
                                 <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap">
                                     <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
-                                        <div class="text-[10px] text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-0.5">GW ${m.gw}</div>
+                                        <div class="text-[10px] font-bold text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-1">GW ${m.gw}</div>
                                         <button onclick="deleteMatch('${m.id}')" class="p-1.5 text-rose-400 hover:bg-rose-950/40 rounded-lg text-xs" title="حذف المباراة"><i class="fa-solid fa-trash"></i></button>
                                     </div>
                                     <div class="flex-1 flex justify-between items-center gap-2">
                                         <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate">${getTeamName(m.home)}</div>
                                         <div class="flex items-center gap-1.5">
-                                            <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white" />
+                                            <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
                                             <span class="text-slate-500">:</span>
-                                            <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white" />
+                                            <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
                                         </div>
                                         <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate">${getTeamName(m.away)}</div>
                                     </div>
                                     <div class="flex items-center gap-1.5 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-start">
-                                        <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
-                                        <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
+                                        <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
+                                        <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition-all"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
                                     </div>
                                 </div>
                             `).join('')}
@@ -662,47 +709,50 @@
                 }
             });
 
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, null, null, pred.isCaptain, pred.isTripleCaptain);
+            // حساب متوقع للنقاط إذا تم اختيار هذه النتيجة بشكل مثالي
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, pred.isCaptain, pred.isTripleCaptain);
 
             container.innerHTML = `
                 <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                     <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
-                        <div class="text-center">
-                            <h3 class="text-base font-bold text-white mt-2">${getTeamName(activeMatchModal.home)} ضد ${getTeamName(activeMatchModal.away)}</h3>
+                        <div class="text-center border-b border-white/5 pb-3">
+                            <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
+                            <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} ضد ${getTeamName(activeMatchModal.away)}</h2>
                         </div>
-                        <div class="flex items-center justify-center gap-4">
+                        <div class="flex items-center justify-center gap-4 py-2">
                             <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">${getTeamName(activeMatchModal.home)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input" />
+                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
+                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
                             </div>
-                            <span class="text-xl font-bold text-slate-500">:</span>
+                            <span class="text-xl font-bold text-slate-500 mt-5">:</span>
                             <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-1">${getTeamName(activeMatchModal.away)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input" />
+                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
+                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
                             </div>
                         </div>
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <label class="flex items-center gap-3 p-2 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
-                                <div class="flex-1"><span class="text-xs font-bold text-amber-400 block">C كابتن (مضاعفة x2)</span></div>
+                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">C كابتن (مضاعفة x2)</span> ${captainUsedInGw && !pred.isCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
                             </label>
-                            <label class="flex items-center gap-3 p-2 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}">
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                                <div class="flex-1"><span class="text-xs font-bold text-fuchsia-400 block">الجوكر (مضاعفة x3)</span></div>
+                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">الجوكر (مضاعفة x3)</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
                             </label>
-                            <label class="flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all border-t border-white/5">
-                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-slate-400" />
-                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون ميزات)</span></div>
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
+                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
+                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون مضاعفات)</span></div>
                             </label>
                         </div>
 
-                        <div class="bg-slate-900/80 p-3.5 rounded-2xl border border-emerald-500/30 text-center">
-                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400">${pts} نقطة</span>
+                        <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
+                            <span class="text-[10px] text-blue-300 font-bold mb-1">النقاط المحتملة للتوقع المثالي</span>
+                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} نقطة</span>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="saveModalPrediction()" class="flex-1 py-3 bg-blue-600 text-white font-bold text-xs rounded-xl">حفظ التوقع</button>
-                            <button onclick="closeModal()" class="px-4 py-3 bg-slate-800 text-slate-300 font-bold text-xs rounded-xl">إلغاء</button>
+                            <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">حفظ التوقع</button>
+                            <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">إلغاء</button>
                         </div>
                     </div>
                 </div>
@@ -712,7 +762,10 @@
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            document.getElementById('modal-pts-display').innerText = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, null, null, p==='captain', p==='triple') + ' نقطة';
+            // نحسب النقاط بافتراض أن النتيجة الفعلية جاءت مطابقة تماماً (h, a, h, a)
+            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple');
+            if (h === '' || a === '') possiblePts = 0;
+            document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
         }
 
         async function saveModalPrediction() {
@@ -720,6 +773,7 @@
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
+            // تحديث شكلي سريع لراحة المستخدم
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             predictions[currentUser.username][activeMatchModal.id] = { 
                 home: Number(h), 
@@ -730,8 +784,9 @@
             
             const reqMatchId = activeMatchModal.id;
             closeModal();
-            render();
+            render(); // إعادة رسم الشاشة لتظهر الأرقام
 
+            // الحفظ الفعلي في السيرفر
             try {
                 await fetch(`${API_BASE_URL}/predict`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -744,16 +799,16 @@
                         isTripleCaptain: powerup === 'triple'
                     })
                 });
-                await syncData(); 
+                await syncData(); // جلب البيانات لتأكيد الحفظ
             } catch(e) {
                 console.error("Predict error:", e);
-                showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر.");
+                showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
             }
         }
 
         async function createMiniLeague() {
             const name = document.getElementById('new-ml-name').value.trim();
-            if (!name) return;
+            if (!name) { showCustomDialog('يرجى كتابة اسم الدوري أولاً.'); return; }
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             
             try {
@@ -763,7 +818,7 @@
                 });
                 const data = await res.json();
                 if(data.success) {
-                    showCustomDialog('تم إنشاء الدوري بنجاح! كود: ' + code);
+                    showCustomDialog('تم إنشاء الدوري بنجاح! كود الدعوة: ' + code);
                     await syncData();
                     render();
                 } else { showCustomDialog(data.message); }
@@ -772,14 +827,14 @@
 
         async function joinMiniLeague() {
             const code = document.getElementById('join-ml-code').value.trim().toUpperCase();
-            if(!code) return;
+            if(!code) { showCustomDialog('يرجى إدخال كود الدوري.'); return; }
             try {
                 const res = await fetch(`${API_BASE_URL}/leagues/join`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ code, username: currentUser.username })
                 });
                 const data = await res.json();
-                showCustomDialog(data.message || (data.success ? 'تم الانضمام بنجاح!' : 'خطأ'));
+                showCustomDialog(data.message || (data.success ? 'تم الانضمام للدوري بنجاح!' : 'خطأ غير معروف'));
                 if (data.success) { await syncData(); render(); }
             } catch(e) { showCustomDialog("تعذر الاتصال بالسيرفر"); }
         }
@@ -807,7 +862,7 @@
         }
 
         function deleteMatch(id) {
-            showCustomDialog('هل أنت متأكد من حذف هذه المباراة نهائياً؟', 'confirm', async () => {
+            showCustomDialog('هل أنت متأكد من حذف هذه المباراة نهائياً من قاعدة البيانات؟', 'confirm', async () => {
                 try {
                     await fetch(`${API_BASE_URL}/admin/match/${id}`, { method: 'DELETE' });
                     await syncData(); render();
@@ -817,13 +872,13 @@
 
         async function saveActual(id) {
             const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
-            if (hVal === '' || aVal === '') return;
+            if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
             try {
                 await fetch(`${API_BASE_URL}/admin/result`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
                 });
-                showCustomDialog('تم تثبيت النتيجة بنجاح!', 'alert');
+                showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
                 await syncData(); render();
             } catch(e){}
         }
@@ -834,7 +889,7 @@
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ matchId: id, actualH: null, actualA: null })
                 });
-                showCustomDialog('تم إلغاء النتيجة.', 'alert');
+                showCustomDialog('تم إلغاء النتيجة، المباراة الآن مفتوحة للتوقعات (إذا لم يمر وقتها).', 'alert');
                 await syncData(); render();
             } catch(e){}
         }
@@ -844,11 +899,11 @@
             container.innerHTML = `
                 <div class="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
                     <div class="glass max-w-xs w-full p-6 rounded-3xl shadow-2xl border border-white/10 text-center animate-fade-up">
-                        <div class="text-4xl mb-4 text-amber-400"><i class="fa-solid fa-${type === 'confirm' ? 'circle-question' : 'circle-exclamation'}"></i></div>
-                        <h3 class="text-sm font-bold text-white mb-6">${message}</h3>
+                        <div class="text-4xl mb-4 ${type === 'confirm' ? 'text-blue-400' : 'text-amber-400'}"><i class="fa-solid fa-${type === 'confirm' ? 'circle-question' : 'circle-exclamation'}"></i></div>
+                        <h3 class="text-sm font-bold text-white mb-6 leading-relaxed">${message}</h3>
                         <div class="flex gap-3">
-                            ${type === 'confirm' ? `<button id="diag-yes" class="flex-1 py-2.5 bg-rose-600 text-white font-bold text-xs rounded-xl">نعم</button>` : ''}
-                            <button id="diag-close" class="flex-1 py-2.5 bg-slate-800 text-white font-bold text-xs rounded-xl">${type === 'confirm' ? 'لا' : 'حسناً'}</button>
+                            ${type === 'confirm' ? `<button id="diag-yes" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all">نعم، متأكد</button>` : ''}
+                            <button id="diag-close" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">${type === 'confirm' ? 'إلغاء' : 'حسناً فهمت'}</button>
                         </div>
                     </div>
                 </div>
@@ -873,11 +928,18 @@
             }
 
             if (!name || pin.length < 4) {
-                showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.');
+                showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام أو حروف.');
                 return;
             }
 
             try {
+                // إظهار شاشة تحميل مؤقتة
+                document.getElementById('app').innerHTML = `
+                    <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
+                        <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
+                        <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
+                    </div>`;
+
                 const response = await fetch(`${API_BASE_URL}/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -894,17 +956,19 @@
                         <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                             <i class="fa-solid fa-cloud-arrow-down fa-spin text-4xl text-blue-500"></i>
                             <span class="font-bold text-lg text-white">Goal Sniper</span>
-                            <span class="font-bold text-sm">جاري مزامنة بياناتك من السيرفر...</span>
+                            <span class="font-bold text-sm">جاري مزامنة جدول المباريات الرسمي...</span>
                         </div>`;
                     
                     await syncData(); 
                     render();    
                 } else {
                     showCustomDialog(data.message || 'خطأ في الدخول.');
+                    render(); // العودة لشاشة الدخول
                 }
             } catch (error) {
                 console.error("Auth Error:", error);
-                showCustomDialog('تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت.');
+                showCustomDialog('تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت لديك.');
+                render();
             }
         }
 
@@ -913,31 +977,40 @@
 
         function renderAuthScreen() {
             return `
-                <div class="min-h-screen flex items-center justify-center p-4 w-full">
-                    <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up">
+                <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative">
+                    <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up relative z-10">
                         <div class="text-center mb-6">
-                            <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-2">
+                            <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-3 border border-blue-500/30">
                                 <i class="fa-solid fa-crosshairs text-4xl text-blue-500"></i>
                             </div>
-                            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400">Goal Sniper</h1>
-                            <p class="text-xs text-slate-400 mt-2">منصة التوقعات الأقوى للدوري الإنجليزي</p>
+                            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
+                            <p class="text-xs text-slate-400 mt-2 font-bold">منصة التوقعات الأقوى للدوري الإنجليزي الممتاز</p>
                         </div>
                         
                         <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                            <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}">تسجيل الدخول</button>
-                            <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}">حساب جديد</button>
+                            <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">تسجيل الدخول</button>
+                            <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">حساب جديد</button>
                         </div>
 
                         <form onsubmit="handleAuth(event)" class="space-y-4">
-                            <div><input type="text" id="auth-name" placeholder="اسم المستخدم" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
-                            <div><input type="password" id="auth-pin" placeholder="كلمة المرور (4 أرقام على الأقل)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">اسم المستخدم</label>
+                                <input type="text" id="auth-name" placeholder="مثال: Ahmed99" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">كلمة المرور (الرمز السري)</label>
+                                <input type="password" id="auth-pin" placeholder="4 أرقام أو حروف على الأقل" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                            </div>
                             
                             ${authMode === 'register' ? `
-                                <div><input type="password" id="auth-pin-confirm" placeholder="تأكيد كلمة المرور" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-1">تأكيد كلمة المرور</label>
+                                    <input type="password" id="auth-pin-confirm" placeholder="أعد كتابة الرمز السري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                                </div>
                             ` : ''}
 
-                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg mt-2 transition-transform active:scale-95">
-                                ${authMode === 'login' ? 'دخول إلى المنصة' : 'إنشاء حساب جديد'}
+                            <button type="submit" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                                ${authMode === 'login' ? 'دخول إلى المنصة <i class="fa-solid fa-arrow-left mr-2"></i>' : 'إنشاء الحساب والبدء <i class="fa-solid fa-check mr-2"></i>'}
                             </button>
                         </form>
                     </div>
@@ -950,17 +1023,17 @@
             if (!currentUser) { app.innerHTML = renderAuthScreen(); return; }
 
             app.innerHTML = `
-                <header class="p-4 glass sticky top-0 z-40 border-b border-white/10 flex justify-between items-center shadow-lg">
+                <header class="p-4 glass sticky top-0 z-40 border-b border-white/10 flex justify-between items-center shadow-lg bg-[#0a0e17]/90 backdrop-blur-xl">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center font-black text-blue-400">${currentUser.username.substring(0, 2).toUpperCase()}</div>
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/30 text-lg border border-white/10">${currentUser.username.substring(0, 1).toUpperCase()}</div>
                         <div>
-                            <h1 class="text-sm font-bold text-slate-200">Goal Sniper</h1>
-                            <p class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[8px]"></i> متصل بالسيرفر المباشر</p>
+                            <h1 class="text-sm font-bold text-slate-200 tracking-wide">Goal Sniper</h1>
+                            <p class="text-[9px] text-emerald-400 font-bold"><i class="fa-solid fa-circle text-[6px] animate-pulse"></i> متصل بالسيرفر المباشر</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
-                        ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
-                        <button onclick="logout()" class="p-2 glass text-rose-400 rounded-xl"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
+                        <button onclick="logout()" class="p-2 glass text-rose-400 rounded-xl hover:bg-rose-600 hover:text-white transition-all border-rose-500/20"><i class="fa-solid fa-power-off"></i></button>
                     </div>
                 </header>
 
@@ -973,12 +1046,12 @@
                     ${currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army' ? renderAdminTab() : ''}
                 </main>
 
-                <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#0a0e17]/95">
-                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1 ${currentTab === 'home' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-house text-base"></i><span class="text-[10px] font-bold">الرئيسية</span></button>
-                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1 ${currentTab === 'matches' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-futbol text-base"></i><span class="text-[10px] font-bold">المباريات</span></button>
-                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1 ${currentTab === 'standings' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-ranking-star text-base"></i><span class="text-[10px] font-bold">الترتيب</span></button>
-                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1 ${currentTab === 'minileagues' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-users text-base"></i><span class="text-[10px] font-bold">الدوريات</span></button>
-                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1 ${currentTab === 'rules' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-book-bookmark text-base"></i><span class="text-[10px] font-bold">القوانين</span></button>
+                <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2">
+                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-bold">الرئيسية</span></button>
+                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-calendar-days text-lg"></i><span class="text-[9px] font-bold">المباريات</span></button>
+                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-trophy text-lg"></i><span class="text-[9px] font-bold">الترتيب</span></button>
+                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-users text-lg"></i><span class="text-[9px] font-bold">الدوريات</span></button>
+                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-scale-balanced text-lg"></i><span class="text-[9px] font-bold">القوانين</span></button>
                 </nav>
             `;
             renderModal();
@@ -989,9 +1062,9 @@
             if (currentUser) {
                 document.getElementById('app').innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                        <i class="fa-solid fa-crosshairs fa-spin text-4xl text-blue-500"></i>
+                        <i class="fa-solid fa-satellite-dish fa-spin text-4xl text-blue-500"></i>
                         <span class="font-bold text-lg text-white">Goal Sniper</span>
-                        <span class="font-bold text-sm">جاري تحميل جدول المباريات الرسمي المحدث...</span>
+                        <span class="font-bold text-sm">جاري تحميل جدول المباريات الرسمي...</span>
                     </div>`;
                 await syncData(); 
             }
