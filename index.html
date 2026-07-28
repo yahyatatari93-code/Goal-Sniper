@@ -101,7 +101,19 @@
                 const json = await res.json();
                 if (json.success) {
                     users = json.data.users || [];
-                    matches = json.data.matches || [];
+                    
+                    // إصلاح مشكلة قفل المباريات: مطابقة أسماء الأعمدة القادمة من قاعدة البيانات
+                    matches = (json.data.matches || []).map(m => ({
+                        id: m.id,
+                        gw: m.gw,
+                        home: m.home,
+                        away: m.away,
+                        date: m.match_date || m.date,
+                        time: m.match_time || m.time,
+                        actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
+                        actualA: m.actual_a !== undefined ? m.actual_a : m.actualA
+                    }));
+                    
                     predictions = json.data.predictions || {};
                     miniLeagues = json.data.miniLeagues || [];
                 }
@@ -500,11 +512,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
-                                    <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}</select>
+                                    <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        <option value="" disabled selected>-- اختر الفريق المضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
-                                    <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}</select>
+                                    <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        <option value="" disabled selected>-- اختر الفريق الضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
                                 </div>
                             </div>
                             <div class="grid grid-cols-3 gap-3">
@@ -779,6 +797,15 @@
             e.preventDefault();
             const name = document.getElementById('auth-name').value.trim();
             const pin = document.getElementById('auth-pin').value.trim();
+            
+            // إضافة التحقق من تطابق كلمة المرور في حالة إنشاء حساب جديد
+            if (authMode === 'register') {
+                const pinConfirm = document.getElementById('auth-pin-confirm').value.trim();
+                if (pin !== pinConfirm) {
+                    showCustomDialog('كلمات المرور غير متطابقة!');
+                    return;
+                }
+            }
 
             if (!name || pin.length < 4) {
                 showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام.');
@@ -798,7 +825,6 @@
                     currentUser = data.user;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     
-                    // إظهار واجهة التحميل عند الدخول الأول لجلب المباريات السحابية
                     document.getElementById('app').innerHTML = `
                         <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                             <i class="fa-solid fa-cloud-arrow-down fa-spin text-4xl text-blue-500"></i>
@@ -831,10 +857,23 @@
                             <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400">Goal Sniper</h1>
                             <p class="text-xs text-slate-400 mt-2">منصة التوقعات الأقوى للدوري الإنجليزي</p>
                         </div>
+                        
+                        <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                            <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}">تسجيل الدخول</button>
+                            <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'}">حساب جديد</button>
+                        </div>
+
                         <form onsubmit="handleAuth(event)" class="space-y-4">
-                            <div><input type="text" id="auth-name" placeholder="اسم المستخدم" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" required /></div>
-                            <div><input type="password" id="auth-pin" placeholder="كلمة المرور (4 أرقام على الأقل)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none" required /></div>
-                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg mt-2">دخول المنصة / تسجيل جديد</button>
+                            <div><input type="text" id="auth-name" placeholder="اسم المستخدم" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
+                            <div><input type="password" id="auth-pin" placeholder="كلمة المرور (4 أرقام على الأقل)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
+                            
+                            ${authMode === 'register' ? `
+                                <div><input type="password" id="auth-pin-confirm" placeholder="تأكيد كلمة المرور" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500" required /></div>
+                            ` : ''}
+
+                            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl shadow-lg mt-2 transition-transform active:scale-95">
+                                ${authMode === 'login' ? 'دخول إلى المنصة' : 'إنشاء حساب جديد'}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -874,6 +913,7 @@
                     <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1 ${currentTab === 'matches' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-futbol text-base"></i><span class="text-[10px] font-bold">المباريات</span></button>
                     <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1 ${currentTab === 'standings' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-ranking-star text-base"></i><span class="text-[10px] font-bold">الترتيب</span></button>
                     <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1 ${currentTab === 'minileagues' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-users text-base"></i><span class="text-[10px] font-bold">الدوريات</span></button>
+                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1 ${currentTab === 'rules' ? 'text-blue-400' : 'text-slate-400'}"><i class="fa-solid fa-book-bookmark text-base"></i><span class="text-[10px] font-bold">القوانين</span></button>
                 </nav>
             `;
             renderModal();
