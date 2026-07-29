@@ -4,166 +4,486 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Goal Sniper</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Cairo', 'sans-serif'] },
-                    colors: {
-                        deep: '#060b19', card: '#0f172a', primary: '#0ea5e9',
-                        crimson: '#e11d48', gold: '#fbbf24', accent: '#8b5cf6'
-                    }
-                }
-            }
-        }
-    </script>
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary: #0ea5e9;
+            --secondary: #38bdf8;
+            --dark: #060b19;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --success: #10b981;
+            --danger: #e11d48;
+            --gold: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
         body {
-            background-color: #060b19;
-            color: #f8fafc;
-            background-image: 
-                radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 90% 100%, rgba(139, 92, 246, 0.12) 0%, transparent 45%),
-                radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 60%);
-            background-attachment: fixed;
-            -webkit-tap-highlight-color: transparent;
+            background-color: var(--dark);
+            color: var(--text);
+            padding-bottom: 70px;
         }
-        .glass {
-            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(14px);
-            border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+        .header {
+            background: rgba(30, 41, 59, 0.95);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .score-input {
-            width: 48px; height: 48px; text-align: center; font-size: 1.2rem; font-weight: bold;
-            background: rgba(6, 11, 25, 0.8); border: 1px solid rgba(14, 165, 233, 0.3); color: white;
-            border-radius: 12px; outline: none; transition: all 0.3s;
+
+        .app-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
         }
-        .score-input:focus { border-color: #0ea5e9; box-shadow: 0 0 15px rgba(14, 165, 233, 0.4); background: rgba(15, 23, 42, 1); }
-        .bottom-nav-pb { padding-bottom: calc(95px + env(safe-area-inset-bottom)); }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
+
+        .app-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--primary);
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(14, 165, 233, 0.5);
+        }
+
+        .container { padding: 15px; max-width: 800px; margin: 0 auto; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .match-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-left: 4px solid var(--primary);
+        }
+
+        .match-date-time {
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 4px;
+            border-radius: 5px;
+        }
+
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            text-align: center;
+            flex: 1;
+        }
+
+        .team img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .vs { font-weight: bold; color: var(--primary); margin: 0 15px; font-size: 1.2rem; }
+
+        .prediction-inputs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .pred-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .pred-input:focus { border-color: var(--primary); outline: none; }
+        .pred-input:disabled { background: rgba(0,0,0,0.3); color: #64748b; }
+
+        .power-ups {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-outline.active { background: var(--primary); color: white; }
+        .btn-triple { border-color: var(--gold); color: var(--gold); }
+        .btn-triple.active { background: var(--gold); color: var(--dark); border-color: var(--gold); }
+        
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            color: #64748b;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .nav-item.active { color: var(--primary); }
+        .nav-item i { font-size: 20px; }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .standings-table th, .standings-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .standings-table th { background: rgba(0,0,0,0.2); color: var(--primary); }
+        
+        .badge {
+            font-size: 16px;
+            margin: 0 2px;
+            cursor: help;
+        }
+
+        .auth-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-box {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; cursor: pointer; border-bottom: 2px solid transparent; color: #64748b; }
+        .tab.active { border-color: var(--primary); color: white; }
+
+        .loading-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--dark); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 9999;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .sniper-box { background: rgba(225, 29, 72, 0.1); border: 1px solid var(--danger); border-radius: 10px; padding: 15px; margin-top: 15px; }
+        
+        .rules-list li { margin-bottom: 10px; line-height: 1.6; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bottom-nav-pb">
+<body>
 
-    <div id="app" class="flex-1 flex flex-col">
-        <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-            <i class="fa-solid fa-crosshairs fa-spin text-4xl text-blue-500"></i>
-            <span class="font-bold text-lg text-white">Goal Sniper</span>
-            <span class="font-bold text-sm">جاري التحميل...</span>
+    <div id="loadingScreen" class="loading-screen">
+        <div class="spinner"></div>
+        <h2 style="color: var(--primary);">Goal Sniper</h2>
+        <p style="margin-top: 10px; color: #94a3b8;">جاري الاتصال بالسيرفر...</p>
+    </div>
+
+    <div id="authApp" style="display: none;" class="auth-container fade-in">
+        <div class="auth-box">
+            <h1 style="color: var(--primary); margin-bottom: 20px;">Goal Sniper</h1>
+            <div class="tabs">
+                <div class="tab active" onclick="switchAuthTab('login')" id="tabLogin">تسجيل الدخول</div>
+                <div class="tab" onclick="switchAuthTab('register')" id="tabRegister">حساب جديد</div>
+            </div>
+            
+            <div id="loginForm">
+                <input type="text" id="loginUsername" class="input-field" placeholder="اسم المستخدم">
+                <input type="password" id="loginPin" class="input-field" placeholder="كلمة المرور">
+                <button class="btn" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="handleAuth('login')">دخول</button>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <input type="text" id="regUsername" class="input-field" placeholder="اسم المستخدم">
+                <input type="password" id="regPin" class="input-field" placeholder="كلمة المرور">
+                <input type="password" id="regPinConfirm" class="input-field" placeholder="تأكيد كلمة المرور">
+                <button class="btn" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="handleAuth('register')">إنشاء حساب</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-container"></div>
-    <div id="dialog-container"></div>
+    <div id="mainApp" style="display: none;">
+        <div class="header">
+            <div class="app-title-container">
+                <!-- يمكنك استبدال الرابط أدناه بمسار صورتك المحلية، مثلاً: src="./logo.png" -->
+                <img src="https://placehold.co/150x150/060b19/0ea5e9?text=GS" alt="Logo" class="app-logo" id="appLogo">
+                <span class="app-title">Goal Sniper</span>
+            </div>
+            <i class="fas fa-sign-out-alt" style="color: var(--danger); cursor: pointer; font-size: 20px;" onclick="logout()"></i>
+        </div>
 
-    <script>
-        // ==========================================
-        // الإعدادات العامة (يمكنك تغييرها بسهولة)
-        // ==========================================
-        const API_BASE_URL = 'https://5.189.138.161.nip.io/api';
+        <div id="content" class="container"></div>
+
+        <div class="nav-bar">
+            <a class="nav-item active" onclick="showHome()"><i class="fas fa-home"></i>الرئيسية</a>
+            <a class="nav-item" onclick="showMatches()"><i class="fas fa-futbol"></i>المباريات</a>
+            <a class="nav-item" onclick="showGlobalStandings()"><i class="fas fa-trophy"></i>الترتيب العام</a>
+            <a class="nav-item" onclick="showMiniLeagues()"><i class="fas fa-users"></i>الدوريات</a>
+            <a class="nav-item" onclick="showRules()"><i class="fas fa-book"></i>القوانين</a>
+            <a class="nav-item" id="navAdmin" style="display:none;" onclick="showAdmin()"><i class="fas fa-cog"></i>الإدارة</a>
+        </div>
+    </div>
+
+<script>
+// ================= المتغيرات والإعدادات =================
+const API_URL = 'http://154.53.59.88:5000'; // رابط سيرفرك
+let currentUser = null;
+let matches = [];
+let predictions = {};
+let users = [];
+let miniLeagues = [];
+let sniperShots = []; // تخزين الرصاصات المطلقة
+
+const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
+const TEAM_NAMES = {
+    'ARS': 'آرسنال', 'MCI': 'مان سيتي', 'LIV': 'ليفربول', 'MUN': 'مان يونايتد', 
+    'CHE': 'تشيلسي', 'TOT': 'توتنهام', 'NEW': 'نيوكاسل', 'AVL': 'أستون فيلا',
+    'BHA': 'برايتون', 'WHU': 'وست هام', 'CRY': 'كريستال بالاس', 'BOU': 'بورنموث',
+    'FUL': 'فولهام', 'WOL': 'ولفرهامبتون', 'EVE': 'إيفرتون', 'BRE': 'برينتفورد',
+    'NFO': 'نوتنغهام', 'LEE': 'ليدز يونايتد', 'IPS': 'إيبسويتش تاون', 'SUN': 'سندرلاند',
+    'COV': 'كوفنتري سيتي', 'HUL': 'هال سيتي'
+};
+
+// ================= دوال مساعدة =================
+function getTeamName(code) { return TEAM_NAMES[code] || code; }
+
+function getTeamLogo(code) {
+    const cleanCode = code.toLowerCase();
+    return `https://resources.premierleague.com/premierleague/badges/50/t${getApiTeamId(cleanCode)}.png`;
+}
+
+function getApiTeamId(code) {
+    const map = {
+        'ars': '3', 'mci': '43', 'liv': '14', 'mun': '1', 'che': '8', 'tot': '6',
+        'new': '4', 'avl': '7', 'bha': '36', 'whu': '21', 'cry': '31', 'bou': '91',
+        'ful': '54', 'wol': '39', 'eve': '11', 'bre': '94', 'nfo': '17', 'lee': '2',
+        'ips': '80', 'sun': '56', 'cov': '110', 'hul': '12'
+    };
+    return map[code] || '1';
+}
+
+function convertDateToNumber(dateStr) {
+    if (!dateStr) return '';
+    const months = {'يناير':1, 'فبراير':2, 'مارس':3, 'أبريل':4, 'مايو':5, 'يونيو':6, 'يوليو':7, 'أغسطس':8, 'سبتمبر':9, 'أكتوبر':10, 'نوفمبر':11, 'ديسمبر':12};
+    let d = dateStr;
+    for (let m in months) { d = d.replace(m, months[m]); }
+    return d;
+}
+
+// ================= الاتصال بالسيرفر والتزامن =================
+async function syncData() {
+    try {
+        const res = await fetch(`${API_URL}/api/sync`);
+        const result = await res.json();
+        if (result.success) {
+            users = result.data.users || [];
+            matches = result.data.matches || [];
+            predictions = result.data.predictions || {};
+            miniLeagues = result.data.miniLeagues || [];
+            sniperShots = result.data.sniperShots || [];
+            
+            // تحويل التواريخ للأرقام وترتيبها زمنياً
+            matches = matches.map(m => {
+                m.match_date = convertDateToNumber(m.match_date);
+                return m;
+            }).sort((a, b) => {
+                const dateA = new Date(a.match_date + ' ' + (a.match_time || '00:00')).getTime();
+                const dateB = new Date(b.match_date + ' ' + (b.match_time || '00:00')).getTime();
+                return dateA - dateB;
+            });
+        }
+    } catch (e) {
+        console.error("Sync error:", e);
+    }
+}
+
+// ================= التوثيق (تسجيل الدخول / إنشاء حساب) =================
+function switchAuthTab(tab) {
+    document.getElementById('tabLogin').classList.remove('active');
+    document.getElementById('tabRegister').classList.remove('active');
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'none';
+
+    if (tab === 'login') {
+        document.getElementById('tabLogin').classList.add('active');
+        document.getElementById('loginForm').style.display = 'block';
+    } else {
+        document.getElementById('tabRegister').classList.add('active');
+        document.getElementById('registerForm').style.display = 'block';
+    }
+}
+
+async function handleAuth(type) {
+    let username, pin;
+    if (type === 'login') {
+        username = document.getElementById('loginUsername').value.trim();
+        pin = document.getElementById('loginPin').value.trim();
+    } else {
+        username = document.getElementById('regUsername').value.trim();
+        pin = document.getElementById('regPin').value.trim();
+        const pinConfirm = document.getElementById('regPinConfirm').value.trim();
+        if (pin !== pinConfirm) return alert('كلمتا المرور غير متطابقتين!');
+    }
+
+    if (!username || !pin) return alert('الرجاء إدخال جميع البيانات');
+
+    document.getElementById('loadingScreen').style.display = 'flex';
+    try {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, pin })
+        });
+        const data = await res.json();
         
-        // رابط الشعار (ارفع صورتك على imgur.com مثلاً وضع الرابط هنا)
-        const APP_LOGO_URL = 'Goal Sniper.png'; 
-        // ==========================================
+        if (data.success) {
+            currentUser = data.user;
+            localStorage.setItem('goalSniperUser', JSON.stringify(currentUser));
+            await syncData();
+            document.getElementById('authApp').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            if (currentUser.role === 'admin') document.getElementById('navAdmin').style.display = 'flex';
+            showHome();
+        } else {
+            alert(data.message);
+        }
+    } catch (e) {
+        alert('خطأ في الاتصال بالسيرفر');
+    }
+    document.getElementById('loadingScreen').style.display = 'none';
+}
 
-        const TEAMS = [
-            { code: 'ARS', name: 'آرسنال' }, { code: 'MCI', name: 'مانشستر سيتي' },
-            { code: 'LIV', name: 'ليفربول' }, { code: 'MUN', name: 'مانشستر يونايتد' },
-            { code: 'CHE', name: 'تشيلسي' }, { code: 'TOT', name: 'توتنهام' },
-            { code: 'NEW', name: 'نيوكاسل يونايتد' }, { code: 'AVL', name: 'أستون فيلا' },
-            { code: 'BHA', name: 'برايتون' }, { code: 'COV', name: 'كوفنتري سيتي' },
-            { code: 'HUL', name: 'هال سيتي' }, { code: 'NFO', name: 'نوتينغهام فورست' },
-            { code: 'LEE', name: 'ليدز يونايتد' }, { code: 'IPS', name: 'إيبسويتش تاون' },
-            { code: 'SUN', name: 'سندرلاند' }, { code: 'CRY', name: 'كريستال بالاس' },
-            { code: 'BRE', name: 'برينتفورد' }, { code: 'FUL', name: 'فولهام' },
-            { code: 'BOU', name: 'بورنموث' }, { code: 'EVE', name: 'إيفرتون' }
-        ];
-        const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
+function logout() {
+    localStorage.removeItem('goalSniperUser');
+    location.reload();
+}
 
-        const getTeamName = (code) => TEAMS.find(t => t.code === code)?.name || code;
-        
-        const getMatchType = (h, a) => {
-            const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
-            if (hB && aB) return { label: '👑 قمة الكبار', color: 'text-yellow-400' };
-            if (!hB && !aB) return { label: '⚽ مباراة متكافئة', color: 'text-gray-400' };
-            return { label: '🌟 الكبار ضد الطموحين', color: 'text-blue-400' };
-        };
+// ================= الحسابات ونقاط القناص =================
+function calcPoints(home, away, predH, predA, actH, actA, isCap, isTC) {
+    if (actH === null || actA === null || predH === '' || predA === '') return 0;
+    predH = Number(predH); predA = Number(predA); actH = Number(actH); actA = Number(actA);
+    let pts = 0;
+    const isOutcomeCorrect = (predH > predA && actH > actA) || (predH < predA && actH < actA) || (predH === predA && actH === actA);
+    const isExact = (predH === actH && predA === actA);
+    
+    if (isExact) pts = 3;
+    else if (isOutcomeCorrect) pts = 1;
 
-        let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
-        let currentTab = 'home', authMode = 'login', activeMatchModal = null;
+    let multiplier = 1;
+    if (isTC) multiplier = 3;
+    else if (isCap) multiplier = 2;
 
-        async function syncData() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/sync`);
-                const json = await res.json();
-                if (json.success) {
-                    users = json.data.users || [];
-                    
-                    matches = (json.data.matches || []).map(m => ({
-                        id: m.id,
-                        gw: m.gw,
-                        home: m.home,
-                        away: m.away,
-                        date: m.match_date || m.date,
-                        time: m.match_time || m.time,
-                        actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
-                        actualA: m.actual_a !== undefined ? m.actual_a : m.actualA
-                    }));
-                    
-                    predictions = json.data.predictions || {};
-                    miniLeagues = json.data.miniLeagues || [];
-                }
-            } catch (e) { 
-                console.warn("Sync failed:", e); 
-                showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
+    return pts * multiplier;
+}
+
+function getCurrentActiveGw() {
+    let activeGw = 1;
+    for (let i = 1; i <= 38; i++) {
+        const gwMatches = matches.filter(m => m.gw === i);
+        if (gwMatches.length > 0) {
+            const allPlayed = gwMatches.every(m => m.actual_h !== null && m.actual_a !== null);
+            if (!allPlayed) {
+                activeGw = i;
+                break;
             }
         }
+    }
+    return activeGw;
+}
 
-        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
-            if (predH === '' || predA === '' || predH === null || predA === null) return 0;
-            const ph = Number(predH), pa = Number(predA);
-            const homeIsBig = BIG_TEAMS.includes(homeCode), awayIsBig = BIG_TEAMS.includes(awayCode);
-            let ah = actualH !== null ? Number(actualH) : ph;
-            let aa = actualA !== null ? Number(actualA) : pa;
+function checkGwStarted(gw) {
+    const gwMatches = matches.filter(m => m.gw === gw);
+    if (gwMatches.length === 0) return false;
+    const firstMatchDate = new Date(gwMatches[0].match_date + ' ' + (gwMatches[0].match_time || '00:00')).getTime();
+    return new Date().getTime() >= firstMatchDate;
+}
 
-            const isExact = (ph === ah && pa === aa);
-            const isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
-            const isDraw = (ah === aa);
-            const totalGoals = ah + aa;
-
-            let pts = 0;
-            if (isOutcomeCorrect || isExact) {
-                if (!homeIsBig && !awayIsBig) {
-                    if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 4 : 3;
-                    else if (isOutcomeCorrect) pts = 1;
-                } else if (homeIsBig && awayIsBig) {
-                    if (isDraw) pts = isExact ? 3 : 2;
-                    else pts = isExact ? 5 : 3;
-                } else {
-                    const bigWon = (homeIsBig && ah > aa) || (awayIsBig && aa > ah);
-                    const bigLost = (homeIsBig && ah < aa) || (awayIsBig && aa < ah);
-                    if (isDraw) pts = isExact ? 3 : 2;
-                    else if (bigWon) pts = isExact ? 2 : 1;
-                    else if (bigLost) pts = isExact ? 6 : 4;
-                }
-            }
-
-            if (isTripleCaptain) return pts * 3; 
-            if (isCaptain) return pts * 2; 
-            return pts;
-        };
-
-        function getGlobalStandings() {
-    // 1. استخراج كل أسماء المستخدمين الفريدة من جدول التوقعات أولاً
+function getGlobalStandings() {
     const allUsernames = new Set();
     Object.keys(predictions).forEach(u => allUsernames.add(u));
     users.forEach(u => allUsernames.add(u.username));
@@ -177,7 +497,7 @@
     });
 
     matches.forEach(m => {
-        const isPlayed = m.actualH !== null && m.actualA !== null;
+        const isPlayed = m.actual_h !== null && m.actual_a !== null;
         allUsernames.forEach(username => {
             const p = (predictions[username] || {})[m.id];
             const userStats = statsMap[username];
@@ -185,30 +505,29 @@
                 userStats.predictedCount++;
                 if (isPlayed) {
                     userStats.playedMatches++;
-                    const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain);
+                    const pts = calcPoints(m.home, m.away, p.home, p.away, m.actual_h, m.actual_a, p.isCaptain, p.isTripleCaptain);
                     userStats.totalPts += pts;
                     
-                    const isOutcomeCorrect = (p.home > p.away && m.actualH > m.actualA) || (p.home < p.away && m.actualH < m.actualA) || (p.home === p.away && m.actualH === m.actualA);
+                    const isOutcomeCorrect = (p.home > p.away && m.actual_h > m.actual_a) || (p.home < p.away && m.actual_h < m.actual_a) || (p.home === p.away && m.actual_h === m.actual_a);
                     if (isOutcomeCorrect) userStats.correctOutcomes++;
 
                     userStats.teamPoints[m.home] = (userStats.teamPoints[m.home] || 0) + pts;
                     userStats.teamPoints[m.away] = (userStats.teamPoints[m.away] || 0) + pts;
                     userStats.gwPoints[m.gw] = (userStats.gwPoints[m.gw] || 0) + pts;
                     
-                    if (Number(p.home) === m.actualH && Number(p.away) === m.actualA) {
+                    if (Number(p.home) === m.actual_h && Number(p.away) === m.actual_a) {
                         userStats.exactsPerGw[m.gw] = (userStats.exactsPerGw[m.gw] || 0) + 1;
                         if (userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
                     }
 
                     const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
-                    const bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
+                    const bigLost = (homeIsBig && m.actual_h < m.actual_a) || (awayIsBig && m.actual_a < m.actual_h);
                     if (bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
                 }
             }
         });
     });
 
-    // إضافة منطق عراف الأسبوع وبقية الحسابات كما في السابق...
     const activeGw = getCurrentActiveGw();
     const prevGw = activeGw > 1 ? activeGw - 1 : 1;
     let highestGwPts = -1, motwUser = null;
@@ -231,851 +550,424 @@
     return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
 }
 
-        function formatMatchDate(dateStr) {
-            if (!dateStr) return '';
-            let str = String(dateStr);
-            // تحويل أسماء الأشهر العربية إلى أرقام
-            const arabicMonths = {
-                'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
-                'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
-                'مايو': '5', 'أيار': '5', 'ايار': '5', 'يونيو': '6', 'حزيران': '6',
-                'يوليو': '7', 'تموز': '7', 'أغسطس': '8', 'اغسطس': '8', 'آب': '8',
-                'سبتمبر': '9', 'أيلول': '9', 'ايلول': '9', 'أكتوبر': '10', 'اكتوبر': '10', 'تشرين الأول': '10',
-                'نوفمبر': '11', 'تشرين الثاني': '11', 'ديسمبر': '12', 'كانون الأول': '12'
-            };
-            for (const [name, num] of Object.entries(arabicMonths)) {
-                if (str.includes(name)) {
-                    str = str.replace(new RegExp(name, 'g'), num);
-                }
-            }
-            return str.replace(/\s+/g, '/').replace(/\/+/g, '/');
-        }
+// ================= حفظ التوقع =================
+async function savePrediction(matchId, predH, predA, isCap, isTC) {
+    if (predH === '' || predA === '') return;
+    try {
+        await fetch(`${API_URL}/api/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: currentUser.username, matchId, predH, predA, isCaptain: isCap, isTripleCaptain: isTC })
+        });
+        if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+        predictions[currentUser.username][matchId] = { home: predH, away: predA, isCaptain: isCap, isTripleCaptain: isTC };
+    } catch (e) { console.error(e); }
+}
 
-        function parseMatchDate(dateStr, timeStr) {
-            try {
-                let dStr = formatMatchDate(dateStr);
-                let [time, period] = (timeStr || '').split(' ');
-                let [hours, minutes] = (time || '0:0').split(':');
-                hours = parseInt(hours, 10) || 0;
-                minutes = parseInt(minutes, 10) || 0;
-                if (period === 'م' && hours !== 12) hours += 12;
-                if (period === 'ص' && hours === 12) hours = 0;
-                
-                let parts = dStr.match(/\d+/g);
-                let y = 2026, m = 0, d = 1;
-                if (parts) {
-                    if (parts.length >= 3 && parts[0].length === 4) { y = parseInt(parts[0]); m = parseInt(parts[1]) - 1; d = parseInt(parts[2]); } 
-                    else if (parts.length >= 2) { d = parseInt(parts[0]); m = parseInt(parts[1]) - 1; if (parts[2]) y = parseInt(parts[2]); }
-                }
-                return new Date(y, m, d, hours, minutes).getTime();
-            } catch(e) { return 0; }
-        }
+function togglePowerUp(matchId, type) {
+    const p = (predictions[currentUser.username] || {})[matchId] || { home: '', away: '' };
+    if (p.home === '' || p.away === '') return alert('يرجى إدخال التوقع أولاً');
+    
+    let isCap = p.isCaptain || false;
+    let isTC = p.isTripleCaptain || false;
 
-        function isMatchLocked(match) {
-            try {
-                if (match.actualH !== null && match.actualA !== null) return true;
-                const matchTimeMs = parseMatchDate(match.date, match.time);
-                if (!matchTimeMs) return false;
-                const now = new Date().getTime();
-                return (matchTimeMs - now) <= 60 * 60 * 1000; // قفل قبل ساعة
-            } catch(e) { return false; }
-        }
+    if (type === 'cap') { isCap = !isCap; if (isCap) isTC = false; }
+    if (type === 'tc') {
+        let tcUsed = 0;
+        Object.values(predictions[currentUser.username]).forEach(pred => { if (pred.isTripleCaptain) tcUsed++; });
+        if (!isTC && tcUsed >= 2) return alert('لقد استنفدت بطاقتي الكابتن الثلاثي لهذا الموسم!');
+        isTC = !isTC; if (isTC) isCap = false;
+    }
 
-        function getCurrentActiveGw() {
-            // يبحث عن أول جولة تحتوي على مباريات غير ملعوبة (actualH و actualA تساوي null)
-            for (let gw = 1; gw <= 38; gw++) {
-                const gwMatches = matches.filter(m => Number(m.gw) === gw);
-                if (gwMatches.length === 0) continue;
-                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null)) return gw;
-            }
-            return 1;
-        }
+    savePrediction(matchId, p.home, p.away, isCap, isTC);
+    renderMatchesList();
+}
 
-        function renderHomeTab() {
-            const activeGw = getCurrentActiveGw();
-            const prevGw = activeGw > 1 ? activeGw - 1 : null;
-            let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
-            
-            // ترتيب المباريات زمنياً (الأقرب فالأبعد)
-            gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-            
-            const userPreds = predictions[currentUser.username] || {};
-            
-            const standings = getGlobalStandings();
-            const myStats = standings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {} };
-            const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
-            const motw = prevGw ? standings.find(u => u.badges.motw) : null;
+// ================= عرض المباريات =================
+function renderMatchCard(m, p) {
+    const isPlayed = m.actual_h !== null && m.actual_a !== null;
+    const isStarted = new Date().getTime() >= new Date(m.match_date + ' ' + (m.match_time || '00:00')).getTime();
+    const disabled = isPlayed || isStarted ? 'disabled' : '';
+    
+    let html = `
+    <div class="card match-card fade-in">
+        <div class="match-date-time">${m.match_date || ''} - ${m.match_time || ''}</div>
+        <div class="match-teams">
+            <div class="team">
+                <img src="${getTeamLogo(m.home)}" alt="${m.home}">
+                <div>${getTeamName(m.home)}</div>
+            </div>
+            <div class="vs">${isPlayed ? `${m.actual_h} - ${m.actual_a}` : 'VS'}</div>
+            <div class="team">
+                <img src="${getTeamLogo(m.away)}" alt="${m.away}">
+                <div>${getTeamName(m.away)}</div>
+            </div>
+        </div>
+        <div class="prediction-inputs">
+            <input type="number" class="pred-input" id="h_${m.id}" value="${p.home !== undefined ? p.home : ''}" min="0" ${disabled} 
+                   onchange="savePrediction('${m.id}', this.value, document.getElementById('a_${m.id}').value, ${p.isCaptain||false}, ${p.isTripleCaptain||false})">
+            <input type="number" class="pred-input" id="a_${m.id}" value="${p.away !== undefined ? p.away : ''}" min="0" ${disabled}
+                   onchange="savePrediction('${m.id}', document.getElementById('h_${m.id}').value, this.value, ${p.isCaptain||false}, ${p.isTripleCaptain||false})">
+        </div>
+    `;
 
-            return `
-                <div class="space-y-6">
-                    <!-- رأس الصفحة (الشعار واسم التطبيق) -->
-                    <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
-                        <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
-                        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
-                        <span class="text-xs text-slate-400 mt-1">توقع. نافس. سيطر.</span>
-                    </div>
+    if (!isPlayed && !isStarted && p.home !== undefined && p.home !== '') {
+        html += `<div class="power-ups">
+            <button class="btn btn-outline ${p.isCaptain ? 'active' : ''}" onclick="togglePowerUp('${m.id}', 'cap')">© كابتن (x2)</button>
+            <button class="btn btn-outline btn-triple ${p.isTripleCaptain ? 'active' : ''}" onclick="togglePowerUp('${m.id}', 'tc')">Ⓣ كابتن ثلاثي (x3)</button>
+        </div>`;
+    }
 
-                    ${motw ? `
-                        <div class="glass p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-500/40">👑</div>
-                                <div>
-                                    <h3 class="text-xs font-bold text-amber-500">عراف الأسبوع (الجولة ${prevGw})</h3>
-                                    <span class="text-base font-black text-white">${motw.username}</span>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <span class="block text-2xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
-                                <span class="text-[10px] text-slate-300">نقطة</span>
-                            </div>
-                        </div>
-                    ` : ''}
+    if (isPlayed && p.home !== undefined && p.home !== '') {
+        const pts = calcPoints(m.home, m.away, p.home, p.away, m.actual_h, m.actual_a, p.isCaptain, p.isTripleCaptain);
+        html += `<div style="text-align:center; color: var(--gold); font-weight:bold; margin-top:10px;">النقاط: +${pts}</div>`;
+    }
+    
+    html += `</div>`;
+    return html;
+}
 
-                    <!-- البطاقة الشخصية (تم تصغيرها وتنسيقها) -->
-                    <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">بطاقة القناص</span>
-                                <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
-                                    ${currentUser.username}
-                                    ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                    ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                    ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
-                                </h2>
-                            </div>
-                            <div class="text-left">
-                                <span class="text-[10px] text-slate-400 block">الترتيب العام</span>
-                                <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">النقاط</span>
-                                <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">الدقة</span>
-                                <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">المفضل</span>
-                                <span class="text-sm font-black text-blue-300 truncate block">${myStats.favTeam}</span>
-                            </div>
-                        </div>
-                    </div>
+function showHome() {
+    setActiveNav(0);
+    const standings = getGlobalStandings();
+    const myStat = standings.find(s => s.username === currentUser.username) || { totalPts: 0, hitRate: 0, badges: {} };
+    const myRank = standings.findIndex(s => s.username === currentUser.username) + 1;
+    
+    const activeGw = getCurrentActiveGw();
+    const gwMatches = matches.filter(m => m.gw === activeGw);
 
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
-                                <i class="fa-solid fa-fire text-amber-400"></i> مباريات الجولة الحالية (${activeGw})
-                            </h3>
-                            <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold">
-                                عرض كل الجولات <i class="fa-solid fa-arrow-left mr-1"></i>
-                            </button>
-                        </div>
-                        <div class="space-y-3">
-                            ${gwMatches.map(match => {
-                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                                const matchType = getMatchType(match.home, match.away);
-                                const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
-                                const isLocked = isMatchLocked(match);
-                                const displayDate = formatMatchDate(match.date);
-                                
-                                let badgeHtml = '';
-                                if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
-                                else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
+    let html = `
+        <div class="card fade-in" style="text-align: center; background: linear-gradient(145deg, #0ea5e9, #0284c7);">
+            <h3>بطاقة القناص</h3>
+            <div style="font-size: 24px; font-weight: bold; margin: 10px 0;">${currentUser.username}</div>
+            <div style="display: flex; justify-content: space-around; margin-top: 10px;">
+                <div>الترتيب<br><strong>#${myRank || '-'}</strong></div>
+                <div>النقاط<br><strong>${myStat.totalPts}</strong></div>
+                <div>الدقة<br><strong>${myStat.hitRate}%</strong></div>
+            </div>
+            <div style="margin-top: 10px;">
+                ${myStat.badges.motw ? '<span class="badge" title="عراف الأسبوع">👑</span>' : ''}
+                ${myStat.badges.sniper ? '<span class="badge" title="القناص">🎯</span>' : ''}
+                ${myStat.badges.giantSlayer ? '<span class="badge" title="قاهر الكبار">🗡️</span>' : ''}
+            </div>
+        </div>
+        <h3 style="margin: 20px 0 10px;">مباريات الجولة الحالية (${activeGw})</h3>
+    `;
 
-                                return `
-                                    <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative ${isLocked ? 'opacity-80' : ''}">
-                                        ${badgeHtml}
-                                        <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
-                                            <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                            <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex-1 text-left font-bold text-sm md:text-base text-slate-200">${getTeamName(match.home)}</div>
-                                            <div class="px-3">
-                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
-                                                    ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> انتهى الوقت' : 'أضف توقعك')}
-                                                </button>
-                                            </div>
-                                            <div class="flex-1 text-right font-bold text-sm md:text-base text-slate-200">${getTeamName(match.away)}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                            ${gwMatches.length === 0 ? '<div class="text-center text-slate-400 text-sm py-8">لا توجد مباريات متاحة الآن.</div>' : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
+    gwMatches.forEach(m => {
+        const p = (predictions[currentUser.username] || {})[m.id] || {};
+        html += renderMatchCard(m, p);
+    });
 
-        function renderMatchesTab() {
-            const userPreds = predictions[currentUser.username] || {};
-            return `
-                <div class="space-y-6">
-                    <div class="glass p-4 rounded-2xl">
-                        <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-blue-400"></i> جدول مباريات الدوري الرسمي</h2>
-                    </div>
-                    ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
-                        let gwMatches = matches.filter(m => Number(m.gw) === gw);
-                        if (gwMatches.length === 0) return '';
-                        
-                        // ترتيب المباريات زمنياً (الأقرب فالأبعد)
-                        gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-                        
-                        return `
-                            <div class="glass p-4 rounded-2xl space-y-3">
-                                <div class="border-b border-white/10 pb-2 flex justify-between items-center">
-                                    <h3 class="font-black text-sm text-blue-400">الجولة ${gw}</h3>
-                                    <span class="text-xs text-slate-400">${gwMatches.length} مواجهات</span>
-                                </div>
-                                <div class="space-y-2">
-                                    ${gwMatches.map(match => {
-                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                                        const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
-                                        const isLocked = isMatchLocked(match);
-                                        const displayDate = formatMatchDate(match.date);
-                                        
-                                        let bMini = '';
-                                        if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 left-2 bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                        else if(pred.isCaptain) bMini = `<div class="absolute top-2 left-2 bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
+    document.getElementById('content').innerHTML = html;
+}
 
-                                        return `
-                                            <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
-                                                ${bMini}
-                                                <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
-                                                    <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <div class="flex-1 text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
-                                                    <div class="px-2">
-                                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : 'توقع الآن')}
-                                                        </button>
-                                                    </div>
-                                                    <div class="flex-1 text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
-                                                </div>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
+function renderMatchesList() {
+    let html = `<h2 style="margin-bottom:15px;">جدول المباريات الكامل</h2>`;
+    const gwMatches = {};
+    matches.forEach(m => {
+        if (!gwMatches[m.gw]) gwMatches[m.gw] = [];
+        gwMatches[m.gw].push(m);
+    });
 
-        function renderStandingsTab() {
-            const standings = getGlobalStandings();
-            return `
-                <div class="glass p-4 md:p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                        <div>
-                            <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-trophy text-amber-400"></i> لوحة الشرف</h2>
-                        </div>
-                        <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">الإجمالي: ${standings.length}</span>
-                    </div>
-                    <div class="space-y-2">
-                        ${standings.map((user, idx) => {
-                            const isMe = user.username === currentUser.username;
-                            return `
-                                <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
-                                    <div class="flex items-center gap-3">
-                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">#${idx + 1}</span>
-                                        <div>
-                                            <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                                                ${user.username} ${isMe ? '(أنت)' : ''}
-                                                ${user.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                                ${user.badges.sniper ? '<span title="القناص" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                                ${user.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
-                                            </h4>
-                                        </div>
-                                    </div>
-                                    <div class="text-left">
-                                        <span class="text-base font-black text-amber-400">${user.totalPts}</span>
-                                        <span class="text-[10px] text-slate-400 block">نقطة</span>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderMiniLeaguesTab() {
-            const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
-            const standings = getGlobalStandings();
-            return `
-                <div class="space-y-6">
-                    <div class="glass p-5 rounded-2xl space-y-4">
-                        <h2 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-users-rectangle"></i> الدوريات المصغرة الخاصة</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                                <input type="text" id="new-ml-name" placeholder="اسم الدوري (مثال: أصدقاء الحي)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
-                                <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">إنشاء وتوليد الكود</button>
-                            </div>
-                            <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                                <input type="text" id="join-ml-code" placeholder="أدخل كود الدوري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
-                                <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">الانضمام الآن</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        ${myLeagues.map(ml => `
-                            <div class="glass p-5 rounded-2xl space-y-3">
-                                <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                                    <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
-                                    <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
-                                </div>
-                                <div class="space-y-2">
-                                    ${ml.members.map(mName => standings.find(s => s.username === mName) || { username: mName, totalPts: 0 })
-                                        .sort((a, b) => b.totalPts - a.totalPts)
-                                        .map((mem, idx) => `
-                                            <div class="py-2.5 px-3 rounded-xl flex justify-between items-center text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
-                                                    <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
-                                                </div>
-                                                <span class="font-black text-amber-400">${mem.totalPts} نقطة</span>
-                                            </div>
-                                        `).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderRulesTab() {
-            return `
-                <div class="glass p-5 md:p-6 rounded-3xl space-y-6">
-                    <div class="border-b border-white/10 pb-4 text-center">
-                        <i class="fa-solid fa-scale-balanced text-4xl text-amber-400 mb-3"></i>
-                        <h2 class="text-xl font-black text-white tracking-wide">دليل القوانين الشامل</h2>
-                        <p class="text-xs text-slate-400 mt-2">افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش</p>
-                    </div>
-                    
-                    <div class="space-y-5">
-                        
-                        <!-- نظام حساب النقاط الأساسي -->
-                        <div class="bg-slate-900/80 p-5 rounded-2xl border-l-4 border-l-blue-500 border border-white/5 shadow-lg">
-                            <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-calculator"></i> 1. نظام حساب النقاط التفصيلي</h3>
-                            <div class="space-y-4">
-                                
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-amber-400 text-sm mb-1">👑 قمة الكبار (مواجهات التوب 6)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><span class="text-emerald-400">5 نقاط:</span> التوقع المثالي بالرقم (مثال: توقعت 2-1 وانتهت 2-1).</li>
-                                        <li><span class="text-blue-400">3 نقاط:</span> توقع الفائز الصحيح (مثال: توقعت فوز المضيف 1-0 وانتهت بفوزه 3-0).</li>
-                                        <li><span class="text-yellow-400">3 نقاط:</span> التوقع المثالي للتعادل (مثال: 1-1 وانتهت 1-1).</li>
-                                        <li><span class="text-slate-400">نقطتين:</span> توقع التعادل بنتيجة مختلفة (مثال: توقعت 0-0 وانتهت 2-2).</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-blue-400 text-sm mb-1">🌟 الكبار ضد الطموحين (فريق كبير ضد فريق عادي)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><strong class="text-white">في حال فوز الكبير:</strong> توقع مثالي (نقطتين) / توقع صحيح (نقطة واحدة).</li>
-                                        <li><strong class="text-rose-400">في حال المفاجأة (خسارة الكبير):</strong> توقع مثالي (6 نقاط) / توقع صحيح للفائز (4 نقاط).</li>
-                                        <li><strong class="text-slate-200">في حال التعادل:</strong> توقع مثالي (3 نقاط) / توقع عادي (نقطتين).</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-slate-300 text-sm mb-1">⚽ المباريات المتكافئة (باقي الفرق)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><span class="text-emerald-400">3 نقاط:</span> التوقع المثالي.</li>
-                                        <li><span class="text-amber-400">4 نقاط (بونص):</span> إذا كانت المباراة مجنونة (5 أهداف أو أكثر) أو تعادل سلبي (0-0) وأصبت التوقع بدقة!</li>
-                                        <li><span class="text-blue-400">نقطة واحدة:</span> التوقع الصحيح للفائز.</li>
-                                    </ul>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- بطاقات القوة -->
-                        <div class="bg-gradient-to-br from-fuchsia-900/30 to-indigo-900/30 p-5 rounded-2xl border-l-4 border-l-fuchsia-500 border border-fuchsia-500/20 shadow-lg">
-                            <h3 class="font-bold text-fuchsia-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-bolt"></i> 2. بطاقات القوة المضاعفة</h3>
-                            <ul class="text-xs text-slate-200 space-y-3 leading-relaxed">
-                                <li class="flex gap-3"><span class="w-6 h-6 bg-amber-500 text-black rounded-full flex items-center justify-center font-black shrink-0">C</span> <div><strong class="text-amber-400">الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرة واحدة فقط</span> في كل جولة.</div></li>
-                                <li class="flex gap-3"><span class="w-6 h-6 bg-fuchsia-600 text-white rounded-full flex items-center justify-center font-black shrink-0">x3</span> <div><strong class="text-fuchsia-400">الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرتين فقط في الموسم</span> (مرة في النصف الأول ومرة في النصف الثاني).</div></li>
-                            </ul>
-                        </div>
-                        
-                        <!-- نظام الإغلاق -->
-                        <div class="bg-amber-900/20 p-5 rounded-2xl border-l-4 border-l-amber-500 border border-amber-500/20 shadow-lg">
-                            <h3 class="font-bold text-amber-400 mb-2 flex items-center gap-2 text-base"><i class="fa-solid fa-lock"></i> 3. نظام الإغلاق الصارم</h3>
-                            <p class="text-xs text-slate-300 leading-relaxed text-justify">حفاظاً على نزاهة التوقعات، يقوم السيرفر <strong class="text-rose-400">بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور أيقونة القفل (<i class="fa-solid fa-lock text-rose-400"></i>)، لا يمكنك إضافة أو تعديل توقعك لتلك المباراة نهائياً.</p>
-                        </div>
-
-                        <!-- الأوسمة -->
-                        <div class="bg-emerald-900/20 p-5 rounded-2xl border-l-4 border-l-emerald-500 border border-emerald-500/20 shadow-lg">
-                            <h3 class="font-bold text-emerald-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-medal"></i> 4. الأوسمة والإنجازات الشخصية</h3>
-                            <ul class="text-xs text-slate-300 space-y-3 leading-relaxed">
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-fire text-amber-400 text-lg w-5 text-center"></i> <div><strong class="text-amber-400">عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.</div></li>
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-crosshairs text-emerald-400 text-lg w-5 text-center"></i> <div><strong class="text-emerald-400">القناص:</strong> وسام دائم تحصل عليه إذا توقعت 3 نتائج مثالية بالرقم في جولة واحدة.</div></li>
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-rose-400 text-lg w-5 text-center"></i> <div><strong class="text-rose-400">قاهر الكبار:</strong> وسام دائم يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) وتحدث بالفعل!</div></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderAdminTab() {
-            const sortedMatches = [...matches].sort((a, b) => Number(a.gw) - Number(b.gw));
-            return `
-                <div class="space-y-6">
-                    <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
-                        <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-shield-halved"></i></div>
-                        <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة يدوية</h2>
-                        
-                        <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
-                                    <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                        <option value="" disabled selected>-- اختر الفريق المضيف --</option>
-                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
-                                    <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                        <option value="" disabled selected>-- اختر الفريق الضيف --</option>
-                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-3 gap-3">
-                                <div><label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة</label><input type="number" id="adm-gw" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
-                                <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label><input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
-                                <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label><input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
-                            </div>
-                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-rose-600/30">إضافة للجدول</button>
-                        </form>
-                    </div>
-
-                    <div class="glass p-6 rounded-3xl space-y-4">
-                        <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
-                        <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
-                            ${sortedMatches.map(m => `
-                                <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap">
-                                    <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
-                                        <div class="text-[10px] font-bold text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-1">GW ${m.gw}</div>
-                                        <button onclick="deleteMatch('${m.id}')" class="p-1.5 text-rose-400 hover:bg-rose-950/40 rounded-lg text-xs" title="حذف المباراة"><i class="fa-solid fa-trash"></i></button>
-                                    </div>
-                                    <div class="flex-1 flex justify-between items-center gap-2">
-                                        <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate">${getTeamName(m.home)}</div>
-                                        <div class="flex items-center gap-1.5">
-                                            <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
-                                            <span class="text-slate-500">:</span>
-                                            <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
-                                        </div>
-                                        <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate">${getTeamName(m.away)}</div>
-                                    </div>
-                                    <div class="flex items-center gap-1.5 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-start">
-                                        <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
-                                        <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition-all"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function openModal(matchId) { activeMatchModal = matches.find(m => m.id === matchId); renderModal(); }
-        function closeModal() { activeMatchModal = null; renderModal(); }
-
-        function renderModal() {
-            const container = document.getElementById('modal-container');
-            if (!activeMatchModal) { container.innerHTML = ''; return; }
-            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-            const hVal = pred.home !== undefined ? pred.home : '';
-            const aVal = pred.away !== undefined ? pred.away : '';
-            
-            const currentGw = Number(activeMatchModal.gw);
-            const userPreds = predictions[currentUser.username] || {};
-            let captainUsedInGw = false;
-            let tcUsedInCurrentHalf = false;
-            
-            Object.entries(userPreds).forEach(([mId, p]) => {
-                if (mId === activeMatchModal.id) return; 
-                const m = matches.find(x => x.id === mId);
-                if (m) {
-                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
-                    if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
-                }
-            });
-
-            // حساب متوقع للنقاط إذا تم اختيار هذه النتيجة بشكل مثالي
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, pred.isCaptain, pred.isTripleCaptain);
-
-            container.innerHTML = `
-                <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
-                        <div class="text-center border-b border-white/5 pb-3">
-                            <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
-                            <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} ضد ${getTeamName(activeMatchModal.away)}</h2>
-                        </div>
-                        <div class="flex items-center justify-center gap-4 py-2">
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
-                            </div>
-                            <span class="text-xl font-bold text-slate-500 mt-5">:</span>
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">C كابتن (مضاعفة x2)</span> ${captainUsedInGw && !pred.isCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
-                            </label>
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">الجوكر (مضاعفة x3)</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
-                            </label>
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
-                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
-                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون مضاعفات)</span></div>
-                            </label>
-                        </div>
-
-                        <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
-                            <span class="text-[10px] text-blue-300 font-bold mb-1">النقاط المحتملة للتوقع المثالي</span>
-                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} نقطة</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">حفظ التوقع</button>
-                            <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">إلغاء</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateModalCalc() {
-            const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
-            const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            // نحسب النقاط بافتراض أن النتيجة الفعلية جاءت مطابقة تماماً (h, a, h, a)
-            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple');
-            if (h === '' || a === '') possiblePts = 0;
-            document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
-        }
-
-        async function saveModalPrediction() {
-            const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
-            const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            if (h === '' || a === '') return;
-            
-            // تحديث شكلي سريع لراحة المستخدم
-            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
-            predictions[currentUser.username][activeMatchModal.id] = { 
-                home: Number(h), 
-                away: Number(a), 
-                isCaptain: powerup === 'captain', 
-                isTripleCaptain: powerup === 'triple'
-            };
-            
-            const reqMatchId = activeMatchModal.id;
-            closeModal();
-            render(); // إعادة رسم الشاشة لتظهر الأرقام
-
-            // الحفظ الفعلي في السيرفر
-            try {
-                await fetch(`${API_BASE_URL}/predict`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: currentUser.username, 
-                        matchId: reqMatchId, 
-                        predH: h, 
-                        predA: a, 
-                        isCaptain: powerup === 'captain', 
-                        isTripleCaptain: powerup === 'triple'
-                    })
-                });
-                await syncData(); // جلب البيانات لتأكيد الحفظ
-            } catch(e) {
-                console.error("Predict error:", e);
-                showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
-            }
-        }
-
-        async function createMiniLeague() {
-            const name = document.getElementById('new-ml-name').value.trim();
-            if (!name) { showCustomDialog('يرجى كتابة اسم الدوري أولاً.'); return; }
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            try {
-                const res = await fetch(`${API_BASE_URL}/leagues`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ id: 'ml_' + Date.now(), name, code, creator: currentUser.username })
-                });
-                const data = await res.json();
-                if(data.success) {
-                    showCustomDialog('تم إنشاء الدوري بنجاح! كود الدعوة: ' + code);
-                    await syncData();
-                    render();
-                } else { showCustomDialog(data.message); }
-            } catch(e) { showCustomDialog("تعذر الاتصال بالسيرفر"); }
-        }
-
-        async function joinMiniLeague() {
-            const code = document.getElementById('join-ml-code').value.trim().toUpperCase();
-            if(!code) { showCustomDialog('يرجى إدخال كود الدوري.'); return; }
-            try {
-                const res = await fetch(`${API_BASE_URL}/leagues/join`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ code, username: currentUser.username })
-                });
-                const data = await res.json();
-                showCustomDialog(data.message || (data.success ? 'تم الانضمام للدوري بنجاح!' : 'خطأ غير معروف'));
-                if (data.success) { await syncData(); render(); }
-            } catch(e) { showCustomDialog("تعذر الاتصال بالسيرفر"); }
-        }
-
-        async function addMatch(e) {
-            e.preventDefault();
-            const gw = document.getElementById('adm-gw').value, home = document.getElementById('adm-home').value;
-            const away = document.getElementById('adm-away').value, dateInput = document.getElementById('adm-date').value;
-            const timeInput = document.getElementById('adm-time').value;
-            if(!gw || !home || !away || !dateInput || !timeInput) return;
-
-            const formattedDate = dateInput.replace(/-/g, '/');
-            let [hours, minutes] = timeInput.split(':'); hours = parseInt(hours, 10);
-            let period = hours >= 12 ? 'م' : 'ص'; hours = hours % 12 || 12;
-            const formattedTime = `${hours}:${minutes} ${period}`;
-            
-            try {
-                await fetch(`${API_BASE_URL}/admin/match`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime})
-                });
-                showCustomDialog(`تمت إضافة المباراة بنجاح!`);
-                await syncData(); render();
-            } catch(e) {}
-        }
-
-        function deleteMatch(id) {
-            showCustomDialog('هل أنت متأكد من حذف هذه المباراة نهائياً من قاعدة البيانات؟', 'confirm', async () => {
-                try {
-                    await fetch(`${API_BASE_URL}/admin/match/${id}`, { method: 'DELETE' });
-                    await syncData(); render();
-                } catch(e){}
+    for (let gw = 1; gw <= 38; gw++) {
+        if (gwMatches[gw]) {
+            html += `<h3 style="color:var(--primary); margin: 20px 0 10px;">الجولة ${gw}</h3>`;
+            gwMatches[gw].forEach(m => {
+                const p = (predictions[currentUser.username] || {})[m.id] || {};
+                html += renderMatchCard(m, p);
             });
         }
+    }
+    document.getElementById('content').innerHTML = html;
+}
 
-        async function saveActual(id) {
-            const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
-            if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
-            try {
-                await fetch(`${API_BASE_URL}/admin/result`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
-                });
-                showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
-                await syncData(); render();
-            } catch(e){}
+function showMatches() { setActiveNav(1); renderMatchesList(); }
+
+// ================= الدوريات المصغرة وميزة القناص =================
+async function fireSniper(leagueCode, gw, points) {
+    const victim = document.getElementById(`sniperTarget_${leagueCode}`).value;
+    if (!victim) return alert('الرجاء اختيار الضحية!');
+    
+    try {
+        const res = await fetch(`${API_URL}/api/sniper/shoot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leagueCode, gw, sniper: currentUser.username, victim, pointsDeducted: points })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert('تم قنص الهدف بنجاح! 🎯');
+            await syncData();
+            showLeagueDetails(leagueCode);
+        } else {
+            alert(data.message);
         }
+    } catch (e) {
+        alert('حدث خطأ في الاتصال');
+    }
+}
 
-        async function clearActual(id) {
-            try {
-                await fetch(`${API_BASE_URL}/admin/result`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ matchId: id, actualH: null, actualA: null })
-                });
-                showCustomDialog('تم إلغاء النتيجة، المباراة الآن مفتوحة للتوقعات (إذا لم يمر وقتها).', 'alert');
-                await syncData(); render();
-            } catch(e){}
-        }
+function showLeagueDetails(code) {
+    const league = miniLeagues.find(l => l.code === code);
+    if (!league) return;
 
-        function showCustomDialog(message, type = 'alert', onConfirm = null) {
-            const container = document.getElementById('dialog-container');
-            container.innerHTML = `
-                <div class="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                    <div class="glass max-w-xs w-full p-6 rounded-3xl shadow-2xl border border-white/10 text-center animate-fade-up">
-                        <div class="text-4xl mb-4 ${type === 'confirm' ? 'text-blue-400' : 'text-amber-400'}"><i class="fa-solid fa-${type === 'confirm' ? 'circle-question' : 'circle-exclamation'}"></i></div>
-                        <h3 class="text-sm font-bold text-white mb-6 leading-relaxed">${message}</h3>
-                        <div class="flex gap-3">
-                            ${type === 'confirm' ? `<button id="diag-yes" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all">نعم، متأكد</button>` : ''}
-                            <button id="diag-close" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">${type === 'confirm' ? 'إلغاء' : 'حسناً فهمت'}</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('diag-close').onclick = () => { container.innerHTML = ''; };
-            if (type === 'confirm' && onConfirm) { document.getElementById('diag-yes').onclick = () => { container.innerHTML = ''; onConfirm(); }; }
-        }
+    const allStats = getGlobalStandings();
+    const activeGw = getCurrentActiveGw();
+    const prevGw = activeGw > 1 ? activeGw - 1 : 1;
+    const isStarted = checkGwStarted(activeGw);
+    const evalGw = isStarted ? prevGw : (activeGw > 1 ? activeGw - 2 : 0);
 
-        function setAuthMode(mode) { authMode = mode; render(); }
+    let membersStats = league.members.map(username => {
+        const gStat = allStats.find(s => s.username === username) || { totalPts: 0, gwPoints: {} };
+        const originalTotal = gStat.totalPts || 0;
+        const prevPts = gStat.gwPoints[evalGw] || 0;
+        
+        // حساب خصومات هذا الدوري فقط
+        const deductions = sniperShots.filter(s => s.league_code === code && s.victim === username).reduce((sum, s) => sum + s.points_deducted, 0);
+        const leagueTotal = originalTotal - deductions;
 
-        async function handleAuth(e) {
-            e.preventDefault();
-            const name = document.getElementById('auth-name').value.trim();
-            const pin = document.getElementById('auth-pin').value.trim();
+        return { username, prevPts, leagueTotal };
+    });
+
+    membersStats.sort((a, b) => b.leagueTotal - a.leagueTotal);
+
+    let html = `
+        <div class="card fade-in">
+            <button onclick="showMiniLeagues()" class="btn" style="margin-bottom: 15px;">🔙 العودة</button>
+            <h2>دوري: ${league.name}</h2>
+            <p>كود الانضمام: <strong>${league.code}</strong></p>
+            <table class="standings-table">
+                <thead><tr><th>#</th><th>الاسم</th><th>نقاط الجولة</th><th>النقاط الكلية</th></tr></thead>
+                <tbody>
+    `;
+
+    membersStats.forEach((m, index) => {
+        html += `<tr>
+            <td>${index + 1}</td>
+            <td>${m.username} ${m.username === currentUser.username ? '(أنت)' : ''}</td>
+            <td>${m.prevPts}</td>
+            <td style="font-weight:bold; color:var(--primary);">${m.leagueTotal}</td>
+        </tr>`;
+    });
+    html += `</tbody></table></div>`;
+
+    // نظام القناص 🎯
+    if (evalGw > 0) {
+        const highestPts = Math.max(...membersStats.map(m => m.prevPts));
+        const topScorers = membersStats.filter(m => m.prevPts === highestPts && highestPts > 0);
+        const isCurrentUserTop = topScorers.some(m => m.username === currentUser.username);
+        const deductionPoints = topScorers.length > 1 ? 2 : 4;
+        
+        const immuneUsers = sniperShots.filter(s => s.league_code === code && s.gw === evalGw - 1).map(s => s.victim);
+        const hasShot = sniperShots.some(s => s.league_code === code && s.gw === evalGw && s.sniper === currentUser.username);
+
+        if (topScorers.length > 0) {
+            html += `<div class="card sniper-box fade-in">
+                <h3 style="color: var(--danger); margin-bottom:10px;">🎯 رصاصة القناص (الجولة ${evalGw})</h3>`;
             
-            if (authMode === 'register') {
-                const pinConfirm = document.getElementById('auth-pin-confirm').value.trim();
-                if (pin !== pinConfirm) {
-                    showCustomDialog('كلمات المرور غير متطابقة!');
-                    return;
-                }
-            }
-
-            if (!name || pin.length < 4) {
-                showCustomDialog('يرجى إدخال اسم المستخدم وكلمة مرور لا تقل عن 4 أرقام أو حروف.');
-                return;
-            }
-
-            try {
-                // إظهار شاشة تحميل مؤقتة
-                document.getElementById('app').innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                        <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
-                        <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
-                    </div>`;
-
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: name, pin: pin })
-                });
-                
-                const data = await response.json();
-
-                if (data.success) {
-                    currentUser = data.user;
-                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
-                    
-                    document.getElementById('app').innerHTML = `
-                        <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                            <i class="fa-solid fa-cloud-arrow-down fa-spin text-4xl text-blue-500"></i>
-                            <span class="font-bold text-lg text-white">Goal Sniper</span>
-                            <span class="font-bold text-sm">جاري مزامنة جدول المباريات الرسمي...</span>
-                        </div>`;
-                    
-                    await syncData(); 
-                    render();    
+            if (isCurrentUserTop) {
+                if (hasShot) {
+                    html += `<p style="color: var(--success); font-weight:bold;">لقد قمت بإطلاق رصاصتك بنجاح في هذه الجولة! 🔫</p>`;
                 } else {
-                    showCustomDialog(data.message || 'خطأ في الدخول.');
-                    render(); // العودة لشاشة الدخول
+                    html += `<p>أنت متصدر الجولة السابقة! يحق لك خصم <strong>${deductionPoints} نقاط</strong> من أي منافس.</p>
+                             <select id="sniperTarget_${code}" class="input-field">
+                                <option value="">-- اختر الضحية --</option>`;
+                    membersStats.forEach(m => {
+                        if (m.username !== currentUser.username) {
+                            const isImmune = immuneUsers.includes(m.username);
+                            html += `<option value="${m.username}" ${isImmune ? 'disabled' : ''}>${m.username} ${isImmune ? '(محمي 🛡️)' : ''}</option>`;
+                        }
+                    });
+                    html += `</select><button class="btn" style="background: var(--danger); margin-top:10px;" onclick="fireSniper('${code}', ${evalGw}, ${deductionPoints})">إطلاق الرصاصة 🔥</button>`;
                 }
-            } catch (error) {
-                console.error("Auth Error:", error);
-                showCustomDialog('تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت لديك.');
-                render();
+            } else {
+                const topNames = topScorers.map(t => t.username).join(' و ');
+                html += `<p>المتصدر والقناص الحالي هو: <strong>${topNames}</strong></p>
+                         <p style="color:#94a3b8; font-size:12px; margin-top:5px;">احذر! رصاصة القناص قادمة... 👀</p>`;
             }
+            html += `</div>`;
         }
+    }
+    document.getElementById('content').innerHTML = html;
+}
 
-        function logout() { currentUser = null; localStorage.removeItem('oracle_current_user_v8'); render(); }
-        function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function showMiniLeagues() {
+    setActiveNav(3);
+    const myLeagues = miniLeagues.filter(l => l.members.includes(currentUser.username));
+    
+    let html = `<h2 style="margin-bottom:15px;">الدوريات الخاصة</h2>
+        <div class="card fade-in">
+            <h3>إنشاء دوري جديد</h3>
+            <input type="text" id="newLeagueName" class="input-field" placeholder="اسم الدوري">
+            <input type="text" id="newLeagueCode" class="input-field" placeholder="كود الانضمام (يجب أن يكون مميزاً)">
+            <button class="btn" onclick="createLeague()">إنشاء</button>
+        </div>
+        <div class="card fade-in">
+            <h3>الانضمام لدوري</h3>
+            <input type="text" id="joinLeagueCode" class="input-field" placeholder="أدخل كود الدوري">
+            <button class="btn" onclick="joinLeague()">انضمام</button>
+        </div>
+        <h3 style="margin:20px 0 10px;">دورياتي:</h3>
+    `;
 
-        function renderAuthScreen() {
-            return `
-                <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative">
-                    <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up relative z-10">
-                        <div class="text-center mb-6">
-                            <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-3 border border-blue-500/30">
-                                <i class="fa-solid fa-crosshairs text-4xl text-blue-500"></i>
-                            </div>
-                            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
-                            <p class="text-xs text-slate-400 mt-2 font-bold">منصة التوقعات الأقوى للدوري الإنجليزي الممتاز</p>
-                        </div>
-                        
-                        <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                            <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">تسجيل الدخول</button>
-                            <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">حساب جديد</button>
-                        </div>
+    myLeagues.forEach(l => {
+        html += `<div class="card fade-in" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; border-left:4px solid var(--primary);" onclick="showLeagueDetails('${l.code}')">
+            <div><strong>${l.name}</strong><br><small>الكود: ${l.code}</small></div>
+            <i class="fas fa-chevron-left" style="color:var(--primary);"></i>
+        </div>`;
+    });
+    document.getElementById('content').innerHTML = html;
+}
 
-                        <form onsubmit="handleAuth(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">اسم المستخدم</label>
-                                <input type="text" id="auth-name" placeholder="مثال: Ahmed99" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">كلمة المرور (الرمز السري)</label>
-                                <input type="password" id="auth-pin" placeholder="4 أرقام أو حروف على الأقل" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                            </div>
-                            
-                            ${authMode === 'register' ? `
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-1">تأكيد كلمة المرور</label>
-                                    <input type="password" id="auth-pin-confirm" placeholder="أعد كتابة الرمز السري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                                </div>
-                            ` : ''}
+async function createLeague() {
+    const name = document.getElementById('newLeagueName').value;
+    const code = document.getElementById('newLeagueCode').value;
+    if (!name || !code) return alert('أدخل البيانات المطلوبة');
+    try {
+        const res = await fetch(`${API_URL}/api/leagues`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: 'L'+Date.now(), name, code, creator: currentUser.username })
+        });
+        const data = await res.json();
+        if (data.success) { await syncData(); showMiniLeagues(); }
+        else alert(data.message);
+    } catch(e) { alert('خطأ في السيرفر'); }
+}
 
-                            <button type="submit" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
-                                ${authMode === 'login' ? 'دخول إلى المنصة <i class="fa-solid fa-arrow-left mr-2"></i>' : 'إنشاء الحساب والبدء <i class="fa-solid fa-check mr-2"></i>'}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            `;
-        }
+async function joinLeague() {
+    const code = document.getElementById('joinLeagueCode').value;
+    if (!code) return alert('أدخل الكود');
+    try {
+        const res = await fetch(`${API_URL}/api/leagues/join`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, username: currentUser.username })
+        });
+        const data = await res.json();
+        if (data.success) { await syncData(); showMiniLeagues(); }
+        else alert(data.message);
+    } catch(e) { alert('خطأ في السيرفر'); }
+}
 
-        function render() {
-            const app = document.getElementById('app');
-            if (!currentUser) { app.innerHTML = renderAuthScreen(); return; }
+function showGlobalStandings() {
+    setActiveNav(2);
+    const standings = getGlobalStandings();
+    let html = `<h2 style="margin-bottom:15px;">الترتيب العام</h2>
+    <div class="card fade-in">
+        <table class="standings-table">
+            <thead><tr><th>#</th><th>الاسم</th><th>النقاط</th><th>الفريق المفضل</th></tr></thead>
+            <tbody>`;
+    standings.forEach((s, index) => {
+        const isMe = s.username === currentUser.username;
+        html += `<tr style="${isMe ? 'background: rgba(14, 165, 233, 0.2); font-weight:bold;' : ''}">
+            <td>${index + 1}</td>
+            <td>${s.username} <br>
+                <small style="font-size:10px;">
+                ${s.badges.motw ? '👑' : ''} ${s.badges.sniper ? '🎯' : ''} ${s.badges.giantSlayer ? '🗡️' : ''}
+                </small>
+            </td>
+            <td style="color:var(--primary); font-size:18px;">${s.totalPts}</td>
+            <td>${s.favTeam}</td>
+        </tr>`;
+    });
+    html += `</tbody></table></div>`;
+    document.getElementById('content').innerHTML = html;
+}
 
-            app.innerHTML = `
-                <header class="p-4 glass sticky top-0 z-40 border-b border-white/10 flex justify-between items-center shadow-lg bg-[#0a0e17]/90 backdrop-blur-xl">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/30 text-lg border border-white/10">${currentUser.username.substring(0, 1).toUpperCase()}</div>
-                        <div>
-                            <h1 class="text-sm font-bold text-slate-200 tracking-wide">Goal Sniper</h1>
-                            <p class="text-[9px] text-emerald-400 font-bold"><i class="fa-solid fa-circle text-[6px] animate-pulse"></i> متصل بالسيرفر المباشر</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
-                        <button onclick="logout()" class="p-2 glass text-rose-400 rounded-xl hover:bg-rose-600 hover:text-white transition-all border-rose-500/20"><i class="fa-solid fa-power-off"></i></button>
-                    </div>
-                </header>
+function showRules() {
+    setActiveNav(4);
+    let html = `
+        <h2 style="margin-bottom:15px;">قوانين اللعبة</h2>
+        <div class="card fade-in">
+            <h3 style="color: var(--primary);">حساب النقاط الأساسي</h3>
+            <ul class="rules-list">
+                <li><strong>التوقع الصحيح تماماً:</strong> تحصل على 3 نقاط (مثال: توقعت 2-1 وانتهت 2-1).</li>
+                <li><strong>توقع النتيجة (فوز/تعادل/خسارة):</strong> تحصل على نقطة واحدة (مثال: توقعت فوز آرسنال 2-0، وفاز آرسنال 1-0).</li>
+                <li><strong>التوقع الخاطئ:</strong> لا تحصل على أي نقطة.</li>
+            </ul>
+        </div>
+        <div class="card fade-in">
+            <h3 style="color: var(--gold);">البطاقات المساعدة</h3>
+            <ul class="rules-list">
+                <li><strong>© الكابتن:</strong> يضاعف نقاط المباراة (x2). يمكنك استخدامه في كل مباراة.</li>
+                <li><strong>Ⓣ الكابتن الثلاثي:</strong> يضرب النقاط في 3 (x3). <strong>مسموح استخدامه مرتين فقط طوال الموسم!</strong></li>
+            </ul>
+        </div>
+        <div class="card fade-in" style="border-left: 4px solid var(--danger);">
+            <h3 style="color: var(--danger);">🎯 ميزة القناص (الدوريات المصغرة فقط)</h3>
+            <ul class="rules-list">
+                <li><strong>المتصدر:</strong> يحصل متصدر الجولة في الدوري المصغر على حق إطلاق رصاصة.</li>
+                <li><strong>الرصاصة العادية (-4):</strong> يختار القناص أي لاعب في دوريه لخصم 4 نقاط منه (تخصم من ترتيب الدوري المصغر فقط ولا تمس الترتيب العام).</li>
+                <li><strong>التعادل (-2):</strong> إذا تعادل أكثر من لاعب في المركز الأول، يحصل كل منهم على رصاصة تِخصم نقطتين فقط.</li>
+                <li><strong>الحصانة 🛡️:</strong> اللاعب الذي تم قنصه في جولة، يصبح محمياً في الجولة التي تليها مباشرة.</li>
+                <li><strong>الصلاحية:</strong> يجب إطلاق الرصاصة قبل انطلاق أول مباراة في الجولة التالية.</li>
+            </ul>
+        </div>
+    `;
+    document.getElementById('content').innerHTML = html;
+}
 
-                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
-                    ${currentTab === 'home' ? renderHomeTab() : ''}
-                    ${currentTab === 'matches' ? renderMatchesTab() : ''}
-                    ${currentTab === 'standings' ? renderStandingsTab() : ''}
-                    ${currentTab === 'minileagues' ? renderMiniLeaguesTab() : ''}
-                    ${currentTab === 'rules' ? renderRulesTab() : ''}
-                    ${currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army' ? renderAdminTab() : ''}
-                </main>
+// ================= لوحة الإدارة =================
+function showAdmin() {
+    setActiveNav(5);
+    let html = `<h2 style="margin-bottom:15px;">لوحة الإدارة</h2>
+        <div class="card fade-in">
+            <h3>تسجيل نتيجة مباراة</h3>
+            <select id="adminMatchSelect" class="input-field">
+                <option value="">-- اختر المباراة --</option>
+                ${matches.map(m => `<option value="${m.id}">جولة ${m.gw}: ${getTeamName(m.home)} ضد ${getTeamName(m.away)}</option>`).join('')}
+            </select>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="adminActH" class="input-field" placeholder="أهداف المضيف">
+                <input type="number" id="adminActA" class="input-field" placeholder="أهداف الضيف">
+            </div>
+            <button class="btn" style="background: var(--success); width:100%; justify-content:center;" onclick="saveAdminResult()">حفظ النتيجة</button>
+        </div>
+    `;
+    document.getElementById('content').innerHTML = html;
+}
 
-                <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2">
-                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-bold">الرئيسية</span></button>
-                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-calendar-days text-lg"></i><span class="text-[9px] font-bold">المباريات</span></button>
-                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-trophy text-lg"></i><span class="text-[9px] font-bold">الترتيب</span></button>
-                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-users text-lg"></i><span class="text-[9px] font-bold">الدوريات</span></button>
-                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-scale-balanced text-lg"></i><span class="text-[9px] font-bold">القوانين</span></button>
-                </nav>
-            `;
-            renderModal();
-        }
+async function saveAdminResult() {
+    const matchId = document.getElementById('adminMatchSelect').value;
+    const actualH = document.getElementById('adminActH').value;
+    const actualA = document.getElementById('adminActA').value;
+    
+    if (!matchId || actualH === '' || actualA === '') return alert('أدخل البيانات كاملة');
+    try {
+        await fetch(`${API_URL}/api/admin/result`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matchId, actualH: Number(actualH), actualA: Number(actualA) })
+        });
+        alert('تم حفظ النتيجة');
+        await syncData();
+    } catch(e) { alert('خطأ في السيرفر'); }
+}
 
-        window.onload = async function() {
-            currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
-            if (currentUser) {
-                document.getElementById('app').innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                        <i class="fa-solid fa-satellite-dish fa-spin text-4xl text-blue-500"></i>
-                        <span class="font-bold text-lg text-white">Goal Sniper</span>
-                        <span class="font-bold text-sm">جاري تحميل جدول المباريات الرسمي...</span>
-                    </div>`;
-                await syncData(); 
-            }
-            render();
-        };
-    </script>
+function setActiveNav(index) {
+    document.querySelectorAll('.nav-item').forEach((el, i) => {
+        if (i === index) el.classList.add('active');
+        else el.classList.remove('active');
+    });
+}
+
+// ================= التشغيل الأولي =================
+window.onload = async () => {
+    const saved = localStorage.getItem('goalSniperUser');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        await syncData();
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        if (currentUser.role === 'admin') document.getElementById('navAdmin').style.display = 'flex';
+        showHome();
+    } else {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('authApp').style.display = 'flex';
+    }
+};
+</script>
 </body>
 </html>
