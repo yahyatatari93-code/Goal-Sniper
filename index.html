@@ -743,10 +743,24 @@
 }
 
         function renderAdminTab() {
-    // 👇 التعديل الجراحي: ترتيب حسب الجولة، ثم حسب التاريخ والوقت 👇
+    // 👇 التعديل الجذري: ترتيب آمن ومضمون 100% 👇
     const sortedMatches = [...matches].sort((a, b) => {
-        if (Number(a.gw) !== Number(b.gw)) return Number(a.gw) - Number(b.gw);
-        return new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time);
+        // 1. الترتيب حسب الجولة أولاً
+        if (Number(a.gw) !== Number(b.gw)) {
+            return Number(a.gw) - Number(b.gw);
+        }
+        
+        // 2. إذا كانت نفس الجولة، نرتب حسب التاريخ (بالمقارنة النصية لتجنب أخطاء المتصفحات)
+        const dateA = String(a.date || "");
+        const dateB = String(b.date || "");
+        if (dateA !== dateB) {
+            return dateA.localeCompare(dateB);
+        }
+        
+        // 3. إذا كان نفس التاريخ، نرتب حسب الوقت بالساعات والدقائق
+        const timeA = String(a.time || "");
+        const timeB = String(b.time || "");
+        return timeA.localeCompare(timeB);
     });
     // 👆 نهاية التعديل 👆
 
