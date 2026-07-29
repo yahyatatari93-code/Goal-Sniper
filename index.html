@@ -100,33 +100,37 @@
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
-
+        let sniperShots = [];
+        
         async function syncData() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/sync`);
-                const json = await res.json();
-                if (json.success) {
-                    users = json.data.users || [];
-                    
-                    matches = (json.data.matches || []).map(m => ({
-                        id: m.id,
-                        gw: m.gw,
-                        home: m.home,
-                        away: m.away,
-                        date: m.match_date || m.date,
-                        time: m.match_time || m.time,
-                        actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
-                        actualA: m.actual_a !== undefined ? m.actual_a : m.actualA
-                    }));
-                    
-                    predictions = json.data.predictions || {};
-                    miniLeagues = json.data.miniLeagues || [];
-                }
-            } catch (e) { 
-                console.warn("Sync failed:", e); 
-                showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
-            }
+    try {
+        const res = await fetch(`${API_BASE_URL}/sync`);
+        const json = await res.json();
+        if (json.success) {
+            users = json.data.users || [];
+            
+            matches = (json.data.matches || []).map(m => ({
+                id: m.id,
+                gw: m.gw,
+                home: m.home,
+                away: m.away,
+                date: m.match_date || m.date,
+                time: m.match_time || m.time,
+                actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
+                actualA: m.actual_a !== undefined ? m.actual_a : m.actualA
+            }));
+            
+            predictions = json.data.predictions || {};
+            miniLeagues = json.data.miniLeagues || [];
+            
+            // 👇 هذا هو السطر المنقذ الذي نسينا إضافته 👇
+            sniperShots = json.data.sniperShots || []; 
         }
+    } catch (e) { 
+        console.warn("Sync failed:", e); 
+        showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
+    }
+}
 
         const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
