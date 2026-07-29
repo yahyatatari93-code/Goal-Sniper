@@ -507,50 +507,61 @@
         }
 
         function renderMiniLeaguesTab() {
-            const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
-            const standings = getGlobalStandings();
-            return `
-                <div class="space-y-6">
-                    <div class="glass p-5 rounded-2xl space-y-4">
-                        <h2 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-users-rectangle"></i> الدوريات المصغرة الخاصة</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                                <input type="text" id="new-ml-name" placeholder="اسم الدوري (مثال: أصدقاء الحي)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
-                                <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">إنشاء وتوليد الكود</button>
-                            </div>
-                            <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                                <input type="text" id="join-ml-code" placeholder="أدخل كود الدوري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
-                                <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">الانضمام الآن</button>
-                            </div>
-                        </div>
+    const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
+    const standings = getGlobalStandings();
+    return `
+        <div class="space-y-6">
+            <div class="glass p-5 rounded-2xl space-y-4">
+                <h2 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-users-rectangle"></i> الدوريات المصغرة الخاصة</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
+                        <input type="text" id="new-ml-name" placeholder="اسم الدوري (مثال: أصدقاء الحي)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
+                        <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">إنشاء وتوليد الكود</button>
                     </div>
-                    <div class="space-y-4">
-                        ${myLeagues.map(ml => `
-                            <div class="glass p-5 rounded-2xl space-y-3">
-                                <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                                    <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
-                                    <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
-                                </div>
-                                <div class="space-y-2">
-                                    ${ml.members.map(mName => standings.find(s => s.username === mName) || { username: mName, totalPts: 0 })
-                                        .sort((a, b) => b.totalPts - a.totalPts)
-                                        .map((mem, idx) => `
-                                            <div class="py-2.5 px-3 rounded-xl flex justify-between items-center text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
-                                                    <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
-                                                </div>
-                                                <span class="font-black text-amber-400">${mem.totalPts} نقطة</span>
-                                            </div>
-                                        `).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
+                        <input type="text" id="join-ml-code" placeholder="أدخل كود الدوري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
+                        <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">الانضمام الآن</button>
                     </div>
                 </div>
-            `;
-        }
-
+            </div>
+            <div class="space-y-4">
+                ${myLeagues.map(ml => `
+                    <div class="glass p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                            <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
+                            <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
+                        </div>
+                        <div class="space-y-2">
+                            ${ml.members.map(mName => standings.find(s => s.username === mName) || { username: mName, totalPts: 0 })
+                                .sort((a, b) => b.totalPts - a.totalPts)
+                                .map((mem, idx) => `
+                                    <div class="py-2.5 px-3 rounded-xl flex justify-between items-center text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
+                                            <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
+                                        </div>
+                                        
+                                        <!-- 👇 التعديل هنا: تم وضع النقاط مع زر القناص في مجموعة واحدة 👇 -->
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-black text-amber-400">${mem.totalPts} نقطة</span>
+                                            
+                                            ${mem.username !== currentUser.username ? `
+                                                <button onclick="fireSniper('${ml.code}', '${mem.username}')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg shadow-red-500/20">
+                                                    <i class="fa-solid fa-crosshairs"></i> قنص
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                        <!-- 👆 نهاية التعديل 👆 -->
+                                        
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
         function renderRulesTab() {
             return `
                 <div class="glass p-5 md:p-6 rounded-3xl space-y-6">
@@ -1076,6 +1087,37 @@
             }
             render();
         };
+        async function fireSniper(leagueCode, victimName) {
+    // رسالة تأكيد آمنة جداً لا تعبث بالتصميم
+    const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم 3 نقاط منه؟\n\nتذكر: يمكنك استخدام هذه الميزة مرة واحدة فقط!`);
+    
+    if (!confirmShot) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                leagueCode: leagueCode,
+                gw: 1, // الجولة الحالية
+                sniper: currentUser.username,
+                victim: victimName,
+                pointsDeducted: 3 // سيتم خصم 3 نقاط من الخصم
+            })
+        });
+        
+        const json = await res.json();
+        if (json.success) {
+            alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
+            // تحديث البيانات فوراً لترى النقاط تنقص!
+            if(typeof syncData === 'function') syncData(); 
+        } else {
+            alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
+        }
+    } catch (e) {
+        alert("❌ لا يمكن الاتصال بالسيرفر حالياً. جرب لاحقاً.");
+    }
+}
     </script>
 </body>
 </html>
