@@ -231,6 +231,65 @@
     return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
 }
 
+        function getLeagueStandings(leagueCode, baseStats) {
+    const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+    const league = miniLeagues.find(l => l.code === leagueCode);
+    if (!league) return null;
+
+    // 1. استنساخ البيانات وعزلها عن الترتيب العام
+    let leagueMembers = baseStats
+        .filter(s => league.members.includes(s.username))
+        .map(s => ({
+            ...s,
+            mlTotalPts: s.totalPts, // نقاط الدوري التي ستتأثر بالقنص
+            mlGwPts: s.gwPoints[activeGw] || 0 // نقاط الجولة الحالية
+        }));
+
+    // 2. تحليل رصاصات القناص في هذا الدوري فقط
+    const currentLeagueShots = (sniperShots || []).filter(shot => 
+        (shot.league_code === leagueCode || shot.leagueCode === leagueCode)
+    );
+
+    const victimsLastGw = new Set(); // لتسجيل الحصانة
+    const snipersThisGw = new Set(); // لتسجيل من استخدم الميزة هذه الجولة
+
+    currentLeagueShots.forEach(shot => {
+        // تطبيق الخصم من المجموع الكلي داخل الدوري فقط
+        const victim = leagueMembers.find(m => m.username === shot.victim);
+        if (victim) victim.mlTotalPts -= shot.points_deducted;
+
+        // تسجيل الحصانة إذا تم قنصه في الجولة السابقة
+        if (shot.gw === activeGw - 1) victimsLastGw.add(shot.victim);
+
+        // تسجيل من أطلق النار في الجولة الحالية
+        if (shot.gw === activeGw) snipersThisGw.add(shot.sniper);
+    });
+
+    // 3. إعادة ترتيب الأعضاء بناءً على نقاط الدوري (بعد الخصومات)
+    leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
+
+    // 4. تحديد المتصدرين في الجولة الحالية (أعلى نقاط الجولة)
+    let maxGwPts = -1;
+    leagueMembers.forEach(m => {
+        if (m.mlGwPts > maxGwPts) maxGwPts = m.mlGwPts;
+    });
+
+    // جلب أسماء المتصدرين بشرط أن تكون نقاطهم أكبر من صفر
+    const topScorers = leagueMembers.filter(m => m.mlGwPts === maxGwPts && maxGwPts > 0).map(m => m.username);
+    
+    // تحديد قوة الرصاصة (4 للانفراد، 2 للتعادل)
+    const sniperPenalty = topScorers.length > 1 ? 2 : 4; 
+
+    return {
+        members: leagueMembers,
+        topScorers,
+        sniperPenalty,
+        victimsLastGw,
+        snipersThisGw,
+        activeGw
+    };
+}
+
         function formatMatchDate(dateStr) {
             if (!dateStr) return '';
             let str = String(dateStr);
@@ -508,7 +567,8 @@
 
         function renderMiniLeaguesTab() {
     const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
-    const standings = getGlobalStandings();
+    const baseStats = getGlobalStandings(); // جلب النقاط الأساسية لمرة واحدة
+    
     return `
         <div class="space-y-6">
             <div class="glass p-5 rounded-2xl space-y-4">
@@ -525,118 +585,158 @@
                 </div>
             </div>
             <div class="space-y-4">
-                ${myLeagues.map(ml => `
+                ${myLeagues.map(ml => {
+                    const leagueData = getLeagueStandings(ml.code, baseStats);
+                    if (!leagueData) return '';
+                    
+                    const canCurrentUseSniper = leagueData.topScorers.includes(currentUser.username) && !leagueData.snipersThisGw.has(currentUser.username);
+
+                    return `
                     <div class="glass p-5 rounded-2xl space-y-3">
                         <div class="flex justify-between items-center border-b border-white/10 pb-3">
                             <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
                             <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
                         </div>
                         <div class="space-y-2">
-                            ${ml.members.map(mName => standings.find(s => s.username === mName) || { username: mName, totalPts: 0 })
-                                .sort((a, b) => b.totalPts - a.totalPts)
-                                .map((mem, idx) => `
-                                    <div class="py-2.5 px-3 rounded-xl flex justify-between items-center text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
-                                            <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
-                                        </div>
-                                        
-                                        <!-- 👇 التعديل هنا: تم وضع النقاط مع زر القناص في مجموعة واحدة 👇 -->
-                                        <div class="flex items-center gap-3">
-                                            <span class="font-black text-amber-400">${mem.totalPts} نقطة</span>
-                                            
-                                            ${mem.username !== currentUser.username ? `
-                                                <button onclick="fireSniper('${ml.code}', '${mem.username}')" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg shadow-red-500/20">
-                                                    <i class="fa-solid fa-crosshairs"></i> قنص
-                                                </button>
-                                            ` : ''}
-                                        </div>
-                                        <!-- 👆 نهاية التعديل 👆 -->
-                                        
+                            ${leagueData.members.map((mem, idx) => `
+                                <div class="py-2.5 px-3 rounded-xl flex flex-wrap justify-between items-center gap-2 text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
+                                        <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
                                     </div>
-                                `).join('')}
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex flex-col items-end">
+                                            <span class="font-black text-amber-400">${mem.mlTotalPts} كلي</span>
+                                            <span class="text-[10px] text-slate-400">${mem.mlGwPts} جولة</span>
+                                        </div>
+                                        
+                                        ${/* منطق ظهور الزر أو درع الحصانة */''}
+                                        ${mem.username !== currentUser.username ? (
+                                            leagueData.victimsLastGw.has(mem.username) 
+                                                ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center gap-1"><i class="fa-solid fa-shield-virus"></i> محمي</span>`
+                                                : canCurrentUseSniper
+                                                    ? `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.activeGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg shadow-red-500/20">
+                                                        <i class="fa-solid fa-crosshairs"></i> قنص (${leagueData.sniperPenalty}-)
+                                                       </button>`
+                                                    : ''
+                                        ) : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         </div>
     `;
 }
         function renderRulesTab() {
-            return `
-                <div class="glass p-5 md:p-6 rounded-3xl space-y-6">
-                    <div class="border-b border-white/10 pb-4 text-center">
-                        <i class="fa-solid fa-scale-balanced text-4xl text-amber-400 mb-3"></i>
-                        <h2 class="text-xl font-black text-white tracking-wide">دليل القوانين الشامل</h2>
-                        <p class="text-xs text-slate-400 mt-2">افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش</p>
-                    </div>
-                    
-                    <div class="space-y-5">
+    return `
+        <div class="glass p-5 md:p-6 rounded-3xl space-y-6">
+            <div class="border-b border-white/10 pb-4 text-center">
+                <i class="fa-solid fa-scale-balanced text-4xl text-amber-400 mb-3"></i>
+                <h2 class="text-xl font-black text-white tracking-wide">دليل القوانين الشامل</h2>
+                <p class="text-xs text-slate-400 mt-2">افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش</p>
+            </div>
+            
+            <div class="space-y-5">
+                
+                <!-- نظام حساب النقاط الأساسي -->
+                <div class="bg-slate-900/80 p-5 rounded-2xl border-l-4 border-l-blue-500 border border-white/5 shadow-lg">
+                    <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-calculator"></i> 1. نظام حساب النقاط التفصيلي</h3>
+                    <div class="space-y-4">
                         
-                        <!-- نظام حساب النقاط الأساسي -->
-                        <div class="bg-slate-900/80 p-5 rounded-2xl border-l-4 border-l-blue-500 border border-white/5 shadow-lg">
-                            <h3 class="font-bold text-blue-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-calculator"></i> 1. نظام حساب النقاط التفصيلي</h3>
-                            <div class="space-y-4">
-                                
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-amber-400 text-sm mb-1">👑 قمة الكبار (مواجهات التوب 6)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><span class="text-emerald-400">5 نقاط:</span> التوقع المثالي بالرقم (مثال: توقعت 2-1 وانتهت 2-1).</li>
-                                        <li><span class="text-blue-400">3 نقاط:</span> توقع الفائز الصحيح (مثال: توقعت فوز المضيف 1-0 وانتهت بفوزه 3-0).</li>
-                                        <li><span class="text-yellow-400">3 نقاط:</span> التوقع المثالي للتعادل (مثال: 1-1 وانتهت 1-1).</li>
-                                        <li><span class="text-slate-400">نقطتين:</span> توقع التعادل بنتيجة مختلفة (مثال: توقعت 0-0 وانتهت 2-2).</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-blue-400 text-sm mb-1">🌟 الكبار ضد الطموحين (فريق كبير ضد فريق عادي)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><strong class="text-white">في حال فوز الكبير:</strong> توقع مثالي (نقطتين) / توقع صحيح (نقطة واحدة).</li>
-                                        <li><strong class="text-rose-400">في حال المفاجأة (خسارة الكبير):</strong> توقع مثالي (6 نقاط) / توقع صحيح للفائز (4 نقاط).</li>
-                                        <li><strong class="text-slate-200">في حال التعادل:</strong> توقع مثالي (3 نقاط) / توقع عادي (نقطتين).</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
-                                    <h4 class="font-bold text-slate-300 text-sm mb-1">⚽ المباريات المتكافئة (باقي الفرق)</h4>
-                                    <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
-                                        <li><span class="text-emerald-400">3 نقاط:</span> التوقع المثالي.</li>
-                                        <li><span class="text-amber-400">4 نقاط (بونص):</span> إذا كانت المباراة مجنونة (5 أهداف أو أكثر) أو تعادل سلبي (0-0) وأصبت التوقع بدقة!</li>
-                                        <li><span class="text-blue-400">نقطة واحدة:</span> التوقع الصحيح للفائز.</li>
-                                    </ul>
-                                </div>
-
-                            </div>
-                        </div>
-
-                        <!-- بطاقات القوة -->
-                        <div class="bg-gradient-to-br from-fuchsia-900/30 to-indigo-900/30 p-5 rounded-2xl border-l-4 border-l-fuchsia-500 border border-fuchsia-500/20 shadow-lg">
-                            <h3 class="font-bold text-fuchsia-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-bolt"></i> 2. بطاقات القوة المضاعفة</h3>
-                            <ul class="text-xs text-slate-200 space-y-3 leading-relaxed">
-                                <li class="flex gap-3"><span class="w-6 h-6 bg-amber-500 text-black rounded-full flex items-center justify-center font-black shrink-0">C</span> <div><strong class="text-amber-400">الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرة واحدة فقط</span> في كل جولة.</div></li>
-                                <li class="flex gap-3"><span class="w-6 h-6 bg-fuchsia-600 text-white rounded-full flex items-center justify-center font-black shrink-0">x3</span> <div><strong class="text-fuchsia-400">الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرتين فقط في الموسم</span> (مرة في النصف الأول ومرة في النصف الثاني).</div></li>
+                        <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                            <h4 class="font-bold text-amber-400 text-sm mb-1">👑 قمة الكبار (مواجهات التوب 6)</h4>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                <li><span class="text-emerald-400">5 نقاط:</span> التوقع المثالي بالرقم (مثال: توقعت 2-1 وانتهت 2-1).</li>
+                                <li><span class="text-blue-400">3 نقاط:</span> توقع الفائز الصحيح (مثال: توقعت فوز المضيف 1-0 وانتهت بفوزه 3-0).</li>
+                                <li><span class="text-yellow-400">3 نقاط:</span> التوقع المثالي للتعادل (مثال: 1-1 وانتهت 1-1).</li>
+                                <li><span class="text-slate-400">نقطتين:</span> توقع التعادل بنتيجة مختلفة (مثال: توقعت 0-0 وانتهت 2-2).</li>
                             </ul>
                         </div>
-                        
-                        <!-- نظام الإغلاق -->
-                        <div class="bg-amber-900/20 p-5 rounded-2xl border-l-4 border-l-amber-500 border border-amber-500/20 shadow-lg">
-                            <h3 class="font-bold text-amber-400 mb-2 flex items-center gap-2 text-base"><i class="fa-solid fa-lock"></i> 3. نظام الإغلاق الصارم</h3>
-                            <p class="text-xs text-slate-300 leading-relaxed text-justify">حفاظاً على نزاهة التوقعات، يقوم السيرفر <strong class="text-rose-400">بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور أيقونة القفل (<i class="fa-solid fa-lock text-rose-400"></i>)، لا يمكنك إضافة أو تعديل توقعك لتلك المباراة نهائياً.</p>
-                        </div>
 
-                        <!-- الأوسمة -->
-                        <div class="bg-emerald-900/20 p-5 rounded-2xl border-l-4 border-l-emerald-500 border border-emerald-500/20 shadow-lg">
-                            <h3 class="font-bold text-emerald-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-medal"></i> 4. الأوسمة والإنجازات الشخصية</h3>
-                            <ul class="text-xs text-slate-300 space-y-3 leading-relaxed">
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-fire text-amber-400 text-lg w-5 text-center"></i> <div><strong class="text-amber-400">عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.</div></li>
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-crosshairs text-emerald-400 text-lg w-5 text-center"></i> <div><strong class="text-emerald-400">القناص:</strong> وسام دائم تحصل عليه إذا توقعت 3 نتائج مثالية بالرقم في جولة واحدة.</div></li>
-                                <li class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-rose-400 text-lg w-5 text-center"></i> <div><strong class="text-rose-400">قاهر الكبار:</strong> وسام دائم يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) وتحدث بالفعل!</div></li>
+                        <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                            <h4 class="font-bold text-blue-400 text-sm mb-1">🌟 الكبار ضد الطموحين (فريق كبير ضد فريق عادي)</h4>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                <li><strong class="text-white">في حال فوز الكبير:</strong> توقع مثالي (نقطتين) / توقع صحيح (نقطة واحدة).</li>
+                                <li><strong class="text-rose-400">في حال المفاجأة (خسارة الكبير):</strong> توقع مثالي (6 نقاط) / توقع صحيح للفائز (4 نقاط).</li>
+                                <li><strong class="text-slate-200">في حال التعادل:</strong> توقع مثالي (3 نقاط) / توقع عادي (نقطتين).</li>
                             </ul>
                         </div>
+
+                        <div class="bg-slate-800/50 p-3 rounded-xl border border-white/5">
+                            <h4 class="font-bold text-slate-300 text-sm mb-1">⚽ المباريات المتكافئة (باقي الفرق)</h4>
+                            <ul class="text-xs text-slate-300 space-y-1.5 list-disc list-inside">
+                                <li><span class="text-emerald-400">3 نقاط:</span> التوقع المثالي.</li>
+                                <li><span class="text-amber-400">4 نقاط (بونص):</span> إذا كانت المباراة مجنونة (5 أهداف أو أكثر) أو تعادل سلبي (0-0) وأصبت التوقع بدقة!</li>
+                                <li><span class="text-blue-400">نقطة واحدة:</span> التوقع الصحيح للفائز.</li>
+                            </ul>
+                        </div>
+
                     </div>
                 </div>
-            `;
-        }
+
+                <!-- بطاقات القوة -->
+                <div class="bg-gradient-to-br from-fuchsia-900/30 to-indigo-900/30 p-5 rounded-2xl border-l-4 border-l-fuchsia-500 border border-fuchsia-500/20 shadow-lg">
+                    <h3 class="font-bold text-fuchsia-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-bolt"></i> 2. بطاقات القوة المضاعفة</h3>
+                    <ul class="text-xs text-slate-200 space-y-3 leading-relaxed">
+                        <li class="flex gap-3"><span class="w-6 h-6 bg-amber-500 text-black rounded-full flex items-center justify-center font-black shrink-0">C</span> <div><strong class="text-amber-400">الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرة واحدة فقط</span> في كل جولة.</div></li>
+                        <li class="flex gap-3"><span class="w-6 h-6 bg-fuchsia-600 text-white rounded-full flex items-center justify-center font-black shrink-0">x3</span> <div><strong class="text-fuchsia-400">الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class="font-bold text-white bg-black/50 px-1 rounded">مرتين فقط في الموسم</span> (مرة في النصف الأول ومرة في النصف الثاني).</div></li>
+                    </ul>
+                </div>
+                
+                <!-- نظام الإغلاق -->
+                <div class="bg-amber-900/20 p-5 rounded-2xl border-l-4 border-l-amber-500 border border-amber-500/20 shadow-lg">
+                    <h3 class="font-bold text-amber-400 mb-2 flex items-center gap-2 text-base"><i class="fa-solid fa-lock"></i> 3. نظام الإغلاق الصارم</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed text-justify">حفاظاً على نزاهة التوقعات، يقوم السيرفر <strong class="text-rose-400">بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور أيقونة القفل (<i class="fa-solid fa-lock text-rose-400"></i>)، لا يمكنك إضافة أو تعديل توقعك لتلك المباراة نهائياً.</p>
+                </div>
+
+                <!-- الأوسمة -->
+                <div class="bg-emerald-900/20 p-5 rounded-2xl border-l-4 border-l-emerald-500 border border-emerald-500/20 shadow-lg">
+                    <h3 class="font-bold text-emerald-400 mb-3 flex items-center gap-2 text-base"><i class="fa-solid fa-medal"></i> 4. الأوسمة والإنجازات الشخصية</h3>
+                    <ul class="text-xs text-slate-300 space-y-3 leading-relaxed">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-fire text-amber-400 text-lg w-5 text-center"></i> <div><strong class="text-amber-400">عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.</div></li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-crosshairs text-emerald-400 text-lg w-5 text-center"></i> <div><strong class="text-emerald-400">القناص:</strong> وسام دائم تحصل عليه إذا توقعت 3 نتائج مثالية بالرقم في جولة واحدة.</div></li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-rose-400 text-lg w-5 text-center"></i> <div><strong class="text-rose-400">قاهر الكبار:</strong> وسام دائم يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) وتحدث بالفعل!</div></li>
+                    </ul>
+                </div>
+                
+                <!-- ميزة القناص (الدوريات المصغرة) -->
+                <div class="bg-rose-900/20 p-5 rounded-2xl border-l-4 border-l-rose-500 border border-rose-500/20 shadow-lg relative overflow-hidden">
+                    <!-- أيقونة العلامة المائية في الخلفية -->
+                    <i class="fa-solid fa-crosshairs absolute -left-4 -bottom-4 text-7xl text-rose-500/10 rotate-45 pointer-events-none"></i>
+                    
+                    <h3 class="font-bold text-rose-400 mb-4 flex items-center gap-2 text-base relative z-10"><i class="fa-solid fa-crosshairs"></i> 5. ميزة القناص (خاصة بالدوريات المصغرة)</h3>
+                    <ul class="text-xs text-slate-200 space-y-3.5 leading-relaxed relative z-10">
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-trophy text-amber-400 mt-0.5 w-4 text-center"></i>
+                            <div><strong class="text-amber-400">من يحصل عليها؟</strong> المتصدر الذي يحقق (أعلى نقاط في الجولة) ضمن دوريه المصغر، يحصل على رصاصة قناص تتيح له خصم <span class="font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded">4 نقاط</span> من أي منافس يختاره.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-handshake-angle text-blue-400 mt-0.5 w-4 text-center"></i>
+                            <div><strong class="text-blue-400">حالة التعادل:</strong> إذا تعادل عدة أشخاص في المركز الأول، يحصل الجميع على الميزة، لكن قوة الرصاصة تصبح <span class="font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded">(خصم نقطتين)</span> لكل منهم.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-shield-virus text-emerald-400 mt-0.5 w-4 text-center"></i>
+                            <div><strong class="text-emerald-400">الدرع (الحصانة):</strong> المشترك الذي يتعرض للقنص، يحصل على درع حماية يمنع قنصه في الجولة التي تليها مباشرة.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-arrows-down-to-people text-fuchsia-400 mt-0.5 w-4 text-center"></i>
+                            <div><strong class="text-fuchsia-400">عزل النقاط:</strong> رصاصة القناص تؤثر <strong>فقط</strong> على نقاطك وترتيبك داخل الدوري المصغر المعني، ولا تؤثر أبداً على الترتيب العام.</div>
+                        </li>
+                        <li class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-hourglass-half text-slate-400 mt-0.5 w-4 text-center"></i>
+                            <div><strong class="text-slate-300">الصلاحية:</strong> الميزة تُمنح بناءً على نتائج الجولة الحالية، وتستخدم لمرة واحدة فقط قبل بداية الجولة القادمة.</div>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    `;
+}
 
         function renderAdminTab() {
             const sortedMatches = [...matches].sort((a, b) => Number(a.gw) - Number(b.gw));
@@ -1087,9 +1187,8 @@
             }
             render();
         };
-        async function fireSniper(leagueCode, victimName) {
-    // رسالة تأكيد آمنة جداً لا تعبث بالتصميم
-    const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم 3 نقاط منه؟\n\nتذكر: يمكنك استخدام هذه الميزة مرة واحدة فقط!`);
+        async function fireSniper(leagueCode, victimName, penaltyPoints, gw) {
+    const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم ${penaltyPoints} نقاط منه؟\n\nتذكر: الميزة تستخدم مرة واحدة فقط في الجولة!`);
     
     if (!confirmShot) return;
 
@@ -1099,17 +1198,16 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 leagueCode: leagueCode,
-                gw: 1, // الجولة الحالية
+                gw: gw,
                 sniper: currentUser.username,
                 victim: victimName,
-                pointsDeducted: 3 // سيتم خصم 3 نقاط من الخصم
+                pointsDeducted: penaltyPoints
             })
         });
         
         const json = await res.json();
         if (json.success) {
             alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-            // تحديث البيانات فوراً لترى النقاط تنقص!
             if(typeof syncData === 'function') syncData(); 
         } else {
             alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
