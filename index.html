@@ -76,20 +76,36 @@
         // ==========================================
 
         const TEAMS = [
-            { code: 'ARS', name: 'آرسنال' }, { code: 'MCI', name: 'مانشستر سيتي' },
-            { code: 'LIV', name: 'ليفربول' }, { code: 'MUN', name: 'مانشستر يونايتد' },
-            { code: 'CHE', name: 'تشيلسي' }, { code: 'TOT', name: 'توتنهام' },
-            { code: 'NEW', name: 'نيوكاسل يونايتد' }, { code: 'AVL', name: 'أستون فيلا' },
-            { code: 'BHA', name: 'برايتون' }, { code: 'COV', name: 'كوفنتري سيتي' },
-            { code: 'HUL', name: 'هال سيتي' }, { code: 'NFO', name: 'نوتينغهام فورست' },
-            { code: 'LEE', name: 'ليدز يونايتد' }, { code: 'IPS', name: 'إيبسويتش تاون' },
-            { code: 'SUN', name: 'سندرلاند' }, { code: 'CRY', name: 'كريستال بالاس' },
-            { code: 'BRE', name: 'برينتفورد' }, { code: 'FUL', name: 'فولهام' },
-            { code: 'BOU', name: 'بورنموث' }, { code: 'EVE', name: 'إيفرتون' }
-        ];
+    { code: 'ARS', name: 'آرسنال', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9825.png' },
+    { code: 'MCI', name: 'مانشستر سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8456.png' },
+    { code: 'LIV', name: 'ليفربول', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8650.png' },
+    { code: 'MUN', name: 'مانشستر يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8654.png' },
+    { code: 'CHE', name: 'تشيلسي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8455.png' },
+    { code: 'TOT', name: 'توتنهام', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8586.png' },
+    { code: 'NEW', name: 'نيوكاسل يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8611.png' },
+    { code: 'AVL', name: 'أستون فيلا', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8622.png' },
+    { code: 'BHA', name: 'برايتون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8659.png' },
+    { code: 'COV', name: 'كوفنتري سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8746.png' },
+    { code: 'HUL', name: 'هال سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8667.png' },
+    { code: 'NFO', name: 'نوتينغهام فورست', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8653.png' },
+    { code: 'LEE', name: 'ليدز يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8463.png' },
+    { code: 'IPS', name: 'إيبسويتش تاون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8678.png' },
+    { code: 'SUN', name: 'سندرلاند', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8472.png' },
+    { code: 'CRY', name: 'كريستال بالاس', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9826.png' },
+    { code: 'BRE', name: 'برينتفورد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8686.png' },
+    { code: 'FUL', name: 'فولهام', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8701.png' },
+    { code: 'BOU', name: 'بورنموث', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8671.png' },
+    { code: 'EVE', name: 'إيفرتون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
+];
         const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
 
         const getTeamName = (code) => TEAMS.find(t => t.code === code)?.name || code;
+        
+        function getTeamLogo(code) {
+    const team = TEAMS.find(t => t.code === code);
+    // إذا وجد الشعار يعيده، وإلا يعطي درعاً رمادياً شفافاً احتياطياً
+    return team && team.logo ? team.logo : 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png';
+}
         
         const getMatchType = (h, a) => {
             const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
@@ -475,61 +491,73 @@
         }
 
         function renderMatchesTab() {
-            const userPreds = predictions[currentUser.username] || {};
-            return `
-                <div class="space-y-6">
-                    <div class="glass p-4 rounded-2xl">
-                        <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-blue-400"></i> جدول مباريات الدوري الرسمي</h2>
-                    </div>
-                    ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
-                        let gwMatches = matches.filter(m => Number(m.gw) === gw);
-                        if (gwMatches.length === 0) return '';
-                        
-                        // ترتيب المباريات زمنياً (الأقرب فالأبعد)
-                        gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-                        
-                        return `
-                            <div class="glass p-4 rounded-2xl space-y-3">
-                                <div class="border-b border-white/10 pb-2 flex justify-between items-center">
-                                    <h3 class="font-black text-sm text-blue-400">الجولة ${gw}</h3>
-                                    <span class="text-xs text-slate-400">${gwMatches.length} مواجهات</span>
-                                </div>
-                                <div class="space-y-2">
-                                    ${gwMatches.map(match => {
-                                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                                        const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
-                                        const isLocked = isMatchLocked(match);
-                                        const displayDate = formatMatchDate(match.date);
-                                        
-                                        let bMini = '';
-                                        if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 left-2 bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                        else if(pred.isCaptain) bMini = `<div class="absolute top-2 left-2 bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
+    const userPreds = predictions[currentUser.username] || {};
+    return `
+        <div class="space-y-6">
+            <div class="glass p-4 rounded-2xl">
+                <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i class="fa-solid fa-calendar-days text-blue-400"></i> جدول مباريات الدوري الرسمي</h2>
+            </div>
+            ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
+                let gwMatches = matches.filter(m => Number(m.gw) === gw);
+                if (gwMatches.length === 0) return '';
+                
+                // ترتيب المباريات زمنياً (الأقرب فالأبعد)
+                gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                
+                return `
+                    <div class="glass p-4 rounded-2xl space-y-3">
+                        <div class="border-b border-white/10 pb-2 flex justify-between items-center">
+                            <h3 class="font-black text-sm text-blue-400">الجولة ${gw}</h3>
+                            <span class="text-xs text-slate-400">${gwMatches.length} مواجهات</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${gwMatches.map(match => {
+                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
+                                const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
+                                const isLocked = isMatchLocked(match);
+                                const displayDate = formatMatchDate(match.date);
+                                
+                                let bMini = '';
+                                if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 left-2 bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
+                                else if(pred.isCaptain) bMini = `<div class="absolute top-2 left-2 bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
 
-                                        return `
-                                            <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
-                                                ${bMini}
-                                                <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
-                                                    <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}
-                                                </div>
-                                                <div class="flex items-center justify-between">
-                                                    <div class="flex-1 text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
-                                                    <div class="px-2">
-                                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : 'توقع الآن')}
-                                                        </button>
-                                                    </div>
-                                                    <div class="flex-1 text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
-                                                </div>
+                                return `
+                                    <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
+                                        ${bMini}
+                                        <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
+                                            <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}
+                                        </div>
+                                        <div class="flex items-center justify-between mt-1">
+                                            
+                                            <!-- 👇 الفريق المضيف مع الشعار 👇 -->
+                                            <div class="flex-1 flex justify-start items-center gap-2">
+                                                <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                                <div class="text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
                                             </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            `;
-        }
+                                            
+                                            <div class="px-2 shrink-0">
+                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                    ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : 'توقع الآن')}
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- 👇 الفريق الضيف مع الشعار 👇 -->
+                                            <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
+                                                <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                                <div class="text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
 
         function renderStandingsTab() {
             const standings = getGlobalStandings();
@@ -743,26 +771,15 @@
 }
 
         function renderAdminTab() {
-    // 👇 التعديل الجذري: ترتيب آمن ومضمون 100% 👇
     const sortedMatches = [...matches].sort((a, b) => {
-        // 1. الترتيب حسب الجولة أولاً
-        if (Number(a.gw) !== Number(b.gw)) {
-            return Number(a.gw) - Number(b.gw);
-        }
-        
-        // 2. إذا كانت نفس الجولة، نرتب حسب التاريخ (بالمقارنة النصية لتجنب أخطاء المتصفحات)
+        if (Number(a.gw) !== Number(b.gw)) return Number(a.gw) - Number(b.gw);
         const dateA = String(a.date || "");
         const dateB = String(b.date || "");
-        if (dateA !== dateB) {
-            return dateA.localeCompare(dateB);
-        }
-        
-        // 3. إذا كان نفس التاريخ، نرتب حسب الوقت بالساعات والدقائق
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
         const timeA = String(a.time || "");
         const timeB = String(b.time || "");
         return timeA.localeCompare(timeB);
     });
-    // 👆 نهاية التعديل 👆
 
     return `
         <div class="space-y-6">
@@ -806,13 +823,25 @@
                                 <button onclick="deleteMatch('${m.id}')" class="p-1.5 text-rose-400 hover:bg-rose-950/40 rounded-lg text-xs" title="حذف المباراة"><i class="fa-solid fa-trash"></i></button>
                             </div>
                             <div class="flex-1 flex justify-between items-center gap-2">
-                                <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate">${getTeamName(m.home)}</div>
+                                
+                                <!-- 👇 تم إضافة شعار الفريق المضيف هنا 👇 -->
+                                <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate flex justify-start items-center gap-2">
+                                    <img src="${getTeamLogo(m.home)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                    ${getTeamName(m.home)}
+                                </div>
+                                
                                 <div class="flex items-center gap-1.5">
                                     <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
                                     <span class="text-slate-500">:</span>
                                     <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
                                 </div>
-                                <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate">${getTeamName(m.away)}</div>
+                                
+                                <!-- 👇 تم إضافة شعار الفريق الضيف هنا 👇 -->
+                                <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate flex justify-end items-center gap-2 flex-row-reverse">
+                                    <img src="${getTeamLogo(m.away)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                    ${getTeamName(m.away)}
+                                </div>
+
                             </div>
                             <div class="flex items-center gap-1.5 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-start">
                                 <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
