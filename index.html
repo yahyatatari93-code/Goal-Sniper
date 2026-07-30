@@ -79,22 +79,22 @@
     { code: 'ARS', name: 'آرسنال', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9825.png' },
     { code: 'MCI', name: 'مانشستر سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8456.png' },
     { code: 'LIV', name: 'ليفربول', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8650.png' },
-    { code: 'MUN', name: 'مانشستر يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8654.png' },
+    { code: 'MUN', name: 'مانشستر يونايتد', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/360.png' },
     { code: 'CHE', name: 'تشيلسي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8455.png' },
     { code: 'TOT', name: 'توتنهام', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8586.png' },
-    { code: 'NEW', name: 'نيوكاسل يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8611.png' },
-    { code: 'AVL', name: 'أستون فيلا', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8622.png' },
+    { code: 'NEW', name: 'نيوكاسل يونايتد', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/361.png' },
+    { code: 'AVL', name: 'أستون فيلا', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/362.png' },
     { code: 'BHA', name: 'برايتون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8659.png' },
-    { code: 'COV', name: 'كوفنتري سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8746.png' },
+    { code: 'COV', name: 'كوفنتري سيتي', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/371.png' },
     { code: 'HUL', name: 'هال سيتي', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8667.png' },
-    { code: 'NFO', name: 'نوتينغهام فورست', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8653.png' },
+    { code: 'NFO', name: 'نوتينغهام فورست', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/393.png' },
     { code: 'LEE', name: 'ليدز يونايتد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8463.png' },
-    { code: 'IPS', name: 'إيبسويتش تاون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8678.png' },
+    { code: 'IPS', name: 'إيبسويتش تاون', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/379.png' },
     { code: 'SUN', name: 'سندرلاند', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8472.png' },
     { code: 'CRY', name: 'كريستال بالاس', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9826.png' },
-    { code: 'BRE', name: 'برينتفورد', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8686.png' },
-    { code: 'FUL', name: 'فولهام', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8701.png' },
-    { code: 'BOU', name: 'بورنموث', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8671.png' },
+    { code: 'BRE', name: 'برينتفورد', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/337.png' },
+    { code: 'FUL', name: 'فولهام', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/370.png' },
+    { code: 'BOU', name: 'بورنموث', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/349.png' },
     { code: 'EVE', name: 'إيفرتون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
         const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
@@ -371,125 +371,137 @@
         }
 
         function renderHomeTab() {
-            const activeGw = getCurrentActiveGw();
-            const prevGw = activeGw > 1 ? activeGw - 1 : null;
-            let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
-            
-            // ترتيب المباريات زمنياً (الأقرب فالأبعد)
-            gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-            
-            const userPreds = predictions[currentUser.username] || {};
-            
-            const standings = getGlobalStandings();
-            const myStats = standings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {} };
-            const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
-            const motw = prevGw ? standings.find(u => u.badges.motw) : null;
+    const activeGw = getCurrentActiveGw();
+    const prevGw = activeGw > 1 ? activeGw - 1 : null;
+    let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
+    
+    // ترتيب المباريات زمنياً (الأقرب فالأبعد)
+    gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+    
+    const userPreds = predictions[currentUser.username] || {};
+    
+    const standings = getGlobalStandings();
+    const myStats = standings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {} };
+    const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
+    const motw = prevGw ? standings.find(u => u.badges.motw) : null;
 
-            return `
-                <div class="space-y-6">
-                    <!-- رأس الصفحة (الشعار واسم التطبيق) -->
-                    <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
-                        <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
-                        <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
-                        <span class="text-xs text-slate-400 mt-1">توقع. نافس. سيطر.</span>
-                    </div>
+    return `
+        <div class="space-y-6">
+            <!-- رأس الصفحة (الشعار واسم التطبيق) -->
+            <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
+                <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
+                <span class="text-xs text-slate-400 mt-1">توقع. نافس. سيطر.</span>
+            </div>
 
-                    ${motw ? `
-                        <div class="glass p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.2)]">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-500/40">👑</div>
-                                <div>
-                                    <h3 class="text-xs font-bold text-amber-500">عراف الأسبوع (الجولة ${prevGw})</h3>
-                                    <span class="text-base font-black text-white">${motw.username}</span>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <span class="block text-2xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
-                                <span class="text-[10px] text-slate-300">نقطة</span>
-                            </div>
-                        </div>
-                    ` : ''}
-
-                    <!-- البطاقة الشخصية (تم تصغيرها وتنسيقها) -->
-                    <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">بطاقة القناص</span>
-                                <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
-                                    ${currentUser.username}
-                                    ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                    ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                    ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
-                                </h2>
-                            </div>
-                            <div class="text-left">
-                                <span class="text-[10px] text-slate-400 block">الترتيب العام</span>
-                                <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-center">
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">النقاط</span>
-                                <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">الدقة</span>
-                                <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
-                            </div>
-                            <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                                <span class="text-[9px] text-slate-400 block mb-0.5">المفضل</span>
-                                <span class="text-sm font-black text-blue-300 truncate block">${myStats.favTeam}</span>
-                            </div>
+            ${motw ? `
+                <div class="glass p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-500/40">👑</div>
+                        <div>
+                            <h3 class="text-xs font-bold text-amber-500">عراف الأسبوع (الجولة ${prevGw})</h3>
+                            <span class="text-base font-black text-white">${motw.username}</span>
                         </div>
                     </div>
-
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
-                                <i class="fa-solid fa-fire text-amber-400"></i> مباريات الجولة الحالية (${activeGw})
-                            </h3>
-                            <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold">
-                                عرض كل الجولات <i class="fa-solid fa-arrow-left mr-1"></i>
-                            </button>
-                        </div>
-                        <div class="space-y-3">
-                            ${gwMatches.map(match => {
-                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                                const matchType = getMatchType(match.home, match.away);
-                                const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
-                                const isLocked = isMatchLocked(match);
-                                const displayDate = formatMatchDate(match.date);
-                                
-                                let badgeHtml = '';
-                                if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
-                                else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
-
-                                return `
-                                    <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative ${isLocked ? 'opacity-80' : ''}">
-                                        ${badgeHtml}
-                                        <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
-                                            <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                            <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
-                                        </div>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex-1 text-left font-bold text-sm md:text-base text-slate-200">${getTeamName(match.home)}</div>
-                                            <div class="px-3">
-                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
-                                                    ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> انتهى الوقت' : 'أضف توقعك')}
-                                                </button>
-                                            </div>
-                                            <div class="flex-1 text-right font-bold text-sm md:text-base text-slate-200">${getTeamName(match.away)}</div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                            ${gwMatches.length === 0 ? '<div class="text-center text-slate-400 text-sm py-8">لا توجد مباريات متاحة الآن.</div>' : ''}
-                        </div>
+                    <div class="text-center">
+                        <span class="block text-2xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
+                        <span class="text-[10px] text-slate-300">نقطة</span>
                     </div>
                 </div>
-            `;
-        }
+            ` : ''}
 
+            <!-- البطاقة الشخصية (تم تصغيرها وتنسيقها) -->
+            <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">بطاقة القناص</span>
+                        <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
+                            ${currentUser.username}
+                            ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>' : ''}
+                            ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
+                            ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
+                        </h2>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-[10px] text-slate-400 block">الترتيب العام</span>
+                        <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-slate-400 block mb-0.5">النقاط</span>
+                        <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
+                        <span class="text-[9px] text-slate-400 block mb-0.5">الدقة</span>
+                        <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
+                        <span class="text-[9px] text-slate-400 block mb-0.5">المفضل</span>
+                        <!-- تم إزالة Truncate من الفريق المفضل ليظهر كاملاً -->
+                        <span class="text-[11px] md:text-sm font-black text-blue-300 block whitespace-normal leading-tight">${myStats.favTeam}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-amber-400"></i> مباريات الجولة الحالية (${activeGw})
+                    </h3>
+                    <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold">
+                        عرض كل الجولات <i class="fa-solid fa-arrow-left mr-1"></i>
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    ${gwMatches.map(match => {
+                        const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
+                        const matchType = getMatchType(match.home, match.away);
+                        const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
+                        const isLocked = isMatchLocked(match);
+                        const displayDate = formatMatchDate(match.date);
+                        
+                        let badgeHtml = '';
+                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
+                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
+
+                        return `
+                            <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative ${isLocked ? 'opacity-80' : ''}">
+                                ${badgeHtml}
+                                <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
+                                    <span class="font-bold ${matchType.color}">${matchType.label}</span>
+                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
+                                </div>
+                                <div class="flex items-center justify-between mt-1">
+                                    
+                                    <!-- 👇 الفريق المضيف مع الشعار وإزالة القص 👇 -->
+                                    <div class="flex-1 flex justify-start items-center gap-2">
+                                        <img src="${getTeamLogo(match.home)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                        <div class="text-left font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                    </div>
+                                    
+                                    <div class="px-2 shrink-0">
+                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
+                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> انتهى الوقت' : 'أضف توقعك')}
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- 👇 الفريق الضيف مع الشعار وإزالة القص 👇 -->
+                                    <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
+                                        <img src="${getTeamLogo(match.away)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                        <div class="text-right font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                    ${gwMatches.length === 0 ? '<div class="text-center text-slate-400 text-sm py-8">لا توجد مباريات متاحة الآن.</div>' : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
         function renderMatchesTab() {
     const userPreds = predictions[currentUser.username] || {};
     return `
@@ -501,7 +513,6 @@
                 let gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) return '';
                 
-                // ترتيب المباريات زمنياً (الأقرب فالأبعد)
                 gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
                 
                 return `
@@ -529,10 +540,10 @@
                                         </div>
                                         <div class="flex items-center justify-between mt-1">
                                             
-                                            <!-- 👇 الفريق المضيف مع الشعار 👇 -->
+                                            <!-- 👇 الفريق المضيف: إزالة القص والسماح بتعدد الأسطر 👇 -->
                                             <div class="flex-1 flex justify-start items-center gap-2">
-                                                <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md" loading="lazy" alt="logo" />
-                                                <div class="text-left font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.home)}</div>
+                                                <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                <div class="text-left font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
                                             </div>
                                             
                                             <div class="px-2 shrink-0">
@@ -541,10 +552,10 @@
                                                 </button>
                                             </div>
                                             
-                                            <!-- 👇 الفريق الضيف مع الشعار 👇 -->
+                                            <!-- 👇 الفريق الضيف: إزالة القص والسماح بتعدد الأسطر 👇 -->
                                             <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
-                                                <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md" loading="lazy" alt="logo" />
-                                                <div class="text-right font-bold text-xs md:text-sm text-slate-200 truncate">${getTeamName(match.away)}</div>
+                                                <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                <div class="text-right font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
                                             </div>
 
                                         </div>
