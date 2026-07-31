@@ -133,7 +133,21 @@ const translations = {
         navHome: "الرئيسية",
         navMatches: "المباريات",
         navLeagues: "الدوريات",
-        navAdmin: "الإدارة"
+        navAdmin: "الإدارة",
+        standings: "الترتيب العام",
+        leagues: "الدوريات",
+        rank: "المركز",
+        player: "اللاعب",
+        totalPoints: "النقاط",
+        hitRate: "نسبة النجاح",
+        createLeague: "إنشاء دوري",
+        joinLeague: "انضمام لدوري",
+        leagueName: "اسم الدوري",
+        leagueCode: "كود الدوري",
+        myLeagues: "دورياتي",
+        publicLeagues: "الدوريات العامة",
+        members: "الأعضاء",
+        you: "أنت"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -164,7 +178,21 @@ const translations = {
         navHome: "Home",
         navMatches: "Matches",
         navLeagues: "Leagues",
-        navAdmin: "Admin"
+        navAdmin: "Admin",
+        standings: "Global Standings",
+        leagues: "Leagues",
+        rank: "Rank",
+        player: "Player",
+        totalPoints: "Points",
+        hitRate: "Hit Rate",
+        createLeague: "Create League",
+        joinLeague: "Join League",
+        leagueName: "League Name",
+        leagueCode: "League Code",
+        myLeagues: "My Leagues",
+        publicLeagues: "Public Leagues",
+        members: "Members",
+        you: "You"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -195,7 +223,21 @@ const translations = {
         navHome: "Ana Sayfa",
         navMatches: "Maçlar",
         navLeagues: "Ligler",
-        navAdmin: "Yönetim"
+        navAdmin: "Yönetim",
+        standings: "Genel Sıralama",
+        leagues: "Ligler",
+        rank: "Sıra",
+        player: "Oyuncu",
+        totalPoints: "Puan",
+        hitRate: "İsabet",
+        createLeague: "Lig Oluştur",
+        joinLeague: "Lige Katıl",
+        leagueName: "Lig Adı",
+        leagueCode: "Lig Kodu",
+        myLeagues: "Liglerim",
+        publicLeagues: "Genel Ligler",
+        members: "Üyeler",
+        you: "Sen"
     }
 };
         
@@ -268,7 +310,47 @@ function changeLanguage(langCode) {
         showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
     }
 }
+        
+function updateBottomNavLanguage() {
+    try {
+        const tabs = {
+            'home': t('navHome'),
+            'matches': t('navMatches'),
+            'leagues': t('navLeagues'), // أو standings حسب اسم التبويب عندك
+            'admin': t('navAdmin')
+        };
+        
+        for (let [tabId, text] of Object.entries(tabs)) {
+            const btn = document.querySelector(`[onclick*="switchTab('${tabId}')"]`);
+            if (btn) {
+                // البحث عن النص داخل الزر بأمان دون المساس بالأيقونة (<i>)
+                const span = btn.querySelector('span') || btn.querySelector('div');
+                if (span) {
+                    span.textContent = text;
+                } else {
+                    // إذا لم يكن هناك span، نبحث عن النص العائم ونغيره فقط
+                    btn.childNodes.forEach(node => {
+                        if (node.nodeType === 3 && node.nodeValue.trim().length > 0) {
+                            node.nodeValue = " " + text;
+                        }
+                    });
+                }
+            }
+        }
+    } catch (e) { console.error("Safe Nav translation error:", e); }
+}
 
+// لضمان عمل الدالة فوراً عند تغيير اللغة:
+// ابحث عن دالة changeLanguage واستدعِ هذه الدالة بداخلها لتصبح هكذا:
+function changeLanguage(langCode) {
+    localStorage.setItem('appLang', langCode);
+    location.reload(); 
+}
+
+// وعند تحميل الصفحة شغلها:
+window.addEventListener('DOMContentLoaded', updateBottomNavLanguage);
+setTimeout(updateBottomNavLanguage, 500);
+        
         const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
             const ph = Number(predH), pa = Number(predA);
@@ -770,59 +852,76 @@ function changeGw(gw) {
 }
 
         function renderStandingsTab() {
-            const standings = getGlobalStandings();
-            return `
-                <div class="glass p-4 md:p-6 rounded-3xl space-y-4">
-                    <div class="flex justify-between items-center border-b border-white/10 pb-3">
-                        <div>
-                            <h2 class="text-lg font-bold flex items-center gap-2"><i class="fa-solid fa-trophy text-amber-400"></i> لوحة الشرف</h2>
-                        </div>
-                        <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">الإجمالي: ${standings.length}</span>
-                    </div>
-                    <div class="space-y-2">
-                        ${standings.map((user, idx) => {
-                            const isMe = user.username === currentUser.username;
-                            return `
-                                <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
-                                    <div class="flex items-center gap-3">
-                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">#${idx + 1}</span>
-                                        <div>
-                                            <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                                                ${user.username} ${isMe ? '(أنت)' : ''}
-                                                ${user.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                                ${user.badges.sniper ? '<span title="القناص" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                                ${user.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
-                                            </h4>
-                                        </div>
-                                    </div>
-                                    <div class="text-left">
-                                        <span class="text-base font-black text-amber-400">${user.totalPts}</span>
-                                        <span class="text-[10px] text-slate-400 block">نقطة</span>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }
+    const standings = getGlobalStandings();
+    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+    const isAr = direction === 'rtl';
 
-        function renderMiniLeaguesTab() {
+    return `
+        <div class="glass p-4 md:p-6 rounded-3xl space-y-4" dir="${direction}">
+            <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                <div>
+                    <h2 class="text-lg font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> ${typeof t === 'function' ? t('standings') : 'لوحة الشرف'}
+                    </h2>
+                </div>
+                <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">
+                    ${typeof t === 'function' ? t('totalPoints').split(' ')[0] : 'الإجمالي'}: ${standings.length}
+                </span>
+            </div>
+            <div class="space-y-2">
+                ${standings.map((user, idx) => {
+                    const isMe = user.username === currentUser.username;
+                    return `
+                        <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">
+                                    #${idx + 1}
+                                </span>
+                                <div>
+                                    <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
+                                        ${user.username} ${isMe ? `(${typeof t === 'function' ? t('you') || 'أنت' : 'أنت'})` : ''}
+                                        ${user.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>` : ''}
+                                        ${user.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+                                        ${user.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
+                                    </h4>
+                                </div>
+                            </div>
+                            <div class="${isAr ? 'text-left' : 'text-right'}">
+                                <span class="text-base font-black text-amber-400">${user.totalPts}</span>
+                                <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderMiniLeaguesTab() {
     const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
-    const baseStats = getGlobalStandings(); // جلب النقاط الأساسية لمرة واحدة
+    const baseStats = getGlobalStandings();
+    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+    const isAr = direction === 'rtl';
     
     return `
-        <div class="space-y-6">
+        <div class="space-y-6" dir="${direction}">
             <div class="glass p-5 rounded-2xl space-y-4">
-                <h2 class="text-lg font-bold text-blue-400"><i class="fa-solid fa-users-rectangle"></i> الدوريات المصغرة الخاصة</h2>
+                <h2 class="text-lg font-bold text-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-users-rectangle"></i> ${typeof t === 'function' ? t('myLeagues') : 'الدوريات المصغرة الخاصة'}
+                </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                        <input type="text" id="new-ml-name" placeholder="اسم الدوري (مثال: أصدقاء الحي)" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
-                        <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">إنشاء وتوليد الكود</button>
+                        <input type="text" id="new-ml-name" placeholder="${typeof t === 'function' ? t('leagueName') : 'اسم الدوري'}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-blue-500" />
+                        <button onclick="createMiniLeague()" class="w-full py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-blue-500 shadow-lg shadow-blue-500/20">
+                            ${typeof t === 'function' ? t('createLeague') : 'إنشاء وتوليد الكود'}
+                        </button>
                     </div>
                     <div class="bg-slate-900/60 p-4 rounded-2xl border border-white/5 space-y-3">
-                        <input type="text" id="join-ml-code" placeholder="أدخل كود الدوري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
-                        <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">الانضمام الآن</button>
+                        <input type="text" id="join-ml-code" placeholder="${typeof t === 'function' ? t('leagueCode') : 'أدخل كود الدوري'}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white uppercase outline-none focus:border-blue-500" />
+                        <button onclick="joinMiniLeague()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl transition-all hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
+                            ${typeof t === 'function' ? t('joinLeague') : 'الانضمام الآن'}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -837,7 +936,9 @@ function changeGw(gw) {
                     <div class="glass p-5 rounded-2xl space-y-3">
                         <div class="flex justify-between items-center border-b border-white/10 pb-3">
                             <h4 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-shield text-blue-500"></i> ${ml.name}</h4>
-                            <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">كود: ${ml.code}</div>
+                            <div class="bg-blue-600/20 px-3 py-1.5 rounded-xl border border-blue-500/30 text-xs font-mono font-bold text-blue-300">
+                                ${typeof t === 'function' ? t('leagueCode').split(' ')[0] : 'كود'}: ${ml.code}
+                            </div>
                         </div>
                         <div class="space-y-2">
                             ${leagueData.members.map((mem, idx) => `
@@ -848,18 +949,17 @@ function changeGw(gw) {
                                     </div>
                                     
                                     <div class="flex items-center gap-3">
-                                        <div class="flex flex-col items-end">
-                                            <span class="font-black text-amber-400">${mem.mlTotalPts} كلي</span>
-                                            <span class="text-[10px] text-slate-400">${mem.mlGwPts} جولة</span>
+                                        <div class="flex flex-col ${isAr ? 'items-start' : 'items-end'}">
+                                            <span class="font-black text-amber-400">${mem.mlTotalPts}</span>
+                                            <span class="text-[10px] text-slate-400">${mem.mlGwPts} ${typeof t === 'function' ? t('gw') : 'جولة'}</span>
                                         </div>
                                         
-                                        ${/* منطق ظهور الزر أو درع الحصانة */''}
                                         ${mem.username !== currentUser.username ? (
                                             leagueData.victimsLastGw.has(mem.username) 
-                                                ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center gap-1"><i class="fa-solid fa-shield-virus"></i> محمي</span>`
+                                                ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`
                                                 : canCurrentUseSniper
                                                     ? `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.activeGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg shadow-red-500/20">
-                                                        <i class="fa-solid fa-crosshairs"></i> قنص (${leagueData.sniperPenalty}-)
+                                                        <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
                                                        </button>`
                                                     : ''
                                         ) : ''}
