@@ -149,8 +149,7 @@ const translations = {
         members: "الأعضاء",
         you: "أنت",
         navStandings: "الترتيب",
-        navRules: "القوانين",
-        loadMore: "عرض المزيد"
+        navRules: "القوانين"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -197,8 +196,7 @@ const translations = {
         members: "Members",
         you: "You",
         navStandings: "Standings",
-        navRules: "Rules",
-        loadMore: "Load More"
+        navRules: "Rules"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -245,8 +243,7 @@ const translations = {
         members: "Üyeler",
         you: "Sen",
         navStandings: "Sıralama",
-        navRules: "Kurallar",
-        loadMore: "Daha Fazla Göster"
+        navRules: "Kurallar"
     }
 };
         
@@ -828,19 +825,10 @@ function changeGw(gw) {
     }
 }
 
-        // 1. متغير لتتبع عدد اللاعبين المعروضين حالياً
-let currentStandingsLimit = 20;
-
-// 2. دالة الترتيب الرئيسية المحدثة
-function renderStandingsTab() {
-    currentStandingsLimit = 20; // تصفير العداد لـ 20 عند فتح الصفحة كل مرة
+        function renderStandingsTab() {
     const standings = getGlobalStandings();
     const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
     const isAr = direction === 'rtl';
-
-    // نأخذ أول 20 لاعب فقط
-    const visibleStandings = standings.slice(0, currentStandingsLimit);
-    const hasMore = standings.length > currentStandingsLimit;
 
     return `
         <div class="glass p-4 md:p-6 rounded-3xl space-y-4" dir="${direction}">
@@ -854,77 +842,34 @@ function renderStandingsTab() {
                     ${typeof t === 'function' ? t('totalPoints').split(' ')[0] : 'الإجمالي'}: ${standings.length}
                 </span>
             </div>
-            
-            <!-- حاوية قائمة اللاعبين (وضعنا لها ID لكي نضيف اللاعبين بداخلها لاحقاً) -->
-            <div class="space-y-2" id="standings-list-container">
-                ${visibleStandings.map((user, idx) => generateStandingCard(user, idx, isAr)).join('')}
-            </div>
-            
-            <!-- زر عرض المزيد (يظهر فقط إذا كان هناك لاعبين أكثر) -->
-            ${hasMore ? `
-            <div class="text-center pt-3" id="load-more-btn-container">
-                <button onclick="loadMoreStandings()" class="px-6 py-2.5 bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all border border-white/10 shadow-lg flex items-center justify-center gap-2 mx-auto">
-                    <span>${typeof t === 'function' ? t('loadMore') || 'عرض المزيد' : 'عرض المزيد'}</span>
-                    <i class="fa-solid fa-angle-down"></i>
-                </button>
-            </div>
-            ` : ''}
-        </div>
-    `;
-}
-
-// 3. دالة مساعدة لرسم بطاقة اللاعب (لتنظيف الكود وتسهيل إعادة استخدامه)
-function generateStandingCard(user, idx, isAr) {
-    const isMe = user.username === currentUser.username;
-    return `
-        <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
-            <div class="flex items-center gap-3">
-                <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">
-                    #${idx + 1}
-                </span>
-                <div>
-                    <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                        ${user.username} ${isMe ? `(${typeof t === 'function' ? t('you') || 'أنت' : 'أنت'})` : ''}
-                        ${user.badges && user.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>` : ''}
-                        ${user.badges && user.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
-                        ${user.badges && user.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
-                    </h4>
-                </div>
-            </div>
-            <div class="${isAr ? 'text-left' : 'text-right'}">
-                <span class="text-base font-black text-amber-400">${user.totalPts}</span>
-                <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
+            <div class="space-y-2">
+                ${standings.map((user, idx) => {
+                    const isMe = user.username === currentUser.username;
+                    return `
+                        <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${isMe ? 'bg-blue-600/20 border-blue-500/50 shadow-lg' : 'bg-slate-900/60 border-white/5'}">
+                            <div class="flex items-center gap-3">
+                                <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${idx === 0 ? 'bg-amber-500 text-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : idx === 1 ? 'bg-slate-300 text-slate-950' : idx === 2 ? 'bg-amber-700 text-white' : 'bg-slate-800 text-slate-300'}">
+                                    #${idx + 1}
+                                </span>
+                                <div>
+                                    <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
+                                        ${user.username} ${isMe ? `(${typeof t === 'function' ? t('you') || 'أنت' : 'أنت'})` : ''}
+                                        ${user.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>` : ''}
+                                        ${user.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+                                        ${user.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
+                                    </h4>
+                                </div>
+                            </div>
+                            <div class="${isAr ? 'text-left' : 'text-right'}">
+                                <span class="text-base font-black text-amber-400">${user.totalPts}</span>
+                                <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
-}
-
-// 4. دالة الجلب التي تعمل عند الضغط على زر "عرض المزيد"
-function loadMoreStandings() {
-    const standings = getGlobalStandings();
-    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
-    const isAr = direction === 'rtl';
-    
-    // نحدد نقطة البداية والنهاية للـ 20 شخص الجدد
-    const start = currentStandingsLimit;
-    const end = start + 20;
-    const newUsers = standings.slice(start, end);
-    
-    const container = document.getElementById('standings-list-container');
-    if (container) {
-        // نولد كود الـ HTML للاعبين الجدد ونلصقه تحت القديم بسلاسة تامة
-        const newHTML = newUsers.map((user, idx) => generateStandingCard(user, start + idx, isAr)).join('');
-        container.insertAdjacentHTML('beforeend', newHTML);
-    }
-    
-    // تحديث العداد
-    currentStandingsLimit = end;
-    
-    // إذا وصلنا لآخر القائمة، نخفي زر "عرض المزيد"
-    if (currentStandingsLimit >= standings.length) {
-        const btnContainer = document.getElementById('load-more-btn-container');
-        if (btnContainer) btnContainer.style.display = 'none';
-    }
 }
 
 function renderMiniLeaguesTab() {
