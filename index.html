@@ -1616,20 +1616,20 @@ function renderMiniLeaguesTab() {
                         ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
                         <div class="flex items-center gap-2">
     
-    <!-- قائمة اللغة المصغرة -->
-    <div class="flex items-center bg-slate-900/60 border border-white/10 rounded-lg px-1.5 py-0.5 shadow-lg">
-        <i class="fa-solid fa-globe text-blue-400 text-[10px] ml-1"></i>
-        <select onchange="changeLanguage(this.value)" id="top-lang-switcher" class="bg-transparent text-white text-[10px] font-bold outline-none cursor-pointer appearance-none text-center">
-            <option value="ar" class="bg-slate-900">عربي</option>
-            <option value="en" class="bg-slate-900">EN</option>
-            <option value="tr" class="bg-slate-900">TR</option>
-        </select>
+    <!-- أزرار اللغات المباشرة والذكية (ضغطة واحدة وبدون تعليق) -->
+    <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
+        <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
+        <span class="text-white/20 text-[10px] px-0.5">|</span>
+        <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
+        <span class="text-white/20 text-[10px] px-0.5">|</span>
+        <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
     </div>
 
-    <!-- زر الخروج -->
+    <!-- زر تسجيل الخروج الخاص بك -->
     <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
         <i class="fa-solid fa-power-off text-sm"></i>
     </button>
+    
 </div>
                 </header>
 
@@ -1698,38 +1698,7 @@ function renderMiniLeaguesTab() {
                 pointsDeducted: penaltyPoints
             })
         });
-
-        // لضبط القائمة المنسدلة العلوية على اللغة الحالية فور فتح التطبيق
-window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        const topLangSelect = document.getElementById('top-lang-switcher');
-        // جلب اللغة الحالية (سواء من المتغير أو من الذاكرة)
-        const activeLang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
-        if (topLangSelect) {
-            topLangSelect.value = activeLang;
-        }
-    }, 100);
-});
-
-        setInterval(() => {
-    const switcher = document.getElementById('top-lang-switcher');
-    if (switcher) {
-        const currentSelectedLang = localStorage.getItem('appLang') || 'ar';
-        if (switcher.value !== currentSelectedLang) {
-            switcher.value = currentSelectedLang;
-        }
-    }
-}, 500);
-
-        // كود لضبط شكل زر اللغة العلوي ليتطابق مع اللغة المحفوظة
-setTimeout(() => {
-    const topSwitcher = document.getElementById('top-lang-switcher');
-    if (topSwitcher) {
-        // يجلب اللغة الحالية، وإذا لم يجدها يضع العربي كافتراضي
-        topSwitcher.value = localStorage.getItem('appLang') || 'ar'; 
-    }
-}, 300);
-        
+       
         const json = await res.json();
         if (json.success) {
             alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
