@@ -513,6 +513,7 @@ function changeLanguage(langCode) {
     const prevGw = activeGw > 1 ? activeGw - 1 : null;
     let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
     
+    // ترتيب المباريات
     gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
     
     const userPreds = predictions[currentUser.username] || {};
@@ -522,12 +523,13 @@ function changeLanguage(langCode) {
     const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
     const motw = prevGw ? standings.find(u => u.badges.motw) : null;
 
+    // تحديد اتجاه النص
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
 
     return `
         <div class="space-y-6" dir="${direction}">
             
-            <!-- أزرار تبديل اللغة (بدون أعلام) -->
+            <!-- أزرار تبديل اللغة الأنيقة -->
             <div class="flex justify-center items-center gap-3 mt-4">
                 <button onclick="changeLanguage('ar')" class="${currentLang === 'ar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-4 py-1.5 rounded-full text-xs font-bold transition-all">
                     AR
@@ -592,7 +594,12 @@ function changeLanguage(langCode) {
                     </div>
                     <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
                         <span class="text-[9px] text-slate-400 block mb-0.5">${t('favTeam')}</span>
-                        <span class="text-[11px] md:text-sm font-black text-blue-300 block whitespace-normal leading-tight">${getTeamName(myStats.favTeam) !== myStats.favTeam ? getTeamName(myStats.favTeam) : myStats.favTeam}</span>
+                        <span class="text-[11px] md:text-sm font-black text-blue-300 block whitespace-normal leading-tight">
+                            ${(() => {
+                                const savedTeam = TEAMS.find(t => t.code === myStats.favTeam || t.name === myStats.favTeam || t.nameEn === myStats.favTeam || t.nameTr === myStats.favTeam);
+                                return savedTeam ? getTeamName(savedTeam.code) : myStats.favTeam;
+                            })()}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -612,6 +619,8 @@ function changeLanguage(langCode) {
                         const matchType = getMatchType(match.home, match.away);
                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                         const isLocked = isMatchLocked(match);
+                        
+                        // هنا نستخدم دالتك الأصلية بكل أمان لاستخراج التاريخ رقمياً
                         const displayDate = formatMatchDate(match.date);
                         
                         let badgeHtml = '';
@@ -623,7 +632,7 @@ function changeLanguage(langCode) {
                                 ${badgeHtml}
                                 <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
                                     <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ${currentLang === 'ar' ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? t('locked') : `${displayDate} - ${match.time}`}</span>
+                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${currentLang === 'ar' ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? t('locked') : `${displayDate} - ${match.time}`}</span>
                                 </div>
                                 <div class="flex items-center justify-between mt-1 gap-2">
                                     
