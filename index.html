@@ -149,7 +149,8 @@ const translations = {
         members: "الأعضاء",
         you: "أنت",
         navStandings: "الترتيب",
-        navRules: "القوانين"
+        navRules: "القوانين",
+        players: "اللاعبون"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -196,7 +197,8 @@ const translations = {
         members: "Members",
         you: "You",
         navStandings: "Standings",
-        navRules: "Rules"
+        navRules: "Rules",
+        players: "Players"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -243,7 +245,8 @@ const translations = {
         members: "Üyeler",
         you: "Sen",
         navStandings: "Sıralama",
-        navRules: "Kurallar"
+        navRules: "Kurallar",
+        players: "Oyuncular"
     }
 };
         
@@ -839,7 +842,7 @@ function changeGw(gw) {
                     </h2>
                 </div>
                 <span class="text-xs font-bold text-blue-400 bg-blue-600/20 px-3 py-1 rounded-full border border-blue-500/30">
-    اللاعبون: ${standings.length}
+    ${typeof t === 'function' && t('players') ? t('players') : 'اللاعبون'}: ${standings.length}
 </span>
             </div>
             <div class="space-y-2">
