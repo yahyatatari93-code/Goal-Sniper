@@ -413,11 +413,12 @@ function changeLanguage(langCode) {
     };
 }
 
-        function formatMatchDate(dateStr) {
+        // 1. دالة تجميل التاريخ (تحوله إلى أرقام أنيقة وموحدة DD/MM/YYYY)
+function formatMatchDate(dateStr) {
     if (!dateStr) return '';
     let str = String(dateStr);
     
-    // 1. الكود الأصلي الخاص بك (لتنظيف الأشهر العربية وتحويلها لأرقام)
+    // تحويل أي شهر عربي إلى رقم في حال تم إدخاله بالخطأ
     const arabicMonths = {
         'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
         'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
@@ -431,72 +432,69 @@ function changeLanguage(langCode) {
             str = str.replace(new RegExp(name, 'g'), num);
         }
     }
-    str = str.replace(/\s+/g, '/').replace(/\/+/g, '/'); 
-    // النتيجة هنا ستكون أرقاماً نظيفة، مثال: "16/8"
-
-    // 2. الإضافة الجديدة (لتحويل الأرقام إلى تاريخ مترجم حسب اللغة)
-    try {
-        const parts = str.split(/[-/]/); // فصل الأرقام
-        if (parts.length >= 2) {
-            let day = parseInt(parts[0]);
-            let month = parseInt(parts[1]) - 1; // الأشهر في البرمجة تبدأ من 0
-            let year = parts[2] ? parseInt(parts[2]) : new Date().getFullYear();
-
-            // معالجة لو كان النسق المعكوس (سنة/شهر/يوم)
-            if (parts[0].length === 4) {
-                year = parseInt(parts[0]);
-                month = parseInt(parts[1]) - 1;
-                day = parseInt(parts[2]);
-            }
-
-            const realDate = new Date(year, month, day);
-            
-            // إذا كان التاريخ صالحاً، قم بترجمته
-            if (!isNaN(realDate.getTime())) {
-                let localeCode = 'ar-EG';
-                if (currentLang === 'en') localeCode = 'en-GB';
-                if (currentLang === 'tr') localeCode = 'tr-TR';
-                
-                return realDate.toLocaleDateString(localeCode, { weekday: 'short', month: 'short', day: 'numeric' });
-            }
+    
+    // توحيد الفواصل
+    str = str.replace(/[\s\.-]+/g, '/').replace(/\/+/g, '/');
+    
+    // تنسيق التاريخ ليظهر بشكل أرقام أنيقة (مثال: 16/08/2026)
+    let parts = str.match(/\d+/g);
+    if (parts && parts.length >= 2) {
+        let d = parts[0].padStart(2, '0');
+        let m = parts[1].padStart(2, '0');
+        let y = parts[2] ? parts[2] : new Date().getFullYear();
+        if (parts[0].length === 4) { // في حال كان النسق YYYY/MM/DD
+            y = parts[0]; m = parts[1].padStart(2, '0'); d = parts[2].padStart(2, '0');
         }
-    } catch(e) {
-        console.error("Date error:", e);
+        return `${d}/${m}/${y}`;
     }
-
-    // في حال فشل الترجمة لأي سبب، يعيد الأرقام التي نظفتها دالتك لكي لا يختفي التاريخ
     return str;
 }
 
-        function parseMatchDate(dateStr, timeStr) {
-            try {
-                let dStr = formatMatchDate(dateStr);
-                let [time, period] = (timeStr || '').split(' ');
-                let [hours, minutes] = (time || '0:0').split(':');
-                hours = parseInt(hours, 10) || 0;
-                minutes = parseInt(minutes, 10) || 0;
-                if (period === 'م' && hours !== 12) hours += 12;
-                if (period === 'ص' && hours === 12) hours = 0;
-                
-                let parts = dStr.match(/\d+/g);
-                let y = 2026, m = 0, d = 1;
-                if (parts) {
-                    if (parts.length >= 3 && parts[0].length === 4) { y = parseInt(parts[0]); m = parseInt(parts[1]) - 1; d = parseInt(parts[2]); } 
-                    else if (parts.length >= 2) { d = parseInt(parts[0]); m = parseInt(parts[1]) - 1; if (parts[2]) y = parseInt(parts[2]); }
-                }
-                return new Date(y, m, d, hours, minutes).getTime();
-            } catch(e) { return 0; }
+        // 2. دالة حساب الوقت (تدعم الآن نظام AM و PM بشكل مثالي)
+function parseMatchDate(dateStr, timeStr) {
+    try {
+        let dStr = formatMatchDate(dateStr);
+        let [time, period] = (timeStr || '').trim().split(/\s+/);
+        let [hours, minutes] = (time || '0:0').split(':');
+        hours = parseInt(hours, 10) || 0;
+        minutes = parseInt(minutes, 10) || 0;
+        
+        // دعم اللغتين (ص/م) و (AM/PM)
+        if (period) {
+            period = period.toUpperCase();
+            if ((period === 'م' || period === 'PM') && hours !== 12) hours += 12;
+            if ((period === 'ص' || period === 'AM') && hours === 12) hours = 0;
         }
+        
+        let parts = dStr.match(/\d+/g);
+        let y = new Date().getFullYear(), m = 0, d = 1;
+        if (parts) {
+            if (parts.length >= 3 && parts[0].length === 4) { 
+                y = parseInt(parts[0]); m = parseInt(parts[1]) - 1; d = parseInt(parts[2]); 
+            } else if (parts.length >= 2) { 
+                d = parseInt(parts[0]); m = parseInt(parts[1]) - 1; if (parts[2]) y = parseInt(parts[2]); 
+            }
+        }
+        return new Date(y, m, d, hours, minutes).getTime();
+    } catch(e) { return 0; }
+}
 
-        function isMatchLocked(match) {
-            try {
-                if (match.actualH !== null && match.actualA !== null) return true;
-                const matchTimeMs = parseMatchDate(match.date, match.time);
-                if (!matchTimeMs) return false;
-                const now = new Date().getTime();
-                return (matchTimeMs - now) <= 60 * 60 * 1000; // قفل قبل ساعة
-            } catch(e) { return false; }
+        // 3. دالة قفل المباراة (تم سد ثغرة القفل الخاطئ)
+function isMatchLocked(match) {
+    try {
+        // التأكد 100% أن النتيجة مسجلة فعلاً وليست (فارغة أو غير معرفة)
+        if (match.actualH !== undefined && match.actualH !== null && match.actualH !== '' && 
+            match.actualA !== undefined && match.actualA !== null && match.actualA !== '') {
+            return true; // المباراة انتهت ومسجلة لها نتيجة
         }
+        
+        const matchTimeMs = parseMatchDate(match.date, match.time);
+        if (!matchTimeMs) return false;
+        
+        const now = new Date().getTime();
+        return (matchTimeMs - now) <= 60 * 60 * 1000; // قفل قبل ساعة من بداية المباراة
+    } catch(e) { return false; }
+}
 
         function getCurrentActiveGw() {
             // يبحث عن أول جولة تحتوي على مباريات غير ملعوبة (actualH و actualA تساوي null)
