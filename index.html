@@ -147,7 +147,9 @@ const translations = {
         myLeagues: "دورياتي",
         publicLeagues: "الدوريات العامة",
         members: "الأعضاء",
-        you: "أنت"
+        you: "أنت",
+        navStandings: "الترتيب",
+        navRules: "القوانين"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -192,7 +194,9 @@ const translations = {
         myLeagues: "My Leagues",
         publicLeagues: "Public Leagues",
         members: "Members",
-        you: "You"
+        you: "You",
+        navStandings: "Standings",
+        navRules: "Rules"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -237,7 +241,9 @@ const translations = {
         myLeagues: "Liglerim",
         publicLeagues: "Genel Ligler",
         members: "Üyeler",
-        you: "Sen"
+        you: "Sen",
+        navStandings: "Sıralama",
+        navRules: "Kurallar"
     }
 };
         
@@ -311,39 +317,32 @@ function changeLanguage(langCode) {
     }
 }
         
+// الدالة الجديدة المضمونة لترجمة الشريط السفلي
 function updateBottomNavLanguage() {
     try {
-        const tabs = {
-            'home': t('navHome'),
-            'matches': t('navMatches'),
-            'leagues': t('navLeagues'), // أو standings حسب اسم التبويب عندك
-            'admin': t('navAdmin')
-        };
+        const homeTxt = document.getElementById('nav-home-text');
+        if (homeTxt) homeTxt.innerText = typeof t === 'function' ? t('navHome') : 'الرئيسية';
         
-        for (let [tabId, text] of Object.entries(tabs)) {
-            const btn = document.querySelector(`[onclick*="switchTab('${tabId}')"]`);
-            if (btn) {
-                // البحث عن النص داخل الزر بأمان دون المساس بالأيقونة (<i>)
-                const span = btn.querySelector('span') || btn.querySelector('div');
-                if (span) {
-                    span.textContent = text;
-                } else {
-                    // إذا لم يكن هناك span، نبحث عن النص العائم ونغيره فقط
-                    btn.childNodes.forEach(node => {
-                        if (node.nodeType === 3 && node.nodeValue.trim().length > 0) {
-                            node.nodeValue = " " + text;
-                        }
-                    });
-                }
-            }
-        }
-    } catch (e) { console.error("Safe Nav translation error:", e); }
+        const matchesTxt = document.getElementById('nav-matches-text');
+        if (matchesTxt) matchesTxt.innerText = typeof t === 'function' ? t('navMatches') : 'المباريات';
+        
+        const standingsTxt = document.getElementById('nav-standings-text');
+        if (standingsTxt) standingsTxt.innerText = typeof t === 'function' ? t('navStandings') : 'الترتيب';
+        
+        const minileaguesTxt = document.getElementById('nav-minileagues-text');
+        if (minileaguesTxt) minileaguesTxt.innerText = typeof t === 'function' ? t('navLeagues') : 'الدوريات';
+        
+        const rulesTxt = document.getElementById('nav-rules-text');
+        if (rulesTxt) rulesTxt.innerText = typeof t === 'function' ? t('navRules') : 'القوانين';
+        
+    } catch (e) {
+        console.error("Nav translation error:", e);
+    }
 }
 
-// لضمان عمل الدالة فوراً عند تغيير اللغة:
-// ابحث عن دالة changeLanguage واستدعِ هذه الدالة بداخلها لتصبح هكذا:
 function changeLanguage(langCode) {
-    localStorage.setItem('appLang', langCode);
+    currentLang = langCode; 
+    localStorage.setItem('appLang', langCode); 
     location.reload(); 
 }
 
@@ -1654,12 +1653,12 @@ function renderMiniLeaguesTab() {
                 </main>
 
                 <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2">
-                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-house text-lg"></i><span class="text-[9px] font-bold">الرئيسية</span></button>
-                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-calendar-days text-lg"></i><span class="text-[9px] font-bold">المباريات</span></button>
-                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-trophy text-lg"></i><span class="text-[9px] font-bold">الترتيب</span></button>
-                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-users text-lg"></i><span class="text-[9px] font-bold">الدوريات</span></button>
-                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-scale-balanced text-lg"></i><span class="text-[9px] font-bold">القوانين</span></button>
-                </nav>
+    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-house text-lg"></i><span id="nav-home-text" class="text-[9px] font-bold">الرئيسية</span></button>
+    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-calendar-days text-lg"></i><span id="nav-matches-text" class="text-[9px] font-bold">المباريات</span></button>
+    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-trophy text-lg"></i><span id="nav-standings-text" class="text-[9px] font-bold">الترتيب</span></button>
+    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-users text-lg"></i><span id="nav-minileagues-text" class="text-[9px] font-bold">الدوريات</span></button>
+    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}"><i class="fa-solid fa-scale-balanced text-lg"></i><span id="nav-rules-text" class="text-[9px] font-bold">القوانين</span></button>
+                 </nav>
             `;
             renderModal();
         }
