@@ -97,6 +97,133 @@
     { code: 'BOU', name: 'بورنموث', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/349.png' },
     { code: 'EVE', name: 'إيفرتون', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
+
+        // تحديد اللغة الافتراضية للتطبيق (جلبها من الذاكرة أو وضع العربية كافتراضي)
+let currentLang = localStorage.getItem('appLang') || 'ar';
+
+// القاموس الشامل للتطبيق
+const translations = {
+    ar: {
+        // الشعار والأساسيات
+        slogan: "توقع بذكاء . تصدر بجدارة . اقنص بقوة",
+        appName: "Goal Sniper",
+        
+        // الصفحة الرئيسية (البطاقة الشخصية)
+        sniperCard: "بطاقة القناص",
+        overallRank: "الترتيب العام",
+        points: "النقاط",
+        accuracy: "الدقة",
+        favTeam: "المفضل",
+        enablePush: "تفعيل الإشعارات الذكية",
+        
+        // الأوسمة
+        motw: "عراف الأسبوع",
+        sniperBadge: "القناص",
+        giantSlayer: "قاهر الكبار",
+        
+        // المباريات والتوقعات
+        currentGwMatches: "مباريات الجولة الحالية",
+        gw: "الجولة",
+        showAllGws: "عرض كل الجولات",
+        fixtures: "جدول مباريات الدوري الرسمي",
+        predictNow: "أضف توقعك",
+        locked: "مقفلة",
+        timeOver: "انتهى الوقت",
+        noMatches: "لا توجد مباريات متاحة الآن.",
+        matchups: "مواجهات",
+        
+        // الجوكر والكابتن
+        tripleCaptain: "الجوكر x3",
+        captain: "C",
+        
+        // رسائل عامة
+        point: "نقطة"
+    },
+    en: {
+        // Slogan and Basics
+        slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
+        appName: "Goal Sniper",
+        
+        // Dashboard (ID Card)
+        sniperCard: "Sniper Card",
+        overallRank: "Overall Rank",
+        points: "Points",
+        accuracy: "Hit Rate",
+        favTeam: "Fav Team",
+        enablePush: "Enable Smart Notifications",
+        
+        // Badges
+        motw: "Oracle of the Week",
+        sniperBadge: "The Sniper",
+        giantSlayer: "Giant Slayer",
+        
+        // Matches and Predictions
+        currentGwMatches: "Current GW Matches",
+        gw: "GW",
+        showAllGws: "Show All Gameweeks",
+        fixtures: "Official League Fixtures",
+        predictNow: "Predict Now",
+        locked: "Locked",
+        timeOver: "Time's Up",
+        noMatches: "No matches available right now.",
+        matchups: "Fixtures",
+        
+        // Chips
+        tripleCaptain: "Triple C x3",
+        captain: "C",
+        
+        // General
+        point: "pt"
+    },
+    tr: {
+        // Slogan ve Temel Kelimeler
+        slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
+        appName: "Goal Sniper",
+        
+        // Ana Sayfa (Kimlik Kartı)
+        sniperCard: "Nişancı Kartı",
+        overallRank: "Genel Sıralama",
+        points: "Puan",
+        accuracy: "İsabet",
+        favTeam: "Favori Takım",
+        enablePush: "Akıllı Bildirimleri Aç",
+        
+        // Rozetler
+        motw: "Haftanın Kahini",
+        sniperBadge: "Keskin Nişancı",
+        giantSlayer: "Dev Avcısı",
+        
+        // Maçlar ve Tahminler
+        currentGwMatches: "Mevcut Hafta Maçları",
+        gw: "Hafta",
+        showAllGws: "Tüm Haftaları Göster",
+        fixtures: "Resmi Lig Fikstürü",
+        predictNow: "Tahmin Et",
+        locked: "Kilitli",
+        timeOver: "Süre Doldu",
+        noMatches: "Şu an için maç bulunmamaktadır.",
+        matchups: "Karşılaşma",
+        
+        // Jokerler
+        tripleCaptain: "Joker x3",
+        captain: "C",
+        
+        // Genel
+        point: "puan"
+    }
+};
+
+// دالة الترجمة السحرية
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+// دالة تغيير اللغة
+function changeLanguage(langCode) {
+    localStorage.setItem('appLang', langCode);
+    location.reload(); // إعادة تحميل الصفحة لتطبيق اللغة الجديدة
+}
+        
         const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
 
         const getTeamName = (code) => TEAMS.find(t => t.code === code)?.name || code;
@@ -385,13 +512,31 @@
     const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
     const motw = prevGw ? standings.find(u => u.badges.motw) : null;
 
+    // تحديد اتجاه النص (من اليمين لليسار للعربية، والعكس للغات الأخرى)
+    const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+
     return `
-        <div class="space-y-6">
+        <div class="space-y-6" dir="${direction}">
+            
+            <!-- 👇 أزرار تبديل اللغة الأنيقة 👇 -->
+            <div class="flex justify-center items-center gap-3 mt-4">
+                <button onclick="changeLanguage('ar')" class="${currentLang === 'ar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5">
+                    🇸🇾 AR
+                </button>
+                <button onclick="changeLanguage('en')" class="${currentLang === 'en' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5">
+                    🇬🇧 EN
+                </button>
+                <button onclick="changeLanguage('tr')" class="${currentLang === 'tr' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5">
+                    🇹🇷 TR
+                </button>
+            </div>
+            <!-- 👆 نهاية أزرار اللغة 👆 -->
+
             <!-- رأس الصفحة (الشعار واسم التطبيق) -->
-            <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
+            <div class="text-center flex flex-col items-center justify-center mb-2">
                 <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
-                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
-                <span class="text-xs text-slate-400 mt-1">تَوَقَّعْ بِذَكَاء . تَصَدَّرْ بِجَدَارَة . اِقْنِصْ بِقُوَّة.</span>
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">${t('appName')}</h1>
+                <span class="text-xs text-slate-400 mt-1">${t('slogan')}</span>
             </div>
 
             ${motw ? `
@@ -399,58 +544,63 @@
                     <div class="flex items-center gap-3">
                         <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-500/40">👑</div>
                         <div>
-                            <h3 class="text-xs font-bold text-amber-500">عراف الأسبوع (الجولة ${prevGw})</h3>
+                            <h3 class="text-xs font-bold text-amber-500">${t('motw')} (${t('gw')} ${prevGw})</h3>
                             <span class="text-base font-black text-white">${motw.username}</span>
                         </div>
                     </div>
                     <div class="text-center">
                         <span class="block text-2xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
-                        <span class="text-[10px] text-slate-300">نقطة</span>
+                        <span class="text-[10px] text-slate-300">${t('point')}</span>
                     </div>
                 </div>
             ` : ''}
 
-            <!-- البطاقة الشخصية (تم تصغيرها وتنسيقها) -->
+            <!-- البطاقة الشخصية -->
             <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">بطاقة القناص</span>
+                        <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">${t('sniperCard')}</span>
                         <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
                             ${currentUser.username}
-                            ${myStats.badges.motw ? '<span title="عراف الأسبوع" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>' : ''}
-                            ${myStats.badges.sniper ? '<span title="القناص" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                            ${myStats.badges.giantSlayer ? '<span title="قاهر الكبار" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
+                            ${myStats.badges.motw ? `<span title="${t('motw')}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
+                            ${myStats.badges.sniper ? `<span title="${t('sniperBadge')}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+                            ${myStats.badges.giantSlayer ? `<span title="${t('giantSlayer')}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
                         </h2>
                     </div>
-                    <div class="text-left">
-                        <span class="text-[10px] text-slate-400 block">الترتيب العام</span>
+                    <div class="${currentLang === 'ar' ? 'text-left' : 'text-right'}">
+                        <span class="text-[10px] text-slate-400 block">${t('overallRank')}</span>
                         <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
                     </div>
                 </div>
+                
                 <div class="grid grid-cols-3 gap-2 text-center">
                     <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">النقاط</span>
+                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('points')}</span>
                         <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
                     </div>
                     <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">الدقة</span>
+                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('accuracy')}</span>
                         <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
                     </div>
                     <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">المفضل</span>
-                        <!-- تم إزالة Truncate من الفريق المفضل ليظهر كاملاً -->
+                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('favTeam')}</span>
                         <span class="text-[11px] md:text-sm font-black text-blue-300 block whitespace-normal leading-tight">${myStats.favTeam}</span>
                     </div>
                 </div>
+
+                <button onclick="subscribeToNotifications()" class="mt-4 w-full bg-blue-600/10 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-bell"></i> ${t('enablePush')}
+                </button>
+                
             </div>
 
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
-                        <i class="fa-solid fa-fire text-amber-400"></i> مباريات الجولة الحالية (${activeGw})
+                        <i class="fa-solid fa-fire text-amber-400"></i> ${t('currentGwMatches')} (${activeGw})
                     </h3>
-                    <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold">
-                        عرض كل الجولات <i class="fa-solid fa-arrow-left mr-1"></i>
+                    <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold flex items-center gap-1">
+                        ${t('showAllGws')} <i class="fa-solid fa-arrow-${currentLang === 'ar' ? 'left' : 'right'}"></i>
                     </button>
                 </div>
                 <div class="space-y-3">
@@ -462,41 +612,39 @@
                         const displayDate = formatMatchDate(match.date);
                         
                         let badgeHtml = '';
-                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> الجوكر x3</div>`;
-                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 left-3 bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">C</div>`;
+                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 ${currentLang === 'ar' ? 'left-3' : 'right-3'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> ${t('tripleCaptain')}</div>`;
+                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 ${currentLang === 'ar' ? 'left-3' : 'right-3'} bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">${t('captain')}</div>`;
 
                         return `
                             <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative ${isLocked ? 'opacity-80' : ''}">
                                 ${badgeHtml}
                                 <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
                                     <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ml-1"></i> ${isLocked ? 'مقفلة' : `${displayDate} - ${match.time}`}</span>
+                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} ${currentLang === 'ar' ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? t('locked') : `${displayDate} - ${match.time}`}</span>
                                 </div>
-                                <div class="flex items-center justify-between mt-1">
+                                <div class="flex items-center justify-between mt-1 gap-2">
                                     
-                                    <!-- 👇 الفريق المضيف مع الشعار وإزالة القص 👇 -->
                                     <div class="flex-1 flex justify-start items-center gap-2">
                                         <img src="${getTeamLogo(match.home)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="text-left font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                        <div class="font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
                                     </div>
                                     
-                                    <div class="px-2 shrink-0">
+                                    <div class="shrink-0">
                                         <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
-                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i> انتهى الوقت' : 'أضف توقعك')}
+                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? `<i class="fa-solid fa-lock"></i> ${t('timeOver')}` : t('predictNow'))}
                                         </button>
                                     </div>
                                     
-                                    <!-- 👇 الفريق الضيف مع الشعار وإزالة القص 👇 -->
                                     <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
                                         <img src="${getTeamLogo(match.away)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="text-right font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                        <div class="font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
                                     </div>
                                     
                                 </div>
                             </div>
                         `;
                     }).join('')}
-                    ${gwMatches.length === 0 ? '<div class="text-center text-slate-400 text-sm py-8">لا توجد مباريات متاحة الآن.</div>' : ''}
+                    ${gwMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-8">${t('noMatches')}</div>` : ''}
                 </div>
             </div>
         </div>
