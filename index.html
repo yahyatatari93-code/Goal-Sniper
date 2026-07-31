@@ -128,6 +128,12 @@ const translations = {
         bigClash: "👑 قمة الكبار",
         balanced: "⚽ مباراة متكافئة",
         bigVsAmbitious: "🌟 الكبار ضد الطموحين"
+        fixtures: "جدول مباريات الدوري الرسمي",
+        matchups: "مواجهات",
+        navHome: "الرئيسية",
+        navMatches: "المباريات",
+        navLeagues: "الدوريات",
+        navAdmin: "الإدارة",
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -153,6 +159,12 @@ const translations = {
         bigClash: "👑 Big Teams Clash",
         balanced: "⚽ Balanced Match",
         bigVsAmbitious: "🌟 Giants vs Underdogs"
+        fixtures: "Official League Fixtures",
+        matchups: "Fixtures",
+        navHome: "Home",
+        navMatches: "Matches",
+        navLeagues: "Leagues",
+        navAdmin: "Admin",
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -178,6 +190,12 @@ const translations = {
         bigClash: "👑 Devlerin Maçı",
         balanced: "⚽ Dengeli Maç",
         bigVsAmbitious: "🌟 Büyükler ve İddialılar"
+        fixtures: "Resmi Lig Fikstürü",
+        matchups: "Karşılaşma",
+        navHome: "Ana Sayfa",
+        navMatches: "Maçlar",
+        navLeagues: "Ligler",
+        navAdmin: "Yönetim",
     }
 };
 
@@ -191,34 +209,7 @@ function changeLanguage(langCode) {
     localStorage.setItem('appLang', langCode);
     location.reload();
 }
-
-        // دالة لترجمة شريط التنقل السفلي تلقائياً
-function updateBottomNavLanguage() {
-    try {
-        const tabs = {
-            'home': t('navHome'),
-            'matches': t('navMatches'),
-            'leagues': t('navLeagues'), // أو اسم التبويب الذي تستخدمه للدوريات
-            'admin': t('navAdmin')
-        };
-        
-        for (let [tabId, translatedText] of Object.entries(tabs)) {
-            // يبحث عن الزر الذي يحتوي على switchTab('home') مثلاً
-            const btn = document.querySelector(`[onclick*="switchTab('${tabId}')"]`);
-            if (btn) {
-                // يبحث عن النص داخل الزر (غالباً يكون داخل span) ويحدثه
-                const textElement = btn.querySelector('span') || btn.lastElementChild;
-                if (textElement) textElement.innerText = translatedText;
-            }
-        }
-    } catch (e) { console.error("Nav translation error", e); }
-}
-
-// تشغيل الترجمة فوراً عند فتح التطبيق
-window.addEventListener('DOMContentLoaded', updateBottomNavLanguage);
-// وإذا كان تطبيقك يعمل بصفحة واحدة (SPA)، ضع هذا السطر في آخر ملف الجافاسكريبت لديك:
-setTimeout(updateBottomNavLanguage, 500);
-        
+      
         const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
 
         function getTeamName(code) {
