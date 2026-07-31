@@ -1720,6 +1720,15 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 }, 500);
+
+        // كود لضبط شكل زر اللغة العلوي ليتطابق مع اللغة المحفوظة
+setTimeout(() => {
+    const topSwitcher = document.getElementById('top-lang-switcher');
+    if (topSwitcher) {
+        // يجلب اللغة الحالية، وإذا لم يجدها يضع العربي كافتراضي
+        topSwitcher.value = localStorage.getItem('appLang') || 'ar'; 
+    }
+}, 300);
         
         const json = await res.json();
         if (json.success) {
