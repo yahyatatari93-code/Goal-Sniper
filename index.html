@@ -138,17 +138,6 @@ const translations = {
         
         // رسائل عامة
         point: "نقطة"
-
-        topClash: "قمة",
-        derby: "ديربي",
-        normalMatch: "مواجهة",
-        navHome: "الرئيسية",
-        navMatches: "المباريات",
-        navLeagues: "الدوريات",
-        navAdmin: "الإدارة"
-        bigClash: "👑 قمة الكبار",
-        balanced: "⚽ مباراة متكافئة",
-        bigVsAmbitious: "🌟 الكبار ضد الطموحين"
     },
     en: {
         // Slogan and Basics
@@ -185,17 +174,6 @@ const translations = {
         
         // General
         point: "pt"
-
-        topClash: "Top Clash",
-        derby: "Derby",
-        normalMatch: "Match",
-        navHome: "Home",
-        navMatches: "Fixtures",
-        navLeagues: "Leagues",
-        navAdmin: "Admin"
-        bigClash: "👑 Big Teams Clash",
-        balanced: "⚽ Balanced Match",
-        bigVsAmbitious: "🌟 Giants vs Underdogs"
     },
     tr: {
         // Slogan ve Temel Kelimeler
@@ -232,17 +210,6 @@ const translations = {
         
         // Genel
         point: "puan"
-
-        topClash: "Dev Maç",
-        derby: "Derbi",
-        normalMatch: "Maç",
-        navHome: "Ana Sayfa",
-        navMatches: "Fikstür",
-        navLeagues: "Ligler",
-        navAdmin: "Yönetim"
-        bigClash: "👑 Devlerin Maçı",
-        balanced: "⚽ Dengeli Maç",
-        bigVsAmbitious: "🌟 Büyükler ve İddialılar"
     }
 };
 
@@ -277,11 +244,11 @@ function changeLanguage(langCode) {
 }
         
         const getMatchType = (h, a) => {
-    const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
-    if (hB && aB) return { label: t('bigClash'), color: 'text-yellow-400' };
-    if (!hB && !aB) return { label: t('balanced'), color: 'text-gray-400' };
-    return { label: t('bigVsAmbitious'), color: 'text-blue-400' };
-};
+            const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
+            if (hB && aB) return { label: '👑 قمة الكبار', color: 'text-yellow-400' };
+            if (!hB && !aB) return { label: '⚽ مباراة متكافئة', color: 'text-gray-400' };
+            return { label: '🌟 الكبار ضد الطموحين', color: 'text-blue-400' };
+        };
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
