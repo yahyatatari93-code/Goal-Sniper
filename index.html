@@ -198,11 +198,10 @@ function changeLanguage(langCode) {
     const team = TEAMS.find(t => t.code === code);
     if (!team) return code;
     
-    // التحقق من اللغة الحالية وعرض الاسم المناسب
     if (currentLang === 'en') return team.nameEn;
     if (currentLang === 'tr') return team.nameTr;
     
-    return team.name; // اللغة العربية كافتراضي
+    return team.name; // العربية كافتراضي
 }
         
         function getTeamLogo(code) {
@@ -212,11 +211,11 @@ function changeLanguage(langCode) {
 }
         
         const getMatchType = (h, a) => {
-            const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
-            if (hB && aB) return { label: '👑 قمة الكبار', color: 'text-yellow-400' };
-            if (!hB && !aB) return { label: '⚽ مباراة متكافئة', color: 'text-gray-400' };
-            return { label: '🌟 الكبار ضد الطموحين', color: 'text-blue-400' };
-        };
+    const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
+    if (hB && aB) return { label: t('bigClash'), color: 'text-yellow-400' };
+    if (!hB && !aB) return { label: t('balanced'), color: 'text-gray-400' };
+    return { label: t('bigVsAmbitious'), color: 'text-blue-400' };
+};
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
@@ -415,24 +414,59 @@ function changeLanguage(langCode) {
 }
 
         function formatMatchDate(dateStr) {
-            if (!dateStr) return '';
-            let str = String(dateStr);
-            // تحويل أسماء الأشهر العربية إلى أرقام
-            const arabicMonths = {
-                'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
-                'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
-                'مايو': '5', 'أيار': '5', 'ايار': '5', 'يونيو': '6', 'حزيران': '6',
-                'يوليو': '7', 'تموز': '7', 'أغسطس': '8', 'اغسطس': '8', 'آب': '8',
-                'سبتمبر': '9', 'أيلول': '9', 'ايلول': '9', 'أكتوبر': '10', 'اكتوبر': '10', 'تشرين الأول': '10',
-                'نوفمبر': '11', 'تشرين الثاني': '11', 'ديسمبر': '12', 'كانون الأول': '12'
-            };
-            for (const [name, num] of Object.entries(arabicMonths)) {
-                if (str.includes(name)) {
-                    str = str.replace(new RegExp(name, 'g'), num);
-                }
-            }
-            return str.replace(/\s+/g, '/').replace(/\/+/g, '/');
+    if (!dateStr) return '';
+    let str = String(dateStr);
+    
+    // 1. الكود الأصلي الخاص بك (لتنظيف الأشهر العربية وتحويلها لأرقام)
+    const arabicMonths = {
+        'يناير': '1', 'جانفي': '1', 'فبراير': '2', 'فيفري': '2', 'شباط': '2',
+        'مارس': '3', 'آذار': '3', 'أبريل': '4', 'ابريل': '4', 'نيسان': '4',
+        'مايو': '5', 'أيار': '5', 'ايار': '5', 'يونيو': '6', 'حزيران': '6',
+        'يوليو': '7', 'تموز': '7', 'أغسطس': '8', 'اغسطس': '8', 'آب': '8',
+        'سبتمبر': '9', 'أيلول': '9', 'ايلول': '9', 'أكتوبر': '10', 'اكتوبر': '10', 'تشرين الأول': '10',
+        'نوفمبر': '11', 'تشرين الثاني': '11', 'ديسمبر': '12', 'كانون الأول': '12'
+    };
+    for (const [name, num] of Object.entries(arabicMonths)) {
+        if (str.includes(name)) {
+            str = str.replace(new RegExp(name, 'g'), num);
         }
+    }
+    str = str.replace(/\s+/g, '/').replace(/\/+/g, '/'); 
+    // النتيجة هنا ستكون أرقاماً نظيفة، مثال: "16/8"
+
+    // 2. الإضافة الجديدة (لتحويل الأرقام إلى تاريخ مترجم حسب اللغة)
+    try {
+        const parts = str.split(/[-/]/); // فصل الأرقام
+        if (parts.length >= 2) {
+            let day = parseInt(parts[0]);
+            let month = parseInt(parts[1]) - 1; // الأشهر في البرمجة تبدأ من 0
+            let year = parts[2] ? parseInt(parts[2]) : new Date().getFullYear();
+
+            // معالجة لو كان النسق المعكوس (سنة/شهر/يوم)
+            if (parts[0].length === 4) {
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]) - 1;
+                day = parseInt(parts[2]);
+            }
+
+            const realDate = new Date(year, month, day);
+            
+            // إذا كان التاريخ صالحاً، قم بترجمته
+            if (!isNaN(realDate.getTime())) {
+                let localeCode = 'ar-EG';
+                if (currentLang === 'en') localeCode = 'en-GB';
+                if (currentLang === 'tr') localeCode = 'tr-TR';
+                
+                return realDate.toLocaleDateString(localeCode, { weekday: 'short', month: 'short', day: 'numeric' });
+            }
+        }
+    } catch(e) {
+        console.error("Date error:", e);
+    }
+
+    // في حال فشل الترجمة لأي سبب، يعيد الأرقام التي نظفتها دالتك لكي لا يختفي التاريخ
+    return str;
+}
 
         function parseMatchDate(dateStr, timeStr) {
             try {
