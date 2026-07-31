@@ -75,7 +75,8 @@
         const APP_LOGO_URL = 'Goal Sniper.png'; 
         // ==========================================
 
-        const TEAMS = [
+        // 1. مصفوفة الفرق (محدثة باللغتين الإنجليزية والتركية مع الشعارات الجديدة)
+const TEAMS = [
     { code: 'ARS', name: 'آرسنال', nameEn: 'Arsenal', nameTr: 'Arsenal', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9825.png' },
     { code: 'MCI', name: 'مانشستر سيتي', nameEn: 'Man City', nameTr: 'Man City', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8456.png' },
     { code: 'LIV', name: 'ليفربول', nameEn: 'Liverpool', nameTr: 'Liverpool', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8650.png' },
@@ -97,131 +98,98 @@
     { code: 'BOU', name: 'بورنموث', nameEn: 'Bournemouth', nameTr: 'Bournemouth', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/349.png' },
     { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
-        
-        // تحديد اللغة الافتراضية للتطبيق (جلبها من الذاكرة أو وضع العربية كافتراضي)
+
+// 2. إعدادات اللغة الافتراضية
 let currentLang = localStorage.getItem('appLang') || 'ar';
 
-// القاموس الشامل للتطبيق
+// 3. القاموس الشامل
 const translations = {
     ar: {
-        // الشعار والأساسيات
         slogan: "توقع بذكاء . تصدر بجدارة . اقنص بقوة",
         appName: "Goal Sniper",
-        
-        // الصفحة الرئيسية (البطاقة الشخصية)
         sniperCard: "بطاقة القناص",
         overallRank: "الترتيب العام",
         points: "النقاط",
         accuracy: "الدقة",
         favTeam: "المفضل",
-        enablePush: "تفعيل الإشعارات الذكية",
-        
-        // الأوسمة
         motw: "عراف الأسبوع",
         sniperBadge: "القناص",
         giantSlayer: "قاهر الكبار",
-        
-        // المباريات والتوقعات
         currentGwMatches: "مباريات الجولة الحالية",
         gw: "الجولة",
         showAllGws: "عرض كل الجولات",
-        fixtures: "جدول مباريات الدوري الرسمي",
         predictNow: "أضف توقعك",
         locked: "مقفلة",
         timeOver: "انتهى الوقت",
         noMatches: "لا توجد مباريات متاحة الآن.",
-        matchups: "مواجهات",
-        
-        // الجوكر والكابتن
         tripleCaptain: "الجوكر x3",
         captain: "C",
-        
-        // رسائل عامة
-        point: "نقطة"
+        point: "نقطة",
+        bigClash: "👑 قمة الكبار",
+        balanced: "⚽ مباراة متكافئة",
+        bigVsAmbitious: "🌟 الكبار ضد الطموحين"
     },
     en: {
-        // Slogan and Basics
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
         appName: "Goal Sniper",
-        
-        // Dashboard (ID Card)
         sniperCard: "Sniper Card",
         overallRank: "Overall Rank",
         points: "Points",
         accuracy: "Hit Rate",
         favTeam: "Fav Team",
-        enablePush: "Enable Smart Notifications",
-        
-        // Badges
         motw: "Oracle of the Week",
         sniperBadge: "The Sniper",
         giantSlayer: "Giant Slayer",
-        
-        // Matches and Predictions
         currentGwMatches: "Current GW Matches",
         gw: "GW",
         showAllGws: "Show All Gameweeks",
-        fixtures: "Official League Fixtures",
         predictNow: "Predict Now",
         locked: "Locked",
         timeOver: "Time's Up",
         noMatches: "No matches available right now.",
-        matchups: "Fixtures",
-        
-        // Chips
         tripleCaptain: "Triple C x3",
         captain: "C",
-        
-        // General
-        point: "pt"
+        point: "pt",
+        bigClash: "👑 Big Teams Clash",
+        balanced: "⚽ Balanced Match",
+        bigVsAmbitious: "🌟 Giants vs Underdogs"
     },
     tr: {
-        // Slogan ve Temel Kelimeler
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
         appName: "Goal Sniper",
-        
-        // Ana Sayfa (Kimlik Kartı)
         sniperCard: "Nişancı Kartı",
         overallRank: "Genel Sıralama",
         points: "Puan",
         accuracy: "İsabet",
         favTeam: "Favori Takım",
-        enablePush: "Akıllı Bildirimleri Aç",
-        
-        // Rozetler
         motw: "Haftanın Kahini",
         sniperBadge: "Keskin Nişancı",
         giantSlayer: "Dev Avcısı",
-        
-        // Maçlar ve Tahminler
         currentGwMatches: "Mevcut Hafta Maçları",
         gw: "Hafta",
         showAllGws: "Tüm Haftaları Göster",
-        fixtures: "Resmi Lig Fikstürü",
         predictNow: "Tahmin Et",
         locked: "Kilitli",
         timeOver: "Süre Doldu",
         noMatches: "Şu an için maç bulunmamaktadır.",
-        matchups: "Karşılaşma",
-        
-        // Jokerler
         tripleCaptain: "Joker x3",
         captain: "C",
-        
-        // Genel
-        point: "puan"
+        point: "puan",
+        bigClash: "👑 Devlerin Maçı",
+        balanced: "⚽ Dengeli Maç",
+        bigVsAmbitious: "🌟 Büyükler ve İddialılar"
     }
 };
 
-// دالة الترجمة السحرية
+// 4. دالة الترجمة وتغيير اللغة
 function t(key) {
-    return translations[currentLang][key] || key;
+    // إذا كانت الكلمة غير موجودة في القاموس، يعيد الكلمة نفسها لكي لا يحدث خطأ
+    return (translations[currentLang] && translations[currentLang][key]) ? translations[currentLang][key] : key;
 }
 
-// دالة تغيير اللغة
 function changeLanguage(langCode) {
     localStorage.setItem('appLang', langCode);
-    location.reload(); // إعادة تحميل الصفحة لتطبيق اللغة الجديدة
+    location.reload();
 }
         
         const BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
