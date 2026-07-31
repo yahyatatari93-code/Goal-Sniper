@@ -687,78 +687,86 @@ function changeGw(gw) {
 }
         
         function renderMatchesTab() {
-    const userPreds = predictions[currentUser.username] || {};
-    const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+    try {
+        const userPreds = predictions[currentUser.username] || {};
+        const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+        const isAr = direction === 'rtl';
 
-    return `
-        <div class="space-y-6" dir="${direction}">
-            <div class="glass p-4 rounded-2xl">
-                <h2 class="text-lg font-bold mb-1 flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-days text-blue-400"></i> ${t('fixtures')}
-                </h2>
+        return `
+            <div class="space-y-6" dir="${direction}">
+                <div class="glass p-4 rounded-2xl">
+                    <h2 class="text-lg font-bold mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-days text-blue-400"></i> ${typeof t === 'function' ? t('fixtures') : 'المباريات'}
+                    </h2>
+                </div>
+                ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
+                    let gwMatches = matches.filter(m => Number(m.gw) === gw);
+                    if (gwMatches.length === 0) return '';
+                    
+                    // ترتيب المباريات
+                    gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                    
+                    return `
+                        <div class="glass p-4 rounded-2xl space-y-3">
+                            <div class="border-b border-white/10 pb-2 flex justify-between items-center">
+                                <h3 class="font-black text-sm text-blue-400">${typeof t === 'function' ? t('gw') : 'الجولة'} ${gw}</h3>
+                                <span class="text-xs text-slate-400">${gwMatches.length} ${typeof t === 'function' ? t('matchups') : 'مواجهات'}</span>
+                            </div>
+                            <div class="space-y-2">
+                                ${gwMatches.map(match => {
+                                    const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
+                                    const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
+                                    const isLocked = isMatchLocked(match);
+                                    
+                                    // حماية ذكية: إذا لم تكن دالة الوقت موجودة، يعرض الوقت القديم دون أن يتعطل
+                                    const displayDate = formatMatchDate(match.date);
+                                    const displayTime = typeof formatDisplayTime === 'function' ? formatDisplayTime(match.time) : match.time;
+                                    
+                                    let bMini = '';
+                                    if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
+                                    else if(pred.isCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
+
+                                    const lockedText = typeof t === 'function' ? t('locked') : 'مقفلة';
+                                    const predictText = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
+
+                                    return `
+                                        <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
+                                            ${bMini}
+                                            <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
+                                                <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}
+                                            </div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                
+                                                <div class="flex-1 flex justify-start items-center gap-2">
+                                                    <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                    <div class="${isAr ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                                </div>
+                                                
+                                                <div class="px-2 shrink-0">
+                                                    <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                        ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : predictText)}
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
+                                                    <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                    <div class="${isAr ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
-            ${Array.from({ length: 38 }, (_, i) => i + 1).map(gw => {
-                let gwMatches = matches.filter(m => Number(m.gw) === gw);
-                if (gwMatches.length === 0) return '';
-                
-                gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-                
-                return `
-                    <div class="glass p-4 rounded-2xl space-y-3">
-                        <div class="border-b border-white/10 pb-2 flex justify-between items-center">
-                            <h3 class="font-black text-sm text-blue-400">${t('gw')} ${gw}</h3>
-                            <span class="text-xs text-slate-400">${gwMatches.length} ${t('matchups')}</span>
-                        </div>
-                        <div class="space-y-2">
-                            ${gwMatches.map(match => {
-                                const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                                const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
-                                const isLocked = isMatchLocked(match);
-                                
-                                // استخدام دالة التاريخ ودالة الوقت المحدثة (AM/PM)
-                                const displayDate = formatMatchDate(match.date);
-                                const displayTime = formatDisplayTime(match.time);
-                                
-                                let bMini = '';
-                                if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 ${currentLang === 'ar' ? 'left-2' : 'right-2'} bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                else if(pred.isCaptain) bMini = `<div class="absolute top-2 ${currentLang === 'ar' ? 'left-2' : 'right-2'} bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
-
-                                return `
-                                    <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
-                                        ${bMini}
-                                        <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
-                                            <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? t('locked') : `${displayDate} - ${displayTime}`}
-                                        </div>
-                                        <div class="flex items-center justify-between mt-1">
-                                            
-                                            <!-- 👇 الفريق المضيف: إزالة القص والسماح بتعدد الأسطر 👇 -->
-                                            <div class="flex-1 flex justify-start items-center gap-2">
-                                                <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                                <div class="${currentLang === 'ar' ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
-                                            </div>
-                                            
-                                            <div class="px-2 shrink-0">
-                                                <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                    ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : t('predictNow'))}
-                                                </button>
-                                            </div>
-                                            
-                                            <!-- 👇 الفريق الضيف: إزالة القص والسماح بتعدد الأسطر 👇 -->
-                                            <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
-                                                <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                                <div class="${currentLang === 'ar' ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
+        `;
+    } catch (e) {
+        console.error("Error in matches tab:", e);
+        return `<div class="text-center text-rose-400 mt-10">حدث خطأ بسيط في عرض المباريات.. ولكن التطبيق لم يتعطل! 🚀</div>`;
+    }
 }
 
         function renderStandingsTab() {
