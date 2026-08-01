@@ -169,7 +169,18 @@ cat3_1: "التوقع الرقمي الدقيق لفوز أحد الفريقين
 cat3_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيجة مختلفة)",
 cat3_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
 cat3_4: "توقع التعادل (بنتيجة مختلفة)",
-cat3_5: "التوقع الدقيق لتعادل سلبي (0-0) أو لنتيجة مجموع أهدافها 5 فأكثر"
+cat3_5: "التوقع الدقيق لتعادل سلبي (0-0) أو لنتيجة مجموع أهدافها 5 فأكثر",
+        appDesc: "منصة التوقعات الأقوى للدوري الإنجليزي الممتاز",
+loginBtn: "تسجيل الدخول",
+registerBtn: "حساب جديد",
+usernameLabel: "اسم المستخدم",
+usernamePh: "مثال: Ahmed99",
+passwordLabel: "كلمة المرور (الرمز السري)",
+passwordPh: "4 أرقام أو حروف على الأقل",
+confirmPasswordLabel: "تأكيد كلمة المرور",
+confirmPasswordPh: "أعد كتابة الرمز السري",
+loginSubmit: "دخول إلى المنصة",
+registerSubmit: "إنشاء الحساب والبدء"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -236,7 +247,18 @@ cat3_1: "Exact score prediction for a win",
 cat3_2: "Correct winner prediction (different score)",
 cat3_3: "Exact score prediction for a draw",
 cat3_4: "Correct draw prediction (different score)",
-cat3_5: "Exact prediction of a (0-0) draw or any score with 5+ total goals"
+cat3_5: "Exact prediction of a (0-0) draw or any score with 5+ total goals",
+        appDesc: "The Ultimate Premier League Prediction Platform",
+loginBtn: "Login",
+registerBtn: "New Account",
+usernameLabel: "Username",
+usernamePh: "e.g., Ahmed99",
+passwordLabel: "Password (PIN)",
+passwordPh: "At least 4 characters or digits",
+confirmPasswordLabel: "Confirm Password",
+confirmPasswordPh: "Retype your PIN",
+loginSubmit: "Enter Platform",
+registerSubmit: "Create Account & Start"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -303,7 +325,18 @@ cat3_1: "Kazanan takım için tam skor tahmini",
 cat3_2: "Doğru kazanan tahmini (farklı skor)",
 cat3_3: "Beraberlik için tam skor tahmini",
 cat3_4: "Doğru beraberlik tahmini (farklı skor)",
-cat3_5: "(0-0) Beraberlik veya toplam 5+ gollü maçın tam tahmini"
+cat3_5: "(0-0) Beraberlik veya toplam 5+ gollü maçın tam tahmini",
+        appDesc: "En İyi Premier Lig Tahmin Platformu",
+loginBtn: "Giriş Yap",
+registerBtn: "Yeni Hesap",
+usernameLabel: "Kullanıcı Adı",
+usernamePh: "Örn: Ahmed99",
+passwordLabel: "Şifre (PIN)",
+passwordPh: "En az 4 karakter veya rakam",
+confirmPasswordLabel: "Şifreyi Onayla",
+confirmPasswordPh: "PIN'inizi tekrar girin",
+loginSubmit: "Platforma Gir",
+registerSubmit: "Hesap Oluştur ve Başla"
     }
 };
         
@@ -1657,48 +1690,66 @@ function ruleRow(text, points, colorType) {
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         function renderAuthScreen() {
-            return `
-                <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative">
-                    <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up relative z-10">
-                        <div class="text-center mb-6">
-                            <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-3 border border-blue-500/30">
-                                <i class="fa-solid fa-crosshairs text-4xl text-blue-500"></i>
-                            </div>
-                            <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
-                            <p class="text-xs text-slate-400 mt-2 font-bold">منصة التوقعات الأقوى للدوري الإنجليزي الممتاز</p>
-                        </div>
-                        
-                        <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                            <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">تسجيل الدخول</button>
-                            <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">حساب جديد</button>
-                        </div>
+    // تحديد الاتجاه وأيقونة السهم بناءً على اللغة الحالية
+    const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    const arrowIcon = lang === 'ar' ? 'fa-arrow-left mr-2' : 'fa-arrow-right ml-2';
 
-                        <form onsubmit="handleAuth(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">اسم المستخدم</label>
-                                <input type="text" id="auth-name" placeholder="مثال: Ahmed99" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">كلمة المرور (الرمز السري)</label>
-                                <input type="password" id="auth-pin" placeholder="4 أرقام أو حروف على الأقل" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                            </div>
-                            
-                            ${authMode === 'register' ? `
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-400 mb-1">تأكيد كلمة المرور</label>
-                                    <input type="password" id="auth-pin-confirm" placeholder="أعد كتابة الرمز السري" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                                </div>
-                            ` : ''}
+    // دالة مساعدة لضمان جلب الترجمة أو إرجاع النص العربي كاحتياطي
+    const text = (key, fallback) => typeof t === 'function' && t(key) ? t(key) : fallback;
 
-                            <button type="submit" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
-                                ${authMode === 'login' ? 'دخول إلى المنصة <i class="fa-solid fa-arrow-left mr-2"></i>' : 'إنشاء الحساب والبدء <i class="fa-solid fa-check mr-2"></i>'}
-                            </button>
-                        </form>
+    return `
+        <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative" dir="${dir}">
+            
+            <!-- أزرار تغيير اللغة (تطفو في الزاوية العلوية) -->
+            <div class="absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg z-50" dir="ltr">
+                <button onclick="changeLanguage('ar')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
+                <span class="text-white/20 text-xs px-1">|</span>
+                <button onclick="changeLanguage('en')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
+                <span class="text-white/20 text-xs px-1">|</span>
+                <button onclick="changeLanguage('tr')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
+            </div>
+
+            <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up relative z-10">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-3 border border-blue-500/30">
+                        <i class="fa-solid fa-crosshairs text-4xl text-blue-500"></i>
                     </div>
+                    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
+                    <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
-            `;
-        }
+                
+                <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                    <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
+                    <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
+                </div>
 
+                <form onsubmit="handleAuth(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('usernameLabel', 'اسم المستخدم')}</label>
+                        <input type="text" id="auth-name" placeholder="${text('usernamePh', 'مثال: Ahmed99')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
+                        <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                    </div>
+                    
+                    ${authMode === 'register' ? `
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('confirmPasswordLabel', 'تأكيد كلمة المرور')}</label>
+                            <input type="password" id="auth-pin-confirm" placeholder="${text('confirmPasswordPh', 'أعد كتابة الرمز السري')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                        </div>
+                    ` : ''}
+
+                    <button type="submit" class="w-full py-4 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                        ${authMode === 'login' ? `${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>` : `${text('registerSubmit', 'إنشاء الحساب والبدء')} <i class="fa-solid fa-check ${lang === 'ar' ? 'mr-2' : 'ml-2'}"></i>`}
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+}
+        
         function render() {
             const app = document.getElementById('app');
             if (!currentUser) { app.innerHTML = renderAuthScreen(); return; }
