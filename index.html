@@ -1329,9 +1329,6 @@ function ruleRow(text, points, colorType) {
     return `
         <div class="space-y-6 max-w-2xl mx-auto pb-10" dir="rtl">
             
-            <!-- ========================================== -->
-            <!-- 1. قسم الخطر والصلاحيات (أحمر)             -->
-            <!-- ========================================== -->
             <div class="glass p-6 rounded-3xl space-y-6 border border-rose-500/20 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-triangle-exclamation"></i></div>
                 
@@ -1340,7 +1337,6 @@ function ruleRow(text, points, colorType) {
                     <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
                 </div>
 
-                <!-- بطاقة حذف مستخدم -->
                 <div class="bg-slate-900/50 border border-rose-500/20 rounded-2xl p-4 relative z-10">
                     <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
                     <input type="text" id="admin-delete-username" placeholder="اسم المستخدم (مثال: Ahmed99)" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
@@ -1348,7 +1344,6 @@ function ruleRow(text, points, colorType) {
                     <button onclick="deleteUserByAdmin()" class="w-full py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-rose-600/20">حذف اللاعب نهائياً</button>
                 </div>
 
-                <!-- بطاقة حذف دوري -->
                 <div class="bg-slate-900/50 border border-amber-500/20 rounded-2xl p-4 relative z-10">
                     <h3 class="text-amber-400 font-bold text-sm mb-3"><i class="fa-solid fa-trash-can ml-1"></i> تدمير دوري مصغر</h3>
                     <input type="text" id="admin-delete-league" placeholder="كود الدوري (مثال: X7B9K)" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
@@ -1357,9 +1352,6 @@ function ruleRow(text, points, colorType) {
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 2. قسم إضافة المباريات (أزرق)              -->
-            <!-- ========================================== -->
             <div class="glass p-6 rounded-3xl border border-blue-500/30 space-y-4 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-6xl text-blue-500/10"><i class="fa-solid fa-calendar-plus"></i></div>
                 <h2 class="text-lg font-bold text-blue-400 flex items-center gap-2 relative z-10"><i class="fa-solid fa-pen-to-square"></i> إضافة مباراة يدوية</h2>
@@ -1390,9 +1382,6 @@ function ruleRow(text, points, colorType) {
                 </form>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 3. قسم إدخال النتائج (أخضر)                -->
-            <!-- ========================================== -->
             <div class="glass p-6 rounded-3xl space-y-4 border border-emerald-500/20">
                 <h3 class="font-bold text-sm text-emerald-400 border-b border-emerald-500/20 pb-3"><i class="fa-solid fa-trophy ml-1"></i> إدخال النتائج الحقيقية للمباريات</h3>
                 <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
