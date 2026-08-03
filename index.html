@@ -1622,36 +1622,28 @@ function ruleRow(text, points, colorType) {
     const adminPass = document.getElementById('admin-pass-1').value;
 
     if (!username || !adminPass) return alert('يرجى ملء جميع الحقول!');
-    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟`)) return;
+    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع!`)) return;
 
     try {
-        // تجهيز الرابط المضمون
-        let url = `${API_BASE_URL}/admin/delete-user`;
-        if (!url.includes('/api/')) {
-            url = `${API_BASE_URL}/api/admin/delete-user`;
-        }
-
-        const response = await fetch(url, {
+        const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
         });
-
-        // 👈 هنا السحر: سنقرأ رد السيرفر كنص عادي أولاً لنرى ماذا يخبئ!
-        const rawText = await response.text(); 
         
+        const rawText = await response.text();
         try {
-            // محاولة تحويل الرد إلى JSON
             const data = JSON.parse(rawText);
             alert(data.message || 'تمت العملية');
-        } catch (jsonError) {
-            // إذا رد السيرفر بصفحة خطأ (مثلاً 404 أو 500) سيظهر هذا التنبيه
-            alert(`السيرفر رفض الطلب! ❌\nكود الحالة: ${response.status}\nالرابط: ${url}\nتفاصيل الرد: ${rawText.substring(0, 100)}`);
+            if(data.success) {
+                // إفراغ الحقل بعد الحذف الناجح
+                document.getElementById('admin-delete-username').value = '';
+            }
+        } catch (e) {
+            alert('السيرفر رفض الطلب (تأكد من عمل Restart للسيرفر)\nالرد: ' + rawText.substring(0, 50));
         }
-
     } catch (error) {
-        // إذا كان السيرفر مغلقاً تماماً أو هناك مشكلة انترنت
-        alert('فشل الاتصال تماماً: ' + error.message);
+        alert('حدث خطأ في الاتصال بالسيرفر');
     }
 }
 
@@ -1663,16 +1655,23 @@ async function deleteLeagueByAdmin() {
     if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
 
     try {
-        // 👇 وهنا أيضاً
         const response = await fetch(`${API_BASE_URL}/admin/delete-league`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
         });
-        const result = await response.json();
-        alert(result.message);
+        
+        const rawText = await response.text();
+        try {
+            const data = JSON.parse(rawText);
+            alert(data.message || 'تمت العملية');
+            if(data.success) {
+                document.getElementById('admin-delete-league').value = '';
+            }
+        } catch (e) {
+            alert('السيرفر رفض الطلب (تأكد من عمل Restart للسيرفر)\nالرد: ' + rawText.substring(0, 50));
+        }
     } catch (error) {
-        console.error("تفاصيل الخطأ:", error);
         alert('حدث خطأ في الاتصال بالسيرفر');
     }
 }
