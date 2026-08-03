@@ -58,7 +58,7 @@ app.post('/api/admin/delete-user', async (req, res) => {
     const { adminPassword, targetUsername } = req.body;
 
     // تأمين المسار بكلمة مرور خاصة بك كمدير
-    if (adminPassword !== 'YOUR_SUPER_SECRET_PASSWORD') {
+    if (adminPassword !== '101383') {
         return res.status(403).json({ success: false, message: 'غير مصرح لك!' });
     }
 
@@ -87,7 +87,7 @@ app.post('/api/admin/delete-user', async (req, res) => {
 app.post('/api/admin/delete-league', async (req, res) => {
     const { adminPassword, leagueCode } = req.body;
 
-    if (adminPassword !== 'YOUR_SUPER_SECRET_PASSWORD') {
+    if (adminPassword !== '101383') {
         return res.status(403).json({ success: false, message: 'غير مصرح لك!' });
     }
 
