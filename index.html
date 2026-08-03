@@ -1326,7 +1326,39 @@ function ruleRow(text, points, colorType) {
     });
 
     return `
-        <div class="space-y-6">
+        <div class="space-y-6 max-w-2xl mx-auto pb-10" dir="rtl">
+            
+            <!-- ========================================== -->
+            <!-- 1. قسم الخطر (الحذف والإعدام)              -->
+            <!-- ========================================== -->
+            <div class="glass p-6 rounded-3xl space-y-6 border border-rose-500/50 relative overflow-hidden bg-rose-950/10">
+                <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                
+                <div class="flex items-center gap-3 border-b border-rose-500/30 pb-4 relative z-10">
+                    <i class="fa-solid fa-user-shield text-rose-500 text-2xl"></i>
+                    <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
+                </div>
+
+                <!-- بطاقة حذف مستخدم -->
+                <div class="bg-slate-900/80 border border-rose-500/30 rounded-2xl p-4 relative z-10">
+                    <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
+                    <input type="text" id="admin-delete-username" placeholder="اسم المستخدم (مثال: Ahmed99)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                    <input type="password" id="admin-pass-1" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                    <button onclick="deleteUserByAdmin()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-rose-600/20">حذف اللاعب نهائياً</button>
+                </div>
+
+                <!-- بطاقة حذف دوري -->
+                <div class="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-4 relative z-10">
+                    <h3 class="text-amber-400 font-bold text-sm mb-3"><i class="fa-solid fa-trash-can ml-1"></i> تدمير دوري مصغر</h3>
+                    <input type="text" id="admin-delete-league" placeholder="كود الدوري (مثال: X7B9K)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                    <input type="password" id="admin-pass-2" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                    <button onclick="deleteLeagueByAdmin()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-amber-600/20">حذف الدوري نهائياً</button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- 2. قسم إضافة المباريات (الكود الأصلي)      -->
+            <!-- ========================================== -->
             <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
                 <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-shield-halved"></i></div>
                 <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة يدوية</h2>
@@ -1357,6 +1389,9 @@ function ruleRow(text, points, colorType) {
                 </form>
             </div>
 
+            <!-- ========================================== -->
+            <!-- 3. قسم النتائج الحقيقية (الكود الأصلي)     -->
+            <!-- ========================================== -->
             <div class="glass p-6 rounded-3xl space-y-4">
                 <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
                 <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
@@ -1368,7 +1403,6 @@ function ruleRow(text, points, colorType) {
                             </div>
                             <div class="flex-1 flex justify-between items-center gap-2">
                                 
-                                <!-- 👇 تم إضافة شعار الفريق المضيف هنا 👇 -->
                                 <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate flex justify-start items-center gap-2">
                                     <img src="${getTeamLogo(m.home)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
                                     ${getTeamName(m.home)}
@@ -1380,7 +1414,6 @@ function ruleRow(text, points, colorType) {
                                     <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
                                 </div>
                                 
-                                <!-- 👇 تم إضافة شعار الفريق الضيف هنا 👇 -->
                                 <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate flex justify-end items-center gap-2 flex-row-reverse">
                                     <img src="${getTeamLogo(m.away)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
                                     ${getTeamName(m.away)}
@@ -1583,6 +1616,46 @@ function ruleRow(text, points, colorType) {
                 } catch(e){}
             });
         }
+
+        async function deleteUserByAdmin() {
+    const username = document.getElementById('admin-delete-username').value;
+    const adminPass = document.getElementById('admin-pass-1').value;
+
+    if (!username || !adminPass) return alert('يرجى ملء جميع الحقول!');
+    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/admin/delete-user`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالسيرفر');
+    }
+}
+
+async function deleteLeagueByAdmin() {
+    const leagueCode = document.getElementById('admin-delete-league').value;
+    const adminPass = document.getElementById('admin-pass-2').value;
+
+    if (!leagueCode || !adminPass) return alert('يرجى ملء جميع الحقول!');
+    if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
+
+    try {
+        const response = await fetch(`${API_URL}/api/admin/delete-league`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالسيرفر');
+    }
+}
 
         async function saveActual(id) {
             const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
