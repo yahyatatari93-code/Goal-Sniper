@@ -1622,20 +1622,36 @@ function ruleRow(text, points, colorType) {
     const adminPass = document.getElementById('admin-pass-1').value;
 
     if (!username || !adminPass) return alert('يرجى ملء جميع الحقول!');
-    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟`)) return;
 
     try {
-        // 👇 هنا استخدمنا المتغير السحري الخاص بك
-        const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
+        // تجهيز الرابط المضمون
+        let url = `${API_BASE_URL}/admin/delete-user`;
+        if (!url.includes('/api/')) {
+            url = `${API_BASE_URL}/api/admin/delete-user`;
+        }
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
         });
-        const result = await response.json();
-        alert(result.message);
+
+        // 👈 هنا السحر: سنقرأ رد السيرفر كنص عادي أولاً لنرى ماذا يخبئ!
+        const rawText = await response.text(); 
+        
+        try {
+            // محاولة تحويل الرد إلى JSON
+            const data = JSON.parse(rawText);
+            alert(data.message || 'تمت العملية');
+        } catch (jsonError) {
+            // إذا رد السيرفر بصفحة خطأ (مثلاً 404 أو 500) سيظهر هذا التنبيه
+            alert(`السيرفر رفض الطلب! ❌\nكود الحالة: ${response.status}\nالرابط: ${url}\nتفاصيل الرد: ${rawText.substring(0, 100)}`);
+        }
+
     } catch (error) {
-        console.error("تفاصيل الخطأ:", error);
-        alert('حدث خطأ في الاتصال بالسيرفر');
+        // إذا كان السيرفر مغلقاً تماماً أو هناك مشكلة انترنت
+        alert('فشل الاتصال تماماً: ' + error.message);
     }
 }
 
