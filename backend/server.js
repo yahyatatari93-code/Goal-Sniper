@@ -57,19 +57,13 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/admin/delete-user', async (req, res) => {
     const { adminPassword, targetUsername } = req.body;
 
-    // تأمين المسار بكلمة مرور خاصة بك كمدير
     if (adminPassword !== '101383') {
         return res.status(403).json({ success: false, message: 'غير مصرح لك!' });
     }
 
     try {
-        // 1. مسح المستخدم من الدوريات المصغرة
         await pool.query('DELETE FROM mini_league_members WHERE username = ?', [targetUsername]);
-        
-        // 2. مسح جميع توقعاته
         await pool.query('DELETE FROM predictions WHERE username = ?', [targetUsername]);
-        
-        // 3. أخيراً.. مسح حسابه بالكامل
         const [result] = await pool.query('DELETE FROM users WHERE username = ?', [targetUsername]);
 
         if (result.affectedRows === 0) {
@@ -92,10 +86,7 @@ app.post('/api/admin/delete-league', async (req, res) => {
     }
 
     try {
-        // 1. مسح جميع الأعضاء المشتركين في هذا الدوري
         await pool.query('DELETE FROM mini_league_members WHERE league_code = ?', [leagueCode]);
-        
-        // 2. مسح الدوري نفسه
         const [result] = await pool.query('DELETE FROM mini_leagues WHERE league_code = ?', [leagueCode]);
 
         if (result.affectedRows === 0) {
@@ -108,7 +99,6 @@ app.post('/api/admin/delete-league', async (req, res) => {
         res.status(500).json({ success: false, message: 'السبب: ' + error.message });
     }
 });
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
