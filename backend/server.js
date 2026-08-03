@@ -35,7 +35,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
-// 2. مسار إنشاء حساب جديد (Register) - تمت إضافته!
+// 2. مسار إنشاء حساب جديد (Register)
 app.post('/api/auth/register', async (req, res) => {
     const { username, pin } = req.body;
     try {
@@ -64,13 +64,13 @@ app.post('/api/admin/delete-user', async (req, res) => {
 
     try {
         // 1. مسح المستخدم من الدوريات المصغرة
-        await db.promise().query('DELETE FROM mini_league_members WHERE username = ?', [targetUsername]);
+        await pool.query('DELETE FROM mini_league_members WHERE username = ?', [targetUsername]);
         
         // 2. مسح جميع توقعاته
-        await db.promise().query('DELETE FROM predictions WHERE username = ?', [targetUsername]);
+        await pool.query('DELETE FROM predictions WHERE username = ?', [targetUsername]);
         
         // 3. أخيراً.. مسح حسابه بالكامل
-        const [result] = await db.promise().query('DELETE FROM users WHERE username = ?', [targetUsername]);
+        const [result] = await pool.query('DELETE FROM users WHERE username = ?', [targetUsername]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
@@ -93,10 +93,10 @@ app.post('/api/admin/delete-league', async (req, res) => {
 
     try {
         // 1. مسح جميع الأعضاء المشتركين في هذا الدوري
-        await db.promise().query('DELETE FROM mini_league_members WHERE league_code = ?', [leagueCode]);
+        await pool.query('DELETE FROM mini_league_members WHERE league_code = ?', [leagueCode]);
         
         // 2. مسح الدوري نفسه
-        const [result] = await db.promise().query('DELETE FROM mini_leagues WHERE league_code = ?', [leagueCode]);
+        const [result] = await pool.query('DELETE FROM mini_leagues WHERE league_code = ?', [leagueCode]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'الدوري غير موجود' });
