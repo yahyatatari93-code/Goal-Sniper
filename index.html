@@ -1325,6 +1325,33 @@ function ruleRow(text, points, colorType) {
         return timeA.localeCompare(timeB);
     });
 
+            function renderAdminPanel() {
+    return `
+        <div class="glass p-6 rounded-3xl space-y-6 max-w-md mx-auto" dir="rtl">
+            <div class="flex items-center gap-3 border-b border-rose-500/30 pb-4">
+                <i class="fa-solid fa-user-shield text-rose-500 text-2xl"></i>
+                <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
+            </div>
+
+            <!-- بطاقة حذف مستخدم -->
+            <div class="bg-slate-900/50 border border-rose-500/20 rounded-2xl p-4">
+                <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
+                <input type="text" id="admin-delete-username" placeholder="اسم المستخدم (مثال: Ahmed99)" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                <input type="password" id="admin-pass-1" placeholder="كلمة مرور الإدارة" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                <button onclick="deleteUserByAdmin()" class="w-full py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white font-bold rounded-xl transition-all text-sm">حذف اللاعب نهائياً</button>
+            </div>
+
+            <!-- بطاقة حذف دوري -->
+            <div class="bg-slate-900/50 border border-amber-500/20 rounded-2xl p-4">
+                <h3 class="text-amber-400 font-bold text-sm mb-3"><i class="fa-solid fa-trash-can ml-1"></i> تدمير دوري مصغر</h3>
+                <input type="text" id="admin-delete-league" placeholder="كود الدوري (مثال: X7B9K)" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                <input type="password" id="admin-pass-2" placeholder="كلمة مرور الإدارة" class="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                <button onclick="deleteLeagueByAdmin()" class="w-full py-2.5 bg-amber-600/80 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm">حذف الدوري نهائياً</button>
+            </div>
+        </div>
+    `;
+}
+
     return `
         <div class="space-y-6">
             <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
@@ -1689,6 +1716,46 @@ function ruleRow(text, points, colorType) {
         function logout() { currentUser = null; localStorage.removeItem('oracle_current_user_v8'); render(); }
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
+        async function deleteUserByAdmin() {
+    const username = document.getElementById('admin-delete-username').value;
+    const adminPass = document.getElementById('admin-pass-1').value;
+
+    if (!username || !adminPass) return alert('يرجى ملء جميع الحقول!');
+    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
+
+    try {
+        const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالسيرفر');
+    }
+}
+
+async function deleteLeagueByAdmin() {
+    const leagueCode = document.getElementById('admin-delete-league').value;
+    const adminPass = document.getElementById('admin-pass-2').value;
+
+    if (!leagueCode || !adminPass) return alert('يرجى ملء جميع الحقول!');
+    if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
+
+    try {
+        const response = await fetch('/api/admin/delete-league', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
+        });
+        const result = await response.json();
+        alert(result.message);
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالسيرفر');
+    }
+}
+        
         function renderAuthScreen() {
     // تحديد الاتجاه وأيقونة السهم بناءً على اللغة الحالية
     const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
