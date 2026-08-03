@@ -53,6 +53,62 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
+// مسار حذف مستخدم (للمدير فقط)
+app.post('/api/admin/delete-user', async (req, res) => {
+    const { adminPassword, targetUsername } = req.body;
+
+    // تأمين المسار بكلمة مرور خاصة بك كمدير
+    if (adminPassword !== 'YOUR_SUPER_SECRET_PASSWORD') {
+        return res.status(403).json({ success: false, message: 'غير مصرح لك!' });
+    }
+
+    try {
+        // 1. مسح المستخدم من الدوريات المصغرة
+        await db.promise().query('DELETE FROM mini_league_members WHERE username = ?', [targetUsername]);
+        
+        // 2. مسح جميع توقعاته
+        await db.promise().query('DELETE FROM predictions WHERE username = ?', [targetUsername]);
+        
+        // 3. أخيراً.. مسح حسابه بالكامل
+        const [result] = await db.promise().query('DELETE FROM users WHERE username = ?', [targetUsername]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+        }
+
+        res.json({ success: true, message: `تم مسح اللاعب ${targetUsername} وكل بياناته بنجاح 🧹` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر' });
+    }
+});
+
+// مسار حذف دوري مصغر (للمدير فقط)
+app.post('/api/admin/delete-league', async (req, res) => {
+    const { adminPassword, leagueCode } = req.body;
+
+    if (adminPassword !== 'YOUR_SUPER_SECRET_PASSWORD') {
+        return res.status(403).json({ success: false, message: 'غير مصرح لك!' });
+    }
+
+    try {
+        // 1. مسح جميع الأعضاء المشتركين في هذا الدوري
+        await db.promise().query('DELETE FROM mini_league_members WHERE league_code = ?', [leagueCode]);
+        
+        // 2. مسح الدوري نفسه
+        const [result] = await db.promise().query('DELETE FROM mini_leagues WHERE league_code = ?', [leagueCode]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, message: 'الدوري غير موجود' });
+        }
+
+        res.json({ success: true, message: `تم تدمير الدوري ${leagueCode} بنجاح 💥` });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
