@@ -1625,7 +1625,8 @@ function ruleRow(text, points, colorType) {
     if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع عن هذا الإجراء!`)) return;
 
     try {
-        const response = await fetch(`${API_URL}/api/admin/delete-user`, {
+        // 👇 تم تصحيح الرابط هنا
+        const response = await fetch('/api/admin/delete-user', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
@@ -1633,6 +1634,7 @@ function ruleRow(text, points, colorType) {
         const result = await response.json();
         alert(result.message);
     } catch (error) {
+        console.error("تفاصيل الخطأ:", error); // أضفت هذه لنرى الخطأ في الـ F12 إذا حدث
         alert('حدث خطأ في الاتصال بالسيرفر');
     }
 }
@@ -1645,7 +1647,8 @@ async function deleteLeagueByAdmin() {
     if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
 
     try {
-        const response = await fetch(`${API_URL}/api/admin/delete-league`, {
+        // 👇 تم تصحيح الرابط هنا أيضاً
+        const response = await fetch('/api/admin/delete-league', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
@@ -1653,6 +1656,7 @@ async function deleteLeagueByAdmin() {
         const result = await response.json();
         alert(result.message);
     } catch (error) {
+        console.error("تفاصيل الخطأ:", error);
         alert('حدث خطأ في الاتصال بالسيرفر');
     }
 }
