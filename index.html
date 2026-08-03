@@ -1622,25 +1622,20 @@ function ruleRow(text, points, colorType) {
     const adminPass = document.getElementById('admin-pass-1').value;
 
     if (!username || !adminPass) return alert('يرجى ملء جميع الحقول!');
-    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟ لا يمكن التراجع!`)) return;
+    if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟`)) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
+        // يمر عبر الجسر backend.js
+        const response = await fetch(`${API_BASE_URL}/backend?path=/admin/delete-user`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
         });
         
-        const rawText = await response.text();
-        try {
-            const data = JSON.parse(rawText);
-            alert(data.message || 'تمت العملية');
-            if(data.success) {
-                // إفراغ الحقل بعد الحذف الناجح
-                document.getElementById('admin-delete-username').value = '';
-            }
-        } catch (e) {
-            alert('السيرفر رفض الطلب (تأكد من عمل Restart للسيرفر)\nالرد: ' + rawText.substring(0, 50));
+        const result = await response.json();
+        alert(result.message || result.error || 'تمت العملية');
+        if(result.success) {
+            document.getElementById('admin-delete-username').value = '';
         }
     } catch (error) {
         alert('حدث خطأ في الاتصال بالسيرفر');
@@ -1652,30 +1647,27 @@ async function deleteLeagueByAdmin() {
     const adminPass = document.getElementById('admin-pass-2').value;
 
     if (!leagueCode || !adminPass) return alert('يرجى ملء جميع الحقول!');
-    if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
+    if (!confirm(`هل أنت متأكد 100% من تدمير الدوري ${leagueCode}؟ لا يمكن التراجع!`)) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/delete-league`, {
+        // يمر عبر الجسر backend.js تماماً مثل حذف المستخدم
+        const response = await fetch(`${API_BASE_URL}/backend?path=/admin/delete-league`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
         });
         
-        const rawText = await response.text();
-        try {
-            const data = JSON.parse(rawText);
-            alert(data.message || 'تمت العملية');
-            if(data.success) {
-                document.getElementById('admin-delete-league').value = '';
-            }
-        } catch (e) {
-            alert('السيرفر رفض الطلب (تأكد من عمل Restart للسيرفر)\nالرد: ' + rawText.substring(0, 50));
+        const result = await response.json();
+        alert(result.message || result.error || 'تمت العملية');
+        if(result.success) {
+            // تفريغ حقل الكود بعد التدمير الناجح
+            document.getElementById('admin-delete-league').value = '';
+            document.getElementById('admin-pass-2').value = '';
         }
     } catch (error) {
         alert('حدث خطأ في الاتصال بالسيرفر');
     }
 }
-
         async function saveActual(id) {
             const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
             if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
