@@ -54,7 +54,7 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 // مسار حذف مستخدم (للمدير فقط)
-app.post('/admin/delete-user', async (req, res) => {
+app.post('/api/admin/delete-user', async (req, res) => {
     const { adminPassword, targetUsername } = req.body;
 
     if (adminPassword !== '101383') {
@@ -78,7 +78,7 @@ app.post('/admin/delete-user', async (req, res) => {
 });
 
 // مسار حذف دوري مصغر (للمدير فقط)
-app.post('/admin/delete-league', async (req, res) => {
+app.post('/api/admin/delete-league', async (req, res) => {
     const { adminPassword, leagueCode } = req.body;
 
     if (adminPassword !== '101383') {
@@ -99,7 +99,7 @@ app.post('/admin/delete-league', async (req, res) => {
         res.status(500).json({ success: false, message: 'السبب: ' + error.message });
     }
 });
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
