@@ -1625,20 +1625,35 @@ function ruleRow(text, points, colorType) {
     if (!confirm(`هل أنت متأكد 100% أنك تريد مسح اللاعب ${username}؟`)) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/delete-user`, {
+        // نجهز الرابط ليتطابق مع ما هو مكتوب في ملف السيرفر تماماً
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        let url = `${baseUrl}/admin/delete-user`;
+
+        let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
         });
-        
+
+        // إذا كان المسار يعطي 404 (غير موجود)، نجرب المسار الآخر احتياطياً
+        if (response.status === 404) {
+            url = `${API_BASE_URL}/admin/delete-user`;
+            response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminPassword: adminPass, targetUsername: username })
+            });
+        }
+
         const result = await response.json();
         alert(result.message || 'تمت العملية');
+        
         if (result.success) {
             document.getElementById('admin-delete-username').value = '';
             document.getElementById('admin-pass-1').value = '';
         }
     } catch (error) {
-        alert('حدث خطأ في الاتصال بالسيرفر');
+        alert('فشل الاتصال بالمسار الصحيح: ' + error.message);
     }
 }
 
@@ -1650,20 +1665,33 @@ async function deleteLeagueByAdmin() {
     if (!confirm(`هل أنت متأكد من تدمير الدوري ${leagueCode}؟`)) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/admin/delete-league`, {
+        const baseUrl = API_BASE_URL.replace('/api', '');
+        let url = `${baseUrl}/admin/delete-league`;
+
+        let response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
         });
-        
+
+        if (response.status === 404) {
+            url = `${API_BASE_URL}/admin/delete-league`;
+            response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminPassword: adminPass, leagueCode: leagueCode })
+            });
+        }
+
         const result = await response.json();
         alert(result.message || 'تمت العملية');
+        
         if (result.success) {
             document.getElementById('admin-delete-league').value = '';
             document.getElementById('admin-pass-2').value = '';
         }
     } catch (error) {
-        alert('حدث خطأ في الاتصال بالسيرفر');
+        alert('فشل الاتصال بالمسار الصحيح: ' + error.message);
     }
 }
         async function saveActual(id) {
