@@ -79,7 +79,7 @@ app.post('/api/admin/delete-user', async (req, res) => {
         res.json({ success: true, message: `تم مسح اللاعب ${targetUsername} وكل بياناته بنجاح 🧹` });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر' });
+        res.status(500).json({ success: false, message: 'السبب: ' + error.message });
     }
 });
 
@@ -105,7 +105,7 @@ app.post('/api/admin/delete-league', async (req, res) => {
         res.json({ success: true, message: `تم تدمير الدوري ${leagueCode} بنجاح 💥` });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر' });
+        res.status(500).json({ success: false, message: 'السبب: ' + error.message });
     }
 });
 
