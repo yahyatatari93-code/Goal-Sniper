@@ -617,7 +617,9 @@ function changeLanguage(langCode) {
 
     currentLeagueShots.forEach(shot => {
         const victim = leagueMembers.find(m => m.username === shot.victim);
-        if (victim) victim.mlTotalPts -= shot.points_deducted;
+        // حماية ذكية: سواء أرسله السيرفر بـ _ أو كحرف كبير، سيتم خصم الرقم
+        const penalty = shot.points_deducted || shot.pointsDeducted || 0; 
+        if (victim) victim.mlTotalPts -= penalty;
 
         // تسجيل الحصانة إذا تم قنصه في الجولة السابقة
         if (shot.gw === evaluationGw - 1) victimsLastGw.add(shot.victim);
@@ -2089,7 +2091,9 @@ async function deleteLeagueByAdmin() {
         const json = await res.json();
         if (json.success) {
             alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-            if(typeof syncData === 'function') syncData(); 
+            // 👇 هنا السر: ننتظر جلب البيانات الجديدة ثم نحدث الشاشة فوراً
+            await syncData(); 
+            render(); 
         } else {
             alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
         }
