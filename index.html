@@ -586,6 +586,15 @@ function changeLanguage(langCode) {
 
         function getLeagueStandings(leagueCode, baseStats) {
     const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+    
+    // 🌟 التعديل الذكي: تحديد "جولة القنص"
+    // إذا انتقلنا لجولة جديدة ولم يسجل فيها أحد أي نقطة بعد، نمنح الرصاصة لبطل الجولة السابقة
+    let evaluationGw = activeGw;
+    let currentGwHasPoints = baseStats.some(s => (s.gwPoints[activeGw] || 0) > 0);
+    if (!currentGwHasPoints && activeGw > 1) {
+        evaluationGw = activeGw - 1;
+    }
+
     const league = miniLeagues.find(l => l.code === leagueCode);
     if (!league) return null;
 
@@ -594,8 +603,8 @@ function changeLanguage(langCode) {
         .filter(s => league.members.includes(s.username))
         .map(s => ({
             ...s,
-            mlTotalPts: s.totalPts, // نقاط الدوري التي ستتأثر بالقنص
-            mlGwPts: s.gwPoints[activeGw] || 0 // نقاط الجولة الحالية
+            mlTotalPts: s.totalPts, 
+            mlGwPts: s.gwPoints[evaluationGw] || 0 // نستخدم الجولة الذكية هنا
         }));
 
     // 2. تحليل رصاصات القناص في هذا الدوري فقط
@@ -604,24 +613,23 @@ function changeLanguage(langCode) {
     );
 
     const victimsLastGw = new Set(); // لتسجيل الحصانة
-    const snipersThisGw = new Set(); // لتسجيل من استخدم الميزة هذه الجولة
+    const snipersThisGw = new Set(); // لتسجيل من استخدم الميزة 
 
     currentLeagueShots.forEach(shot => {
-        // تطبيق الخصم من المجموع الكلي داخل الدوري فقط
         const victim = leagueMembers.find(m => m.username === shot.victim);
         if (victim) victim.mlTotalPts -= shot.points_deducted;
 
         // تسجيل الحصانة إذا تم قنصه في الجولة السابقة
-        if (shot.gw === activeGw - 1) victimsLastGw.add(shot.victim);
+        if (shot.gw === evaluationGw - 1) victimsLastGw.add(shot.victim);
 
-        // تسجيل من أطلق النار في الجولة الحالية
-        if (shot.gw === activeGw) snipersThisGw.add(shot.sniper);
+        // تسجيل من أطلق النار في جولة التقييم الحالية
+        if (shot.gw === evaluationGw) snipersThisGw.add(shot.sniper);
     });
 
     // 3. إعادة ترتيب الأعضاء بناءً على نقاط الدوري (بعد الخصومات)
     leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
 
-    // 4. تحديد المتصدرين في الجولة الحالية (أعلى نقاط الجولة)
+    // 4. تحديد المتصدرين في الجولة (أعلى نقاط)
     let maxGwPts = -1;
     leagueMembers.forEach(m => {
         if (m.mlGwPts > maxGwPts) maxGwPts = m.mlGwPts;
@@ -639,7 +647,7 @@ function changeLanguage(langCode) {
         sniperPenalty,
         victimsLastGw,
         snipersThisGw,
-        activeGw
+        activeGw: evaluationGw // نمرر الجولة الذكية لكي تُحفظ الرصاصة فيها
     };
 }
 
