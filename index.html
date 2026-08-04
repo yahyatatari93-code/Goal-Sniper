@@ -433,7 +433,7 @@ function changeLanguage(langCode) {
             let pts = 0;
             if (isOutcomeCorrect || isExact) {
                 if (!homeIsBig && !awayIsBig) {
-                    if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 5 : (isDraw ? 2 : 3);
+                    if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 5 : (isDraw ? 3 : 3);
                     else if (isOutcomeCorrect) pts = 1;
                 } else if (homeIsBig && awayIsBig) {
                     if (isDraw) pts = isExact ? 3 : 2;
@@ -1230,7 +1230,7 @@ function renderMiniLeaguesTab() {
                     <div class="p-3 divide-y divide-white/5">
                         ${ruleRow(rt.cat3_5, '+5', 'emerald')}
                         ${ruleRow(rt.cat3_1, '+3', 'amber')}
-                        ${ruleRow(rt.cat3_3, '+2', 'slate')}
+                        ${ruleRow(rt.cat3_3, '+3', 'slate')}
                         ${ruleRow(rt.cat3_2, '+1', 'gray')}
                         ${ruleRow(rt.cat3_4, '+1', 'gray')}
                     </div>
