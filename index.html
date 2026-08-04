@@ -50,6 +50,27 @@
         .bottom-nav-pb { padding-bottom: calc(95px + env(safe-area-inset-bottom)); }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-up { animation: fadeUp 0.35s ease forwards; }
+        .marquee-container {
+    overflow: hidden;
+    white-space: nowrap;
+    background: linear-gradient(90deg, rgba(15,23,42,0.95), rgba(30,58,138,0.6), rgba(15,23,42,0.95));
+    border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+    position: sticky;
+    top: 73px; /* ليلتصق أسفل الهيدر مباشرة */
+    z-index: 30;
+    padding: 6px 0;
+}
+.marquee-content {
+    display: inline-block;
+    color: #fbbf24; /* لون ذهبي أنيق */
+    font-size: 0.8rem;
+    font-weight: 900;
+    animation: scroll-left 25s linear infinite;
+}
+@keyframes scroll-left {
+    0% { transform: translateX(-100vw); } /* يبدأ من أقصى اليسار */
+    100% { transform: translateX(100vw); } /* يختفي في أقصى اليمين */
+}
     </style>
 </head>
 <body class="min-h-screen flex flex-col bottom-nav-pb">
@@ -377,8 +398,29 @@ function changeLanguage(langCode) {
 };
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
+        let marqueeTexts = { 
+    ar: "مرحباً بكم في Goal Sniper! 🎯", 
+    en: "Welcome to Goal Sniper! 🎯", 
+    tr: "Goal Sniper'a Hoş Geldiniz! 🎯" 
+};
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
         let sniperShots = [];
+
+        async function fetchMarquee() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/announcement`);
+        const data = await res.json();
+        if (data.success && data.text) {
+            try {
+                // نحاول قراءة النص كصندوق لغات (JSON)
+                marqueeTexts = JSON.parse(data.text);
+            } catch(e) {
+                // في حال كان النص قديماً وغير مقسم، نضعه لكل اللغات كاحتياط
+                marqueeTexts = { ar: data.text, en: data.text, tr: data.text };
+            }
+        }
+    } catch(e) {}
+}
         
         async function syncData() {
     try {
@@ -1341,7 +1383,22 @@ function ruleRow(text, points, colorType) {
                     <i class="fa-solid fa-user-shield text-rose-500 text-2xl"></i>
                     <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
                 </div>
-
+                
+                <!-- بطاقة الشريط المتحرك (متعدد اللغات) -->
+                <div class="bg-slate-900/80 border border-blue-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                    <h3 class="text-blue-400 font-bold text-sm mb-3"><i class="fa-solid fa-bullhorn ml-1"></i> نص الشريط الإخباري (متعدد اللغات)</h3>
+                    
+                    <input type="text" id="admin-marquee-ar" placeholder="النص بالعربية (مثال: بطل الجولة هو Ahmed99 🎉)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-right">
+                    
+                    <input type="text" id="admin-marquee-en" placeholder="النص بالإنجليزية (e.g., GW Winner is Ahmed99 🎉)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-left">
+                    
+                    <input type="text" id="admin-marquee-tr" placeholder="النص بالتركية (Örn: Haftanın Kazananı Ahmed99 🎉)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500 text-left">
+                    
+                    <input type="password" id="admin-pass-3" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500">
+                    
+                    <button onclick="updateMarqueeByAdmin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-blue-600/20">تغيير النص ونشره فوراً</button>
+                </div>
+                
                 <!-- بطاقة حذف مستخدم -->
                 <div class="bg-slate-900/80 border border-rose-500/30 rounded-2xl p-4 relative z-10">
                     <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
@@ -1697,6 +1754,38 @@ async function deleteLeagueByAdmin() {
         alert('فشل الاتصال بالمسار الصحيح: ' + error.message);
     }
 }
+        async function updateMarqueeByAdmin() {
+    const textAr = document.getElementById('admin-marquee-ar').value.trim();
+    const textEn = document.getElementById('admin-marquee-en').value.trim();
+    const textTr = document.getElementById('admin-marquee-tr').value.trim();
+    const adminPass = document.getElementById('admin-pass-3').value;
+
+    if (!textAr || !textEn || !textTr || !adminPass) return alert('يرجى ملء جميع النصوص وكلمة المرور!');
+
+    // نجمع اللغات في صندوق واحد
+    const combinedText = JSON.stringify({ ar: textAr, en: textEn, tr: textTr });
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/announcement`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminPassword: adminPass, text: combinedText })
+        });
+        const result = await response.json();
+        alert(result.message);
+        
+        if (result.success) {
+            marqueeTexts = { ar: textAr, en: textEn, tr: textTr }; // تحديث مباشر
+            document.getElementById('admin-marquee-ar').value = '';
+            document.getElementById('admin-marquee-en').value = '';
+            document.getElementById('admin-marquee-tr').value = '';
+            document.getElementById('admin-pass-3').value = '';
+            render(); // إعادة رسم الشاشة
+        }
+    } catch (error) {
+        alert('حدث خطأ في الاتصال بالسيرفر.');
+    }
+}
         async function saveActual(id) {
             const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
             if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
@@ -1896,6 +1985,14 @@ async function deleteLeagueByAdmin() {
 </div>
                 </header>
 
+                ${marqueeTexts[currentLang] ? `
+                <div class="marquee-container" dir="ltr">
+                    <div class="marquee-content">${marqueeTexts[currentLang]}</div>
+                </div>
+                ` : ''}
+
+                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
+
                 <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
                     ${currentTab === 'home' ? renderHomeTab() : ''}
                     ${currentTab === 'matches' ? renderMatchesTab() : ''}
@@ -1933,6 +2030,7 @@ async function deleteLeagueByAdmin() {
 
         window.onload = async function() {
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
+            fetchMarquee(); // جلب الإعلان عند فتح التطبيق
             if (currentUser) {
                 document.getElementById('app').innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
