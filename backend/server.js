@@ -99,6 +99,33 @@ app.post('/api/admin/delete-league', async (req, res) => {
         res.status(500).json({ success: false, message: 'السبب: ' + error.message });
     }
 });
+
+// جلب نص الشريط المتحرك
+app.get('/api/announcement', async (req, res) => {
+    try {
+        // إنشاء الجدول بصمت إذا لم يكن موجوداً
+        await pool.query("CREATE TABLE IF NOT EXISTS settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value TEXT)");
+        const [rows] = await pool.query("SELECT setting_value FROM settings WHERE setting_key = 'marquee' LIMIT 1");
+        res.json({ success: true, text: rows.length > 0 ? rows[0].setting_value : 'مرحباً بكم في منصة Goal Sniper! 🎯' });
+    } catch (error) { 
+        res.json({ success: false, text: '' }); 
+    }
+});
+
+// تحديث نص الشريط (من لوحة الإدارة)
+app.post('/api/admin/announcement', async (req, res) => {
+    const { adminPassword, text } = req.body;
+    if (adminPassword !== '101383') return res.status(403).json({ success: false, message: 'غير مصرح!' });
+    
+    try {
+        await pool.query("CREATE TABLE IF NOT EXISTS settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value TEXT)");
+        // إدخال أو تحديث النص
+        await pool.query("INSERT INTO settings (setting_key, setting_value) VALUES ('marquee', ?) ON DUPLICATE KEY UPDATE setting_value = ?", [text, text]);
+        res.json({ success: true, message: 'تم تحديث الشريط المتحرك بنجاح 🚀' });
+    } catch (error) { 
+        res.status(500).json({ success: false, message: error.message }); 
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
