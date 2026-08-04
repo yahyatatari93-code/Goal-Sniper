@@ -453,7 +453,10 @@ function changeLanguage(langCode) {
         };
 
         function getGlobalStandings() {
-    // 1. استخراج كل أسماء المستخدمين الفريدة من جدول التوقعات أولاً
+    // 1. تحديد الجولة الحالية والسابقة في البداية لكي نستخدمها في الأوسمة المؤقتة
+    const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+    const prevGw = activeGw > 1 ? activeGw - 1 : 1;
+
     const allUsernames = new Set();
     Object.keys(predictions).forEach(u => allUsernames.add(u));
     users.forEach(u => allUsernames.add(u.username));
@@ -487,20 +490,20 @@ function changeLanguage(langCode) {
                     
                     if (Number(p.home) === m.actualH && Number(p.away) === m.actualA) {
                         userStats.exactsPerGw[m.gw] = (userStats.exactsPerGw[m.gw] || 0) + 1;
-                        if (userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
+                        // التعديل: تفعيل وسام القناص فقط إذا تحقق في الجولة السابقة
+                        if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
                     }
 
                     const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
                     const bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
-                    if (bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
+                    // التعديل: تفعيل وسام قاهر الكبار فقط إذا تحقق في الجولة السابقة
+                    if (Number(m.gw) === prevGw && bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
                 }
             }
         });
     });
 
-    // إضافة منطق عراف الأسبوع وبقية الحسابات كما في السابق...
-    const activeGw = getCurrentActiveGw();
-    const prevGw = activeGw > 1 ? activeGw - 1 : 1;
+    // 2. إضافة منطق عراف الأسبوع
     let highestGwPts = -1, motwUser = null;
     
     Object.values(statsMap).forEach(userStats => {
@@ -1076,8 +1079,8 @@ function renderMiniLeaguesTab() {
         lockDesc: "حفاظاً على نزاهة اللعبة، يقوم السيرفر <strong class='text-rose-400'>بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور القفل لا يمكنك تعديل توقعك نهائياً.",
         badgesTitle: "4. الأوسمة والإنجازات الشخصية",
         badge_1: "<strong class='text-amber-400'>عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.",
-        badge_2: "<strong class='text-emerald-400'>القناص:</strong> وسام دائم تحصل عليه إذا توقعت 3 نتائج مثالية في جولة واحدة.",
-        badge_3: "<strong class='text-rose-400'>قاهر الكبار:</strong> وسام دائم يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) وتحدث بالفعل!",
+        badge_2: "<strong class='text-emerald-400'>القناص:</strong> وسام مؤقت تحصل عليه إذا توقعت 3 نتائج مثالية في الجولة السابقة.",
+        badge_3: "<strong class='text-rose-400'>قاهر الكبار:</strong> وسام مؤقت يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) في الجولة السابقة وتحدث بالفعل!",
         sniperTitle: "5. ميزة القناص (خاصة بالدوريات المصغرة)",
         sn_1: "<strong class='text-amber-400'>من يحصل عليها؟</strong> المتصدر الذي يحقق أعلى نقاط ضمن دوريه المصغر، يحصل على رصاصة تتيح له خصم <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 نقاط</span> من منافسه.",
         sn_2: "<strong class='text-blue-400'>حالة التعادل:</strong> إذا تعادل عدة أشخاص، يحصل الجميع على الميزة، لكن قوة الرصاصة تصبح <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(خصم نقطتين)</span>.",
@@ -1116,8 +1119,8 @@ function renderMiniLeaguesTab() {
         lockDesc: "To ensure fairness, the server <strong class='text-rose-400'>automatically locks predictions exactly 60 minutes</strong> before any match kicks off. Once locked, predictions cannot be altered.",
         badgesTitle: "4. Badges & Achievements",
         badge_1: "<strong class='text-amber-400'>Oracle of the Week:</strong> Temporary badge for the highest scorer of the previous GW.",
-        badge_2: "<strong class='text-emerald-400'>The Sniper:</strong> Permanent badge for predicting 3 exact scores in a single GW.",
-        badge_3: "<strong class='text-rose-400'>Giant Slayer:</strong> Permanent badge for correctly predicting an upset (Giant loses)!",
+        badge_2: "<strong class='text-emerald-400'>The Sniper:</strong> Temporary badge for predicting 3 exact scores in the previous GW.",
+        badge_3: "<strong class='text-rose-400'>Giant Slayer:</strong> Temporary badge for correctly predicting an upset (Giant loses) in the previous GW!",
         sniperTitle: "5. Sniper Feature (Mini-Leagues)",
         sn_1: "<strong class='text-amber-400'>Who gets it?</strong> The top scorer of a mini-league gets a bullet to deduct <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 pts</span> from a rival.",
         sn_2: "<strong class='text-blue-400'>Tie case:</strong> If tied, all top scorers get it, but the penalty is reduced to <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 pts)</span>.",
@@ -1156,8 +1159,8 @@ function renderMiniLeaguesTab() {
         lockDesc: "Adaleti sağlamak için sistem tahminleri maçtan <strong class='text-rose-400'>tam 60 dakika önce kilitler</strong>. Kilitlendikten sonra değiştirilemez.",
         badgesTitle: "4. Rozetler ve Başarılar",
         badge_1: "<strong class='text-amber-400'>Haftanın Kahini:</strong> Önceki haftanın en yüksek puanlısına verilen geçici rozet.",
-        badge_2: "<strong class='text-emerald-400'>Keskin Nişancı:</strong> Bir haftada 3 tam skor bilenlere verilen kalıcı rozet.",
-        badge_3: "<strong class='text-rose-400'>Dev Avcısı:</strong> Bir sürprizi (Büyük takım yenilgisi) doğru bilenlere kalıcı rozet!",
+        badge_2: "<strong class='text-emerald-400'>Keskin Nişancı:</strong> Önceki haftada 3 tam skor bilenlere verilen geçici rozet.",
+        badge_3: "<strong class='text-rose-400'>Dev Avcısı:</strong> Önceki haftada bir sürprizi (Büyük takım yenilgisi) doğru bilenlere verilen geçici rozet!",
         sniperTitle: "5. Keskin Nişancı Özelliği (Mini Ligler)",
         sn_1: "<strong class='text-amber-400'>Kim Alır?</strong> Mini ligde haftanın en yüksek puanını alan kişi, rakibinden <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 puan</span> düşürme hakkı kazanır.",
         sn_2: "<strong class='text-blue-400'>Beraberlik Durumu:</strong> Birden fazla birinci varsa hepsi hakkı kazanır ancak ceza <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 puan)</span> olur.",
@@ -1230,7 +1233,7 @@ function renderMiniLeaguesTab() {
                     <div class="p-3 divide-y divide-white/5">
                         ${ruleRow(rt.cat3_5, '+5', 'emerald')}
                         ${ruleRow(rt.cat3_1, '+3', 'amber')}
-                        ${ruleRow(rt.cat3_3, '+3', 'slate')}
+                        ${ruleRow(rt.cat3_3, '+3', 'amber')}
                         ${ruleRow(rt.cat3_2, '+1', 'gray')}
                         ${ruleRow(rt.cat3_4, '+1', 'gray')}
                     </div>
