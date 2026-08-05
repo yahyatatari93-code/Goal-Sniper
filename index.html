@@ -991,15 +991,29 @@ function changeGw(gw) {
 
                                         const officialResultText = isAr ? 'النتيجة الرسمية:' : 'Official Result:';
                                         
+                                        // عكس ترتيب الأرقام بصرياً في حال كانت اللغة عربية لتتطابق مع الفِرق
+                                        const visualActualScore = isAr ? `${match.actualA} - ${match.actualH}` : `${match.actualH} - ${match.actualA}`;
+                                        
                                         // إضافة الشريط السفلي الملون في حال انتهاء المباراة
                                         resultBar = `
                                             <div class="mt-3 pt-3 border-t border-slate-700/50 flex justify-between items-center bg-slate-800/50 -mx-3 -mb-3 p-3 rounded-b-xl">
                                                 <div class="text-xs text-slate-300 font-bold flex items-center gap-2">
-                                                    ${officialResultText} <span class="text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-700 shadow-inner block" dir="ltr">${match.actualH} - ${match.actualA}</span>
+                                                    ${officialResultText} <span class="text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-700 shadow-inner block" dir="ltr">${visualActualScore}</span>
                                                 </div>
                                                 <div>${badge}</div>
                                             </div>
                                         `;
+                                    }
+
+                                    // 🌟 الحل الآمن والمضمون: حساب محتوى الزر هنا قبل كتابته في الـ HTML
+                                    let btnContent = '';
+                                    if (isPredicted) {
+                                        // عكس توقع اللاعب ليتطابق مع الشاشة العربية
+                                        btnContent = isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`;
+                                    } else if (isLocked) {
+                                        btnContent = '<i class="fa-solid fa-lock"></i>';
+                                    } else {
+                                        btnContent = predictText;
                                     }
 
                                     return `
@@ -1017,7 +1031,7 @@ function changeGw(gw) {
                                                 
                                                 <div class="px-2 shrink-0">
                                                     <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                        ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : predictText)}
+                                                        ${btnContent}
                                                     </button>
                                                 </div>
                                                 
