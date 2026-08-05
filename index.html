@@ -945,39 +945,85 @@ function changeGw(gw) {
                                     const displayTime = typeof formatDisplayTime === 'function' ? formatDisplayTime(match.time) : match.time;
                                     
                                     let bMini = '';
-                                    if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
-                                    else if(pred.isCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
+                                    if(pred.isTripleCaptain) bMini = \`<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>\`;
+                                    else if(pred.isCaptain) bMini = \`<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>\`;
 
                                     const lockedText = typeof t === 'function' ? t('locked') : 'مقفلة';
                                     const predictText = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
 
-                                    return `
-                                        <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
-                                            ${bMini}
+                                    // 🌟 حساب النتيجة الحقيقية والنقاط (شريط النتائج الذكي)
+                                    let resultBar = '';
+                                    if (match.actualH !== undefined && match.actualA !== undefined && match.actualH !== null && match.actualA !== null && match.actualH !== '' && match.actualA !== '') {
+                                        const h = parseInt(match.actualH);
+                                        const a = parseInt(match.actualA);
+                                        const ph = isPredicted ? parseInt(pred.home) : null;
+                                        const pa = isPredicted ? parseInt(pred.away) : null;
+                                        
+                                        let badge = '';
+                                        if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
+                                            let pts = 0;
+                                            if (h === ph && a === pa) {
+                                                pts = 3; // علامة كاملة
+                                            } else if (Math.sign(h - a) === Math.sign(ph - pa)) {
+                                                pts = 1; // نتيجة صحيحة
+                                            }
+                                            
+                                            // مضاعفة النقاط في حال الكابتن
+                                            if (pred.isTripleCaptain) pts *= 3;
+                                            else if (pred.isCaptain) pts *= 2;
+                                            
+                                            if (pts >= 3) {
+                                                badge = \`<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30 shadow-[0_0_8px_rgba(16,185,129,0.2)]"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>\${pts} \${isAr ? 'نقاط' : 'Pts'}</span>\`;
+                                            } else if (pts > 0) {
+                                                badge = \`<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>\${pts} \${isAr ? 'نقطة' : 'Pt'}</span>\`;
+                                            } else {
+                                                badge = \`<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-[11px] font-bold border border-red-500/30"><i class="fa-solid fa-xmark ${isAr ? 'ml-1' : 'mr-1'}"></i>0 \${isAr ? 'نقطة' : 'Pts'}</span>\`;
+                                            }
+                                        } else {
+                                            badge = \`<span class="bg-slate-500/20 text-slate-400 px-2 py-1 rounded text-[11px] font-bold border border-slate-500/30">\${isAr ? 'لم تتوقع (0)' : 'No Pred (0)'}</span>\`;
+                                        }
+
+                                        const officialResultText = isAr ? 'النتيجة الرسمية:' : 'Official Result:';
+                                        
+                                        // إضافة الشريط السفلي الملون في حال انتهاء المباراة
+                                        resultBar = \`
+                                            <div class="mt-3 pt-3 border-t border-slate-700/50 flex justify-between items-center bg-slate-800/50 -mx-3 -mb-3 p-3 rounded-b-xl">
+                                                <div class="text-xs text-slate-300 font-bold flex items-center gap-2">
+                                                    \${officialResultText} <span class="text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-700 shadow-inner block" dir="ltr">\${match.actualH} - \${match.actualA}</span>
+                                                </div>
+                                                <div>\${badge}</div>
+                                            </div>
+                                        \`;
+                                    }
+
+                                    return \`
+                                        <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative \${isLocked ? 'opacity-70' : ''}">
+                                            \${bMini}
                                             <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
-                                                <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}
+                                                <i class="far fa-\${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> \${isLocked ? lockedText : \`\${displayDate} - \${displayTime}\`}
                                             </div>
                                             <div class="flex items-center justify-between mt-1">
                                                 
                                                 <div class="flex-1 flex justify-start items-center gap-2">
-                                                    <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                                    <div class="${isAr ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                                    <img src="\${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                    <div class="\${isAr ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">\${getTeamName(match.home)}</div>
                                                 </div>
                                                 
                                                 <div class="px-2 shrink-0">
-                                                    <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                        ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : predictText)}
+                                                    <button \${isLocked ? 'disabled' : \`onclick="openModal('\${match.id}')"\`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all \${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} \${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                        \${isPredicted ? \`\${pred.home} - \${pred.away}\` : (isLocked ? '<i class="fa-solid fa-lock"></i>' : predictText)}
                                                     </button>
                                                 </div>
                                                 
                                                 <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
-                                                    <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                                    <div class="${isAr ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                                    <img src="\${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+                                                    <div class="\${isAr ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-slate-200 whitespace-normal leading-tight">\${getTeamName(match.away)}</div>
                                                 </div>
 
                                             </div>
+                                            \${resultBar} 
                                         </div>
-                                    `;
+                                    \`;
                                 }).join('')}
                             </div>
                         </div>
@@ -1065,6 +1111,7 @@ function renderMiniLeaguesTab() {
                     </div>
                 </div>
             </div>
+            
             <div class="space-y-4">
                 ${myLeagues.map(ml => {
                     const leagueData = getLeagueStandings(ml.code, baseStats);
@@ -1080,39 +1127,67 @@ function renderMiniLeaguesTab() {
                                 ${typeof t === 'function' ? t('leagueCode').split(' ')[0] : 'كود'}: ${ml.code}
                             </div>
                         </div>
-                        <div class="space-y-2">
-                            ${leagueData.members.map((mem, idx) => `
-                                <div class="py-2.5 px-3 rounded-xl flex flex-wrap justify-between items-center gap-2 text-xs ${mem.username === currentUser.username ? 'bg-blue-600/10 border border-blue-500/20' : 'bg-slate-900/40'}">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center ${idx===0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
-                                        <span class="font-bold ${mem.username === currentUser.username ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
-                                    </div>
-                                    
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex flex-col ${isAr ? 'items-start' : 'items-end'}">
-                                            <span class="font-black text-amber-400">${mem.mlTotalPts}</span>
-                                            <span class="text-[10px] text-slate-400">${mem.mlGwPts} ${typeof t === 'function' ? t('gw') : 'جولة'}</span>
-                                        </div>
+                        
+                        <!-- 🌟 تصميم الجدول الجديد 🌟 -->
+                        <div class="overflow-x-auto mt-2">
+                            <table class="w-full text-sm text-center">
+                                <thead>
+                                    <tr class="border-b border-white/10 text-[11px] text-slate-400">
+                                        <th class="pb-2 w-8 font-bold">#</th>
+                                        <th class="pb-2 text-${isAr ? 'right' : 'left'} font-bold px-2">${typeof t === 'function' ? t('player') : 'القناص'}</th>
+                                        <th class="pb-2 font-bold text-emerald-400 w-16">${typeof t === 'function' ? t('gwPts') : 'الجولة'}</th>
+                                        <th class="pb-2 font-bold text-amber-400 w-16">${typeof t === 'function' ? t('totalPts') : 'الإجمالي'}</th>
+                                        <th class="pb-2 w-12"></th> <!-- عمود للأزرار (قناص/حصانة) -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${leagueData.members.map((mem, idx) => {
+                                        const isMe = mem.username === currentUser.username;
                                         
-                                        ${mem.username !== currentUser.username ? (
-                                            leagueData.victimsLastGw.has(mem.username) 
-                                                ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`
-                                                : canCurrentUseSniper
-                                                    ? `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.activeGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center gap-1 shadow-lg shadow-red-500/20">
-                                                        <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
-                                                       </button>`
-                                                    : ''
-                                        ) : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
+                                        // تجهيز زر القناص أو الحصانة
+                                        let actionBtn = '';
+                                        if (!isMe) {
+                                            if (leagueData.victimsLastGw.has(mem.username)) {
+                                                actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`;
+                                            } else if (canCurrentUseSniper) {
+                                                actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.activeGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
+                                                    <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
+                                                </button>`;
+                                            }
+                                        }
+
+                                        return `
+                                        <tr class="border-b border-white/5 transition-colors hover:bg-white/5 ${isMe ? 'bg-blue-900/20' : ''}">
+                                            <td class="py-2.5">
+                                                <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs ${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
+                                            </td>
+                                            <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2">
+                                                <span class="font-bold text-[12px] ${isMe ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
+                                                ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] ml-1"></i>' : ''}
+                                            </td>
+                                            <td class="py-2.5">
+                                                <span class="bg-emerald-900/20 text-emerald-400 font-bold px-2 py-1 rounded text-xs">${mem.mlGwPts}</span>
+                                            </td>
+                                            <td class="py-2.5">
+                                                <span class="bg-amber-900/20 text-amber-400 font-black px-2 py-1 rounded text-xs border border-amber-500/20 shadow-inner">${mem.mlTotalPts}</span>
+                                            </td>
+                                            <td class="py-2.5 text-center">
+                                                ${actionBtn}
+                                            </td>
+                                        </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                `}).join('')}
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
 }
+        
         function renderRulesTab() {
     // قاموس مصغر خاص بصفحة القوانين فقط (لحمايتك من الأخطاء)
     const rulesTranslations = {
@@ -1815,17 +1890,30 @@ async function deleteLeagueByAdmin() {
     }
 }
         async function saveActual(id) {
-            const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
-            if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
-            try {
-                await fetch(`${API_BASE_URL}/admin/result`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
-                });
-                showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
-                await syncData(); render();
-            } catch(e){}
-        }
+    const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
+    if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
+    try {
+        await fetch(`${API_BASE_URL}/admin/result`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
+        });
+        showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
+        
+        // 1. حفظ مكان الشاشة الحالي (السكرول)
+        const currentScroll = window.scrollY; 
+        
+        await syncData(); 
+        render(); // إعادة رسم الشاشة
+        
+        // 2. العودة بلمح البصر لنفس المكان دون أن يشعر المستخدم
+        setTimeout(() => {
+            window.scrollTo(0, currentScroll);
+        }, 0); 
+        
+    } catch(e){
+        console.error("Error saving result:", e);
+    }
+}
 
         async function clearActual(id) {
             try {
