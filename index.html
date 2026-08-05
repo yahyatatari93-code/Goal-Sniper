@@ -221,7 +221,16 @@ confirmPasswordPh: "أعد كتابة الرمز السري",
 loginSubmit: "دخول إلى المنصة",
 registerSubmit: "إنشاء الحساب والبدء",
         gwPts: "نقاط الجولة",
-totalPts: "النقاط الكلية"
+totalPts: "النقاط الكلية",
+        matchPrediction: "توقع نتيجة المباراة",
+vs: "ضد",
+captain: "C كابتن (مضاعفة x2)",
+tripleCaptain: "الجوكر (مضاعفة x3)",
+normalPred: "توقع عادي (بدون مضاعفات)",
+used: "مُستخدمة",
+potentialPoints: "النقاط المحتملة للتوقع المثالي",
+savePred: "حفظ التوقع",
+cancel: "إلغاء"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -301,7 +310,16 @@ confirmPasswordPh: "Retype your PIN",
 loginSubmit: "Enter Platform",
 registerSubmit: "Create Account & Start",
         gwPts: "GW Points",
-totalPts: "Total Points"
+totalPts: "Total Points",
+        matchPrediction: "Match Prediction",
+vs: "vs",
+captain: "Captain (x2 Points)",
+tripleCaptain: "Triple Captain (x3 Points)",
+normalPred: "Normal Prediction",
+used: "Used",
+potentialPoints: "Potential Points for Perfect Guess",
+savePred: "Save Prediction",
+cancel: "Cancel",
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -381,7 +399,16 @@ confirmPasswordPh: "PIN'inizi tekrar girin",
 loginSubmit: "Platforma Gir",
 registerSubmit: "Hesap Oluştur ve Başla",
         gwPts: "Hafta Puanı",
-totalPts: "Toplam Puan"
+totalPts: "Toplam Puan",
+        matchPrediction: "Maç Tahmini",
+vs: "vs",
+captain: "Kaptan (x2 Puan)",
+tripleCaptain: "Joker (x3 Puan)",
+normalPred: "Normal Tahmin",
+used: "Kullanıldı",
+potentialPoints: "Kusursuz Tahmin Puanı",
+savePred: "Tahmini Kaydet",
+cancel: "İptal",
     }
 };
         
@@ -1619,76 +1646,104 @@ function ruleRow(text, points, colorType) {
         function closeModal() { activeMatchModal = null; renderModal(); }
 
         function renderModal() {
-            const container = document.getElementById('modal-container');
-            if (!activeMatchModal) { container.innerHTML = ''; return; }
-            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-            const hVal = pred.home !== undefined ? pred.home : '';
-            const aVal = pred.away !== undefined ? pred.away : '';
-            
-            const currentGw = Number(activeMatchModal.gw);
-            const userPreds = predictions[currentUser.username] || {};
-            let captainUsedInGw = false;
-            let tcUsedInCurrentHalf = false;
-            
-            Object.entries(userPreds).forEach(([mId, p]) => {
-                if (mId === activeMatchModal.id) return; 
-                const m = matches.find(x => x.id === mId);
-                if (m) {
-                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
-                    if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
-                }
-            });
+    const container = document.getElementById('modal-container');
+    if (!activeMatchModal) { container.innerHTML = ''; return; }
+    
+    // التحقق من لغة التطبيق لضبط الاتجاه
+    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+    const isAr = direction === 'rtl';
 
-            // حساب متوقع للنقاط إذا تم اختيار هذه النتيجة بشكل مثالي
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, pred.isCaptain, pred.isTripleCaptain);
+    const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
+    const hVal = pred.home !== undefined ? pred.home : '';
+    const aVal = pred.away !== undefined ? pred.away : '';
+    
+    const currentGw = Number(activeMatchModal.gw);
+    const userPreds = predictions[currentUser.username] || {};
+    let captainUsedInGw = false;
+    let tcUsedInCurrentHalf = false;
+    
+    Object.entries(userPreds).forEach(([mId, p]) => {
+        if (mId === activeMatchModal.id) return; 
+        const m = matches.find(x => x.id === mId);
+        if (m) {
+            if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
+            if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
+        }
+    });
 
-            container.innerHTML = `
-                <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
-                        <div class="text-center border-b border-white/5 pb-3">
-                            <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
-                            <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} ضد ${getTeamName(activeMatchModal.away)}</h2>
-                        </div>
-                        <div class="flex items-center justify-center gap-4 py-2">
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
-                            </div>
-                            <span class="text-xl font-bold text-slate-500 mt-5">:</span>
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner" placeholder="0" />
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">C كابتن (مضاعفة x2)</span> ${captainUsedInGw && !pred.isCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
-                            </label>
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">الجوكر (مضاعفة x3)</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">مُستخدمة</span>' : ''}</div>
-                            </label>
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
-                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
-                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">توقع عادي (بدون مضاعفات)</span></div>
-                            </label>
-                        </div>
+    // حساب متوقع للنقاط إذا تم اختيار هذه النتيجة بشكل مثالي
+    const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, pred.isCaptain, pred.isTripleCaptain);
 
-                        <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
-                            <span class="text-[10px] text-blue-300 font-bold mb-1">النقاط المحتملة للتوقع المثالي</span>
-                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} نقطة</span>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">حفظ التوقع</button>
-                            <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">إلغاء</button>
-                        </div>
+    // مفاتيح الترجمة أو النصوص الاحتياطية
+    const matchPredTitle = typeof t === 'function' ? t('matchPrediction') : 'توقع نتيجة المباراة';
+    const vsText = typeof t === 'function' ? t('vs') : 'ضد';
+    const capText = typeof t === 'function' ? t('captain') : 'C كابتن (مضاعفة x2)';
+    const tcText = typeof t === 'function' ? t('tripleCaptain') : 'الجوكر (مضاعفة x3)';
+    const normalPredText = typeof t === 'function' ? t('normalPred') : 'توقع عادي (بدون مضاعفات)';
+    const usedText = typeof t === 'function' ? t('used') : 'مُستخدمة';
+    const potentialPtsText = typeof t === 'function' ? t('potentialPoints') : 'النقاط المحتملة للتوقع المثالي';
+    const ptText = isAr ? 'نقطة' : 'Pts';
+    const saveText = typeof t === 'function' ? t('savePred') : 'حفظ التوقع';
+    const cancelText = typeof t === 'function' ? t('cancel') : 'إلغاء';
+
+    // ترتيب عرض الأرقام والأسماء ليناسب اللغة
+    const leftTeam = isAr ? activeMatchModal.home : activeMatchModal.home;
+    const rightTeam = isAr ? activeMatchModal.away : activeMatchModal.away;
+    const leftVal = isAr ? hVal : hVal;
+    const rightVal = isAr ? aVal : aVal;
+    const leftInputId = isAr ? 'modal-pred-h' : 'modal-pred-h';
+    const rightInputId = isAr ? 'modal-pred-a' : 'modal-pred-a';
+
+    container.innerHTML = `
+        <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="${direction}">
+            <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
+                <div class="text-center border-b border-white/5 pb-3">
+                    <h3 class="text-sm font-bold text-blue-400 mb-1">${matchPredTitle}</h3>
+                    <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
+                </div>
+                
+                <div class="flex items-center justify-center gap-4 py-2" dir="ltr"> <!-- يجب أن يبقى ltr لتجنب مشاكل الأرقام -->
+                    <div class="text-center">
+                        <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
+                        <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
+                    </div>
+                    <span class="text-xl font-bold text-slate-500 mt-5">:</span>
+                    <div class="text-center">
+                        <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
+                        <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
                     </div>
                 </div>
-            `;
-        }
+                
+                <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
+                        <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
+                        <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">${capText}</span> ${captainUsedInGw && !pred.isCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
+                        <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
+                        <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                    </label>
+                    
+                    <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
+                        <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
+                        <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">${normalPredText}</span></div>
+                    </label>
+                </div>
 
+                <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
+                    <span class="text-[10px] text-blue-300 font-bold mb-1">${potentialPtsText}</span>
+                    <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} ${ptText}</span>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">${saveText}</button>
+                    <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">${cancelText}</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
