@@ -25,7 +25,7 @@
     
     <style>
         body {
-            background-color: #060b19;
+            background-color: #0f172a;
             color: #f8fafc;
             background-image: 
                 radial-gradient(circle at 10% 0%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
@@ -39,35 +39,6 @@
             border: 1px solid rgba(14, 165, 233, 0.15); border-radius: 20px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
-        /* --- كود العلامة المائية في الخلفية --- */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    
-    /* 🔴 ضع مسار أو رابط صورتك هنا بدلاً من الرابط الحالي */
-    background-image: url('watermark.png'); 
-    
-    background-repeat: no-repeat;
-    background-position: center center; /* لتوسيط الصورة في الشاشة */
-    
-    /* للتحكم بحجم الصورة: يمكنك استخدام contain أو cover أو نسبة مئوية مثل 50% */
-    background-size: contain; 
-    /* هذه التعويذة السحرية تحول أي صورة ملونة أو سوداء إلى لون أبيض! */
-    filter: brightness(0) invert(1); 
-    
-       /* درجة الشفافية (0.1 تعني شفافية 10% وهي الأفضل للعلامة المائية) */
-    opacity: 0.15; 
-    
-    /* إرسال الصورة للخلف تماماً لكي لا تغطي عناصر التطبيق */
-    z-index: 7777; 
-    
-    /* الأهم: يمنع الصورة من حظر نقرات المستخدم على الأزرار */
-    pointer-events: none; 
-}
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .score-input {
