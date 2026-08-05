@@ -1892,23 +1892,27 @@ async function deleteLeagueByAdmin() {
         async function saveActual(id) {
     const hVal = document.getElementById(`actual-h-${id}`).value, aVal = document.getElementById(`actual-a-${id}`).value;
     if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
+    
     try {
+        // 1. التقاط مكان الشاشة بدقة قبل أي تغيير
+        const currentScroll = window.scrollY || document.documentElement.scrollTop;
+        
         await fetch(`${API_BASE_URL}/admin/result`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
         });
         showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
         
-        // 1. حفظ مكان الشاشة الحالي (السكرول)
-        const currentScroll = window.scrollY; 
-        
         await syncData(); 
-        render(); // إعادة رسم الشاشة
+        render(); // إعادة بناء الصفحة
         
-        // 2. العودة بلمح البصر لنفس المكان دون أن يشعر المستخدم
+        // 2. إعطاء المتصفح مهلة 100 ميلي ثانية ليرسم العناصر بالكامل ثم العودة الفورية
         setTimeout(() => {
-            window.scrollTo(0, currentScroll);
-        }, 0); 
+            window.scrollTo({
+                top: currentScroll,
+                behavior: 'instant' // العودة بلمح البصر وبدون تأثير الانزلاق
+            });
+        }, 100); 
         
     } catch(e){
         console.error("Error saving result:", e);
