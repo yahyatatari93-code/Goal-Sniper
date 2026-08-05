@@ -219,7 +219,9 @@ passwordPh: "4 أرقام أو حروف على الأقل",
 confirmPasswordLabel: "تأكيد كلمة المرور",
 confirmPasswordPh: "أعد كتابة الرمز السري",
 loginSubmit: "دخول إلى المنصة",
-registerSubmit: "إنشاء الحساب والبدء"
+registerSubmit: "إنشاء الحساب والبدء",
+        gwPts: "نقاط الجولة",
+totalPts: "النقاط الكلية"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -297,7 +299,9 @@ passwordPh: "At least 4 characters or digits",
 confirmPasswordLabel: "Confirm Password",
 confirmPasswordPh: "Retype your PIN",
 loginSubmit: "Enter Platform",
-registerSubmit: "Create Account & Start"
+registerSubmit: "Create Account & Start",
+        gwPts: "GW Points",
+totalPts: "Total Points"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -375,7 +379,9 @@ passwordPh: "En az 4 karakter veya rakam",
 confirmPasswordLabel: "Şifreyi Onayla",
 confirmPasswordPh: "PIN'inizi tekrar girin",
 loginSubmit: "Platforma Gir",
-registerSubmit: "Hesap Oluştur ve Başla"
+registerSubmit: "Hesap Oluştur ve Başla",
+        gwPts: "Hafta Puanı",
+totalPts: "Toplam Puan"
     }
 };
         
@@ -1135,8 +1141,8 @@ function renderMiniLeaguesTab() {
                                     <tr class="border-b border-white/10 text-[11px] text-slate-400">
                                         <th class="pb-2 w-8 font-bold">#</th>
                                         <th class="pb-2 text-${isAr ? 'right' : 'left'} font-bold px-2">${typeof t === 'function' ? t('player') : 'القناص'}</th>
-                                        <th class="pb-2 font-bold text-emerald-400 w-16">${typeof t === 'function' ? t('gwPts') : 'الجولة'}</th>
-                                        <th class="pb-2 font-bold text-amber-400 w-16">${typeof t === 'function' ? t('totalPts') : 'الإجمالي'}</th>
+                                        <th class="pb-2 font-bold text-emerald-400 w-16">${typeof t === 'function' ? t('gwPts') : 'نقاط الجولة'}</th>
+                                        <th class="pb-2 font-bold text-amber-400 w-16">${typeof t === 'function' ? t('totalPts') : 'النقاط الكلية'}</th>
                                         <th class="pb-2 w-12"></th> <!-- عمود للأزرار (قناص/حصانة) -->
                                     </tr>
                                 </thead>
