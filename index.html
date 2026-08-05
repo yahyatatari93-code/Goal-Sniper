@@ -1894,9 +1894,6 @@ async function deleteLeagueByAdmin() {
     if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
     
     try {
-        // 1. التقاط مكان الشاشة بدقة قبل أي تغيير
-        const currentScroll = window.scrollY || document.documentElement.scrollTop;
-        
         await fetch(`${API_BASE_URL}/admin/result`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
@@ -1904,15 +1901,18 @@ async function deleteLeagueByAdmin() {
         showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
         
         await syncData(); 
-        render(); // إعادة بناء الصفحة
+        render(); // الشاشة تُمسح وتُعاد من جديد
         
-        // 2. إعطاء المتصفح مهلة 100 ميلي ثانية ليرسم العناصر بالكامل ثم العودة الفورية
+        // الحل القاطع: البحث عن مربع النتيجة لنفس المباراة والقفز إليه مباشرة
         setTimeout(() => {
-            window.scrollTo({
-                top: currentScroll,
-                behavior: 'instant' // العودة بلمح البصر وبدون تأثير الانزلاق
-            });
-        }, 100); 
+            const matchInput = document.getElementById(`actual-h-${id}`);
+            if (matchInput) {
+                matchInput.scrollIntoView({ 
+                    behavior: 'instant', 
+                    block: 'center' // يضع المباراة في منتصف الشاشة لراحة عينك
+                });
+            }
+        }, 100);
         
     } catch(e){
         console.error("Error saving result:", e);
