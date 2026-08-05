@@ -887,7 +887,7 @@ function isMatchLocked(match) {
                                     
                                     <div class="shrink-0">
                                         <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
-                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? `<i class="fa-solid fa-lock"></i> ${t('timeOver')}` : t('predictNow'))}
+                                            ${isPredicted ? (isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`) : (isLocked ? '<i class="fa-solid fa-lock"></i>' : predictText)}
                                         </button>
                                     </div>
                                     
