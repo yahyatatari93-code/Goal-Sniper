@@ -1758,7 +1758,6 @@ function ruleRow(text, points, colorType) {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
-            // تحديث شكلي سريع لراحة المستخدم
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             predictions[currentUser.username][activeMatchModal.id] = { 
                 home: Number(h), 
@@ -1769,12 +1768,18 @@ function ruleRow(text, points, colorType) {
             
             const reqMatchId = activeMatchModal.id;
             closeModal();
-            render(); // إعادة رسم الشاشة لتظهر الأرقام
+            render(); 
 
-            // الحفظ الفعلي في السيرفر
             try {
-                await fetch(`${API_BASE_URL}/predict`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                // 🌟 استخراج المفتاح من جيب المتصفح
+                const token = localStorage.getItem('oracle_token_v8');
+                
+                const response = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST', 
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // 🌟 إبراز المفتاح للسيرفر هنا
+                    },
                     body: JSON.stringify({ 
                         username: currentUser.username, 
                         matchId: reqMatchId, 
@@ -1784,13 +1789,23 @@ function ruleRow(text, points, colorType) {
                         isTripleCaptain: powerup === 'triple'
                     })
                 });
-                await syncData(); // جلب البيانات لتأكيد الحفظ
+                
+                const data = await response.json();
+                
+                if(!data.success) {
+                    showCustomDialog(data.message || "حدث خطأ غير معروف");
+                    // إذا كان المفتاح منتهي الصلاحية، نسجل خروج المستخدم ليحصل على مفتاح جديد
+                    if(data.message.includes('منتهي') || data.message.includes('توقف')) {
+                        logout();
+                    }
+                } else {
+                    await syncData();
+                }
             } catch(e) {
                 console.error("Predict error:", e);
                 showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
             }
         }
-
         async function createMiniLeague() {
             const name = document.getElementById('new-ml-name').value.trim();
             if (!name) { showCustomDialog('يرجى كتابة اسم الدوري أولاً.'); return; }
