@@ -2051,7 +2051,10 @@ async function deleteLeagueByAdmin() {
                         <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
                     </div>`;
 
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                // 🌟 التعديل السحري: توجيه الطلب للمسار الصحيح بناءً على نوع العملية
+                const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
+
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: name, pin: pin })
