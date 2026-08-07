@@ -1,11 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const jwt = require('jsonwebtoken'); // 🔴 تمت إضافة مكتبة التشفير هنا
 require('dotenv').config();
 
 const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+
+// 🔴 إنشاء مفتاح سري لتشفير التوكن (يمكنك تغييره متى شئت)
+const JWT_SECRET = process.env.JWT_SECRET || 'GoalSniper_Super_Secret_Key_2026';
 
 // إعداد الاتصال بقاعدة بيانات MySQL
 const pool = mysql.createPool({
@@ -20,13 +24,19 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'Server is running securely on Contabo!' });
 });
 
+// ===================================================
 // 1. مسار تسجيل الدخول (Login)
+// ===================================================
 app.post('/api/auth/login', async (req, res) => {
     const { username, pin } = req.body;
     try {
         const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND pin = ?', [username, pin]);
         if (rows.length > 0) {
-            res.json({ success: true, user: rows[0] });
+            // 🔴 توليد رمز توثيق صالح لمدة 90 يوماً
+            const token = jwt.sign({ username: rows[0].username }, JWT_SECRET, { expiresIn: '90d' });
+            
+            // إرسال الرمز مع بيانات المستخدم للتطبيق
+            res.json({ success: true, user: rows[0], token: token });
         } else {
             res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
         }
@@ -35,19 +45,25 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+// ===================================================
 // 2. مسار إنشاء حساب جديد (Register)
+// ===================================================
 app.post('/api/auth/register', async (req, res) => {
     const { username, pin } = req.body;
     try {
-        // التحقق مما إذا كان الاسم موجوداً مسبقاً
-        const [existing] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        // 🔴 التحقق من عدم التكرار مع مراعاة حالة الأحرف لمنع التحايل
+        const [existing] = await pool.query('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', [username]);
         if (existing.length > 0) {
             return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر.' });
         }
         
         // إنشاء الحساب الجديد
         await pool.query('INSERT INTO users (username, pin) VALUES (?, ?)', [username, pin]);
-        res.json({ success: true, user: { username, pin } });
+        
+        // 🔴 توليد رمز التوثيق للحساب الجديد فور إنشائه
+        const token = jwt.sign({ username: username }, JWT_SECRET, { expiresIn: '90d' });
+        
+        res.json({ success: true, user: { username, pin }, token: token });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -126,6 +142,7 @@ app.post('/api/admin/announcement', async (req, res) => {
         res.status(500).json({ success: false, message: error.message }); 
     }
 });
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
