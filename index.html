@@ -2065,6 +2065,8 @@ async function deleteLeagueByAdmin() {
                 if (data.success) {
                     currentUser = data.user;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+
+                    localStorage.setItem('oracle_token_v8', data.token);
                     
                     document.getElementById('app').innerHTML = `
                         <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
@@ -2086,7 +2088,12 @@ async function deleteLeagueByAdmin() {
             }
         }
 
-        function logout() { currentUser = null; localStorage.removeItem('oracle_current_user_v8'); render(); }
+        function logout() { 
+    currentUser = null; 
+    localStorage.removeItem('oracle_current_user_v8'); 
+    localStorage.removeItem('oracle_token_v8'); // 🌟 مسح المفتاح
+    render(); 
+}
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         function renderAuthScreen() {
