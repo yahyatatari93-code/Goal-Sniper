@@ -2044,14 +2044,12 @@ async function deleteLeagueByAdmin() {
             }
 
             try {
-                // إظهار شاشة تحميل مؤقتة
                 document.getElementById('app').innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                        <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
-                        <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
+                        <i class="fa-solid fa-user-secret fa-beat text-4xl text-blue-500"></i>
+                        <span class="font-bold text-lg text-white">جاري الفحص الدقيق...</span>
                     </div>`;
 
-                // 🌟 التعديل هنا: توجيه الطلب للتسجيل أو الدخول بناءً على وضع المستخدم
                 const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
                 
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -2060,35 +2058,33 @@ async function deleteLeagueByAdmin() {
                     body: JSON.stringify({ username: name, pin: pin })
                 });
                 
-                const data = await response.json();
+                // 🕵️‍♂️ قراءة الرد كنص أولاً لمعرفة ماذا يرسل السيرفر بالضبط (لالتقاط أي خطأ مخفي)
+                const textData = await response.text();
+                
+                let data;
+                try {
+                    // محاولة تحويل النص إلى بيانات مقروءة
+                    data = JSON.parse(textData);
+                } catch (parseError) {
+                    // إذا أرسل السيرفر صفحة خطأ بدلاً من البيانات
+                    showCustomDialog(`⚠️ السيرفر رد بشكل غير متوقع! الحالة: ${response.status}، الرد: ${textData.substring(0, 100)}`);
+                    render();
+                    return;
+                }
 
                 if (data.success) {
                     currentUser = data.user;
-                    
-                    // 🌟 التعديل هنا: حفظ رمز التوثيق (Token) القادم من السيرفر
-                    if (data.token) {
-                        localStorage.setItem('oracle_auth_token', data.token);
-                    }
-                    
+                    if (data.token) localStorage.setItem('oracle_auth_token', data.token);
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
-                    
-                    document.getElementById('app').innerHTML = `
-                        <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                            <i class="fa-solid fa-cloud-arrow-down fa-spin text-4xl text-blue-500"></i>
-                            <span class="font-bold text-lg text-white">Goal Sniper</span>
-                            <span class="font-bold text-sm">جاري مزامنة جدول المباريات الرسمي...</span>
-                        </div>`;
-                    
                     await syncData(); 
                     render();    
                 } else {
-                    // السيرفر سيرد هنا بـ "اسم المستخدم موجود مسبقاً" أو "كلمة المرور خاطئة"
                     showCustomDialog(data.message || 'حدث خطأ أثناء العملية.');
                     render(); 
                 }
             } catch (error) {
-                console.error("Auth Error:", error);
-                showCustomDialog('تعذر الاتصال بالسيرفر. تأكد من اتصال الإنترنت لديك.');
+                // 🕵️‍♂️ طباعة الخطأ التقني الدقيق بدلاً من الرسالة العامة
+                showCustomDialog('الخطأ التقني: ' + error.message);
                 render();
             }
         }
