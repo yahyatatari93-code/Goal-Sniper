@@ -51,21 +51,24 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     const { username, pin } = req.body;
     try {
-        // 🔴 التحقق من عدم التكرار مع مراعاة حالة الأحرف لمنع التحايل
         const [existing] = await pool.query('SELECT * FROM users WHERE LOWER(username) = LOWER(?)', [username]);
         if (existing.length > 0) {
             return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر.' });
         }
         
-        // إنشاء الحساب الجديد
         await pool.query('INSERT INTO users (username, pin) VALUES (?, ?)', [username, pin]);
-        
-        // 🔴 توليد رمز التوثيق للحساب الجديد فور إنشائه
         const token = jwt.sign({ username: username }, JWT_SECRET, { expiresIn: '90d' });
         
         res.json({ success: true, user: { username, pin }, token: token });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        // طباعة الخطأ في السيرفر
+        console.error("🔥 DB Error during register:", error);
+        
+        // إرسال كود 400 بدلاً من 500 لكي لا يتدخل Nginx ويخفي الخطأ
+        res.status(400).json({ 
+            success: false, 
+            message: 'السبب من قاعدة البيانات: ' + error.message 
+        });
     }
 });
 
