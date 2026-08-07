@@ -15,8 +15,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'GoalSniper_Super_Secret_Key_2026';
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '', // ضع كلمة مرور قاعدة البيانات الخاصة بك هنا إذا لزم الأمر
-    database: process.env.DB_NAME || 'league_oracle'
+    password: 'ضع_كلمة_المرور_هنا', // <-- اكتب كلمة المرور الحقيقية بين القوسين
+    database: 'league_oracle' // وتأكد أن هذا هو اسم قاعدة بياناتك
 });
 
 // اختبار الاتصال
