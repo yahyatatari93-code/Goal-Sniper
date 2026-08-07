@@ -2051,7 +2051,10 @@ async function deleteLeagueByAdmin() {
                         <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
                     </div>`;
 
-                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                // 🌟 التعديل هنا: توجيه الطلب للتسجيل أو الدخول بناءً على وضع المستخدم
+                const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
+                
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: name, pin: pin })
@@ -2061,6 +2064,12 @@ async function deleteLeagueByAdmin() {
 
                 if (data.success) {
                     currentUser = data.user;
+                    
+                    // 🌟 التعديل هنا: حفظ رمز التوثيق (Token) القادم من السيرفر
+                    if (data.token) {
+                        localStorage.setItem('oracle_auth_token', data.token);
+                    }
+                    
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     
                     document.getElementById('app').innerHTML = `
@@ -2073,8 +2082,9 @@ async function deleteLeagueByAdmin() {
                     await syncData(); 
                     render();    
                 } else {
-                    showCustomDialog(data.message || 'خطأ في الدخول.');
-                    render(); // العودة لشاشة الدخول
+                    // السيرفر سيرد هنا بـ "اسم المستخدم موجود مسبقاً" أو "كلمة المرور خاطئة"
+                    showCustomDialog(data.message || 'حدث خطأ أثناء العملية.');
+                    render(); 
                 }
             } catch (error) {
                 console.error("Auth Error:", error);
@@ -2083,7 +2093,12 @@ async function deleteLeagueByAdmin() {
             }
         }
 
-        function logout() { currentUser = null; localStorage.removeItem('oracle_current_user_v8'); render(); }
+        function logout() { 
+    currentUser = null; 
+    localStorage.removeItem('oracle_current_user_v8'); 
+    localStorage.removeItem('oracle_auth_token'); // مسح الرمز
+    render(); 
+}
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         function renderAuthScreen() {
