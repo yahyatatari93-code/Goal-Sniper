@@ -796,94 +796,99 @@ function isMatchLocked(match) {
 
     // تحديد اتجاه النص
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+    const isAr = currentLang === 'ar';
 
     return `
-        <div class="space-y-6" dir="${direction}">
+        <div class="space-y-5" dir="${direction}">
             
-            <!-- أزرار تبديل اللغة الأنيقة -->
-            <div class="flex justify-center items-center gap-3 mt-4">
-                <button onclick="changeLanguage('ar')" class="${currentLang === 'ar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-4 py-1.5 rounded-full text-xs font-bold transition-all">
-                    AR
-                </button>
-                <button onclick="changeLanguage('en')" class="${currentLang === 'en' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-4 py-1.5 rounded-full text-xs font-bold transition-all">
-                    EN
-                </button>
-                <button onclick="changeLanguage('tr')" class="${currentLang === 'tr' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-slate-900/60 text-slate-400 border border-white/5'} px-4 py-1.5 rounded-full text-xs font-bold transition-all">
-                    TR
-                </button>
+            <!-- 1. قسم الهوية والشعار (Hero Section) -->
+            <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
+                    <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="relative w-24 h-24 rounded-[2rem] shadow-[0_0_25px_rgba(14,165,233,0.3)] mb-4 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-6xl text-blue-500 mb-4 drop-shadow-[0_0_15px_rgba(14,165,233,0.5)]\\'></i>';">
+                </div>
+                <h1 class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">${typeof t === 'function' ? t('appName') : 'Goal Sniper'}</h1>
+                <span class="text-[11px] text-slate-400 mt-2 font-bold tracking-wide">${typeof t === 'function' ? t('slogan') : 'توقع بذكاء . تصدر بجدارة . اقنص بقوة'}</span>
             </div>
 
-            <!-- رأس الصفحة -->
-            <div class="text-center flex flex-col items-center justify-center mb-2">
-                <img src="${APP_LOGO_URL}" alt="Goal Sniper Logo" class="w-20 h-20 rounded-2xl shadow-[0_0_20px_rgba(14,165,233,0.3)] mb-3 object-cover border border-blue-500/30" onerror="this.onerror=null; this.outerHTML='<i class=\\'fa-solid fa-crosshairs text-5xl text-blue-500 mb-3\\'></i>';">
-                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">${t('appName')}</h1>
-                <span class="text-xs text-slate-400 mt-1">${t('slogan')}</span>
+            <!-- 2. شريط مجتمع القناصين (التواصل الاجتماعي) -->
+            <div class="glass py-2.5 px-4 rounded-2xl border border-white/5 bg-slate-900/40 shadow-lg flex justify-center items-center gap-6 max-w-sm mx-auto" dir="ltr">
+                <a href="https://www.facebook.com/profile.php?id=61593211584610" target="_blank" class="text-[#1877F2] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(24,119,242,0.8)] transition-all"><i class="fa-brands fa-facebook-f"></i></a>
+                <a href="https://www.instagram.com/goal.sniper02?igsh=Z2cyMXBpNjMxMm9j" target="_blank" class="text-[#E4405F] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(228,64,95,0.8)] transition-all"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.tiktok.com/@goal.sniper2" target="_blank" class="text-white text-xl hover:scale-125 hover:text-[#25F4EE] hover:drop-shadow-[0_0_10px_rgba(37,244,238,0.8)] transition-all"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="https://www.youtube.com/@GoalSniper-r8p" target="_blank" class="text-[#FF0000] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] transition-all"><i class="fa-brands fa-youtube"></i></a>
             </div>
 
+            <!-- عراف الأسبوع (يظهر فقط إن وجد) -->
             ${motw ? `
-                <div class="glass p-4 rounded-3xl bg-gradient-to-r from-amber-500/20 to-amber-700/20 border border-amber-500/30 flex items-center justify-between shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <div class="glass p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-700/10 border border-amber-500/20 flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-500/40">👑</div>
+                        <div class="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-full flex items-center justify-center text-lg shadow-inner">👑</div>
                         <div>
-                            <h3 class="text-xs font-bold text-amber-500">${t('motw')} (${t('gw')} ${prevGw})</h3>
-                            <span class="text-base font-black text-white">${motw.username}</span>
+                            <h3 class="text-[10px] font-bold text-amber-500/80">${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'} (GW ${prevGw})</h3>
+                            <span class="text-sm font-black text-amber-400">${motw.username}</span>
                         </div>
                     </div>
-                    <div class="text-center">
-                        <span class="block text-2xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
-                        <span class="text-[10px] text-slate-300">${t('point')}</span>
+                    <div class="text-center bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
+                        <span class="block text-xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
                     </div>
                 </div>
             ` : ''}
 
-            <!-- البطاقة الشخصية -->
-            <div class="glass p-4 md:p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-indigo-950/60 via-[#131b2e] to-blue-950/50">
-                <div class="flex justify-between items-start mb-4">
+            <!-- 3. البطاقة الشخصية (Sniper Card) -->
+            <div class="glass p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-[#0a0f1c] via-[#11192b] to-blue-900/10">
+                <!-- إضاءة خلفية للبطاقة -->
+                <div class="absolute -top-10 -${isAr ? 'left' : 'right'}-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex justify-between items-start mb-5 relative z-10">
                     <div>
-                        <span class="text-[10px] font-bold text-blue-400 bg-blue-600/20 px-2 py-1 rounded-full border border-blue-500/30">${t('sniperCard')}</span>
-                        <h2 class="text-lg md:text-xl font-black mt-1.5 text-white flex items-center gap-2">
+                        <span class="text-[9px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 uppercase tracking-wider">${typeof t === 'function' ? t('sniperCard') : 'بطاقة القناص'}</span>
+                        <h2 class="text-xl md:text-2xl font-black mt-2.5 text-white flex items-center gap-2">
                             ${currentUser.username}
-                            ${myStats.badges.motw ? `<span title="${t('motw')}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
-                            ${myStats.badges.sniper ? `<span title="${t('sniperBadge')}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
-                            ${myStats.badges.giantSlayer ? `<span title="${t('giantSlayer')}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
+                            ${myStats.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
+                            ${myStats.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+                            ${myStats.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
                         </h2>
                     </div>
-                    <div class="${currentLang === 'ar' ? 'text-left' : 'text-right'}">
-                        <span class="text-[10px] text-slate-400 block">${t('overallRank')}</span>
-                        <span class="text-base md:text-lg font-black text-amber-400">#${myRank}</span>
+                    <div class="${isAr ? 'text-left' : 'text-right'}">
+                        <span class="text-[10px] text-slate-400 block font-bold">${typeof t === 'function' ? t('overallRank') : 'الترتيب العام'}</span>
+                        <span class="text-2xl md:text-3xl font-black text-amber-400 drop-shadow-md">#${myRank}</span>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-2 text-center">
-                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('points')}</span>
-                        <span class="text-sm font-black text-amber-400">${myStats.totalPts}</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('accuracy')}</span>
-                        <span class="text-sm font-black text-emerald-400">${myStats.hitRate}%</span>
-                    </div>
-                    <div class="bg-slate-900/60 p-2 rounded-xl border border-white/5 flex flex-col justify-center">
-                        <span class="text-[9px] text-slate-400 block mb-0.5">${t('favTeam')}</span>
-                        <span class="text-[11px] md:text-sm font-black text-blue-300 block whitespace-normal leading-tight">
+                <!-- شريط الإحصائيات الأفقي المدمج -->
+                <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-2xl border border-white/5 divide-x divide-white/10 ${isAr ? 'divide-x-reverse' : ''} relative z-10 shadow-inner">
+                    <div class="flex-1 text-center flex flex-col justify-center px-1">
+                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('favTeam') : 'المفضل'}</span>
+                        <span class="text-[10px] md:text-xs font-black text-blue-300 block truncate leading-tight">
                             ${(() => {
                                 const savedTeam = TEAMS.find(t => t.code === myStats.favTeam || t.name === myStats.favTeam || t.nameEn === myStats.favTeam || t.nameTr === myStats.favTeam);
                                 return savedTeam ? getTeamName(savedTeam.code) : myStats.favTeam;
                             })()}
                         </span>
                     </div>
+                    <div class="flex-1 text-center px-1">
+                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('accuracy') : 'الدقة'}</span>
+                        <span class="text-xs md:text-sm font-black text-emerald-400 block">${myStats.hitRate}%</span>
+                    </div>
+                    <div class="flex-1 text-center px-1">
+                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('points') : 'النقاط'}</span>
+                        <span class="text-xs md:text-sm font-black text-amber-400 block">${myStats.totalPts}</span>
+                    </div>
                 </div>
             </div>
 
-            <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-base md:text-lg flex items-center gap-2">
-                        <i class="fa-solid fa-fire text-amber-400"></i> ${t('currentGwMatches')} (${activeGw})
+            <!-- 4. قسم مباريات الجولة الحالية -->
+            <div class="mt-2">
+                <div class="flex justify-between items-center mb-4 px-1">
+                    <h3 class="font-bold text-base flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-amber-400"></i> ${typeof t === 'function' ? t('currentGwMatches') : 'مباريات الجولة الحالية'} <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-lg">(GW ${activeGw})</span>
                     </h3>
-                    <button onclick="switchTab('matches')" class="text-xs text-blue-400 hover:underline font-semibold flex items-center gap-1">
-                        ${t('showAllGws')} <i class="fa-solid fa-arrow-${currentLang === 'ar' ? 'left' : 'right'}"></i>
+                    <button onclick="switchTab('matches')" class="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 bg-blue-500/10 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all">
+                        ${typeof t === 'function' ? t('showAllGws') : 'عرض كل الجولات'} <i class="fa-solid fa-arrow-${isAr ? 'left' : 'right'}"></i>
                     </button>
                 </div>
+                
                 <div class="space-y-3">
                     ${gwMatches.map(match => {
                         const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
@@ -891,43 +896,47 @@ function isMatchLocked(match) {
                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                         const isLocked = isMatchLocked(match);
                         
-                        // هنا نستخدم دالتك الأصلية بكل أمان لاستخراج التاريخ رقمياً
                         const displayDate = formatMatchDate(match.date);
                         
                         let badgeHtml = '';
-                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 ${currentLang === 'ar' ? 'left-3' : 'right-3'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px]"><i class="fa-solid fa-bolt"></i> ${t('tripleCaptain')}</div>`;
-                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 ${currentLang === 'ar' ? 'left-3' : 'right-3'} bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs">${t('captain')}</div>`;
+                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 ${isAr ? 'left-3' : 'right-3'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px] shadow-lg shadow-fuchsia-500/20"><i class="fa-solid fa-bolt"></i> <span class="hidden md:inline">${typeof t === 'function' ? t('tripleCaptain') : 'الجوكر x3'}</span></div>`;
+                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 ${isAr ? 'left-3' : 'right-3'} bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shadow-lg shadow-amber-500/30">${typeof t === 'function' ? t('captain') : 'C'}</div>`;
 
                         return `
-                            <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative ${isLocked ? 'opacity-80' : ''}">
+                            <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md border border-white/5 relative hover:border-blue-500/30 transition-colors ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
                                 ${badgeHtml}
-                                <div class="flex justify-between items-center text-xs text-slate-400 border-b border-white/5 pb-2">
+                                <div class="flex justify-between items-center text-[10px] md:text-xs text-slate-400 border-b border-white/5 pb-2">
                                     <span class="font-bold ${matchType.color}">${matchType.label}</span>
-                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${currentLang === 'ar' ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? t('locked') : `${displayDate} - ${match.time}`}</span>
+                                    <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? (typeof t === 'function' ? t('locked') : 'مقفلة') : `${displayDate} - ${match.time}`}</span>
                                 </div>
                                 <div class="flex items-center justify-between mt-1 gap-2">
                                     
                                     <div class="flex-1 flex justify-start items-center gap-2">
                                         <img src="${getTeamLogo(match.home)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                        <div class="font-bold text-[11px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
                                     </div>
                                     
                                     <div class="shrink-0">
-                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700' : ''} font-bold text-xs rounded-xl transition-all">
-                                            ${isPredicted ? `${pred.home} - ${pred.away}` : (isLocked ? `<i class="fa-solid fa-lock"></i> ${t('timeOver')}` : t('predictNow'))}
+                                        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700 bg-none shadow-none text-slate-400' : 'hover:scale-105 active:scale-95'} font-bold text-[11px] md:text-xs rounded-xl transition-all">
+                                            ${isPredicted ? `<span class="tracking-widest">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>` : (isLocked ? `<i class="fa-solid fa-lock"></i> ${typeof t === 'function' ? t('timeOver') : 'انتهى الوقت'}` : (typeof t === 'function' ? t('predictNow') : 'توقع الآن'))}
                                         </button>
                                     </div>
                                     
                                     <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
                                         <img src="${getTeamLogo(match.away)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="font-bold text-[12px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                        <div class="font-bold text-[11px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
                                     </div>
                                     
                                 </div>
                             </div>
                         `;
                     }).join('')}
-                    ${gwMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-8">${t('noMatches')}</div>` : ''}
+                    ${gwMatches.length === 0 ? `
+                        <div class="glass p-8 rounded-2xl text-center text-slate-400 text-sm flex flex-col items-center gap-3">
+                            <i class="fa-solid fa-futbol text-3xl opacity-30"></i>
+                            ${typeof t === 'function' ? t('noMatches') : 'لا توجد مباريات متاحة الآن.'}
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         </div>
