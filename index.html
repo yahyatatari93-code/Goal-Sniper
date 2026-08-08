@@ -545,77 +545,97 @@ function changeLanguage(langCode) {
             return pts;
         };
 
-        function getGlobalStandings() {
-    // 1. تحديد الجولة الحالية والسابقة في البداية لكي نستخدمها في الأوسمة المؤقتة
-    const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-    const prevGw = activeGw > 1 ? activeGw - 1 : 1;
-
-    const allUsernames = new Set();
-    Object.keys(predictions).forEach(u => allUsernames.add(u));
-    users.forEach(u => allUsernames.add(u.username));
-
-    const statsMap = {};
-    allUsernames.forEach(username => { 
-        statsMap[username] = { 
-            username: username, totalPts: 0, predictedCount: 0, correctOutcomes: 0, playedMatches: 0,
-            teamPoints: {}, exactsPerGw: {}, gwPoints: {}, badges: { sniper: false, giantSlayer: false, motw: false }
-        }; 
-    });
-
-    matches.forEach(m => {
-        const isPlayed = m.actualH !== null && m.actualA !== null;
-        allUsernames.forEach(username => {
-            const p = (predictions[username] || {})[m.id];
-            const userStats = statsMap[username];
-            if (userStats && p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
-                userStats.predictedCount++;
-                if (isPlayed) {
-                    userStats.playedMatches++;
-                    const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, p.isCaptain, p.isTripleCaptain);
-                    userStats.totalPts += pts;
-                    
-                    const isOutcomeCorrect = (p.home > p.away && m.actualH > m.actualA) || (p.home < p.away && m.actualH < m.actualA) || (p.home === p.away && m.actualH === m.actualA);
-                    if (isOutcomeCorrect) userStats.correctOutcomes++;
-
-                    userStats.teamPoints[m.home] = (userStats.teamPoints[m.home] || 0) + pts;
-                    userStats.teamPoints[m.away] = (userStats.teamPoints[m.away] || 0) + pts;
-                    userStats.gwPoints[m.gw] = (userStats.gwPoints[m.gw] || 0) + pts;
-                    
-                    if (Number(p.home) === m.actualH && Number(p.away) === m.actualA) {
-                        userStats.exactsPerGw[m.gw] = (userStats.exactsPerGw[m.gw] || 0) + 1;
-                        // التعديل: تفعيل وسام القناص فقط إذا تحقق في الجولة السابقة
-                        if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
-                    }
-
-                    const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
-                    const bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
-                    // التعديل: تفعيل وسام قاهر الكبار فقط إذا تحقق في الجولة السابقة
-                    if (Number(m.gw) === prevGw && bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
-                }
-            }
-        });
-    });
-
-    // 2. إضافة منطق عراف الأسبوع
-    let highestGwPts = -1, motwUser = null;
-    
-    Object.values(statsMap).forEach(userStats => {
-        const pts = userStats.gwPoints[prevGw] || 0;
-        if (pts > highestGwPts && pts > 0) { highestGwPts = pts; motwUser = userStats.username; }
-    });
-    if (motwUser) statsMap[motwUser].badges.motw = true;
-
-    Object.values(statsMap).forEach(userStats => {
-        userStats.hitRate = userStats.playedMatches > 0 ? Math.round((userStats.correctOutcomes / userStats.playedMatches) * 100) : 0;
-        let bestTeam = '-', maxTeamPts = -1;
-        for (const [team, pts] of Object.entries(userStats.teamPoints)) {
-            if (pts > maxTeamPts) { maxTeamPts = pts; bestTeam = getTeamName(team); }
+        // 🌟 دالة جديدة: تبحث عن الكابتن الصريح، وإن لم تجد تختار المباراة الأولى إجبارياً
+        function getActiveCaptainId(username, gw) {
+            const gwMatches = matches.filter(m => Number(m.gw) === Number(gw)).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+            if (gwMatches.length === 0) return null;
+            
+            const userP = predictions[username] || {};
+            const explicitCap = gwMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
+            
+            if (explicitCap) return explicitCap.id;
+            return gwMatches[0].id; // الكابتن الإجباري (أول مباراة)
         }
-        userStats.favTeam = maxTeamPts > 0 ? bestTeam : '-';
-    });
 
-    return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
-}
+        function getGlobalStandings() {
+            const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+            const prevGw = activeGw > 1 ? activeGw - 1 : 1;
+
+            const allUsernames = new Set();
+            Object.keys(predictions).forEach(u => allUsernames.add(u));
+            users.forEach(u => allUsernames.add(u.username));
+
+            const statsMap = {};
+            allUsernames.forEach(username => { 
+                statsMap[username] = { 
+                    username: username, totalPts: 0, predictedCount: 0, correctOutcomes: 0, playedMatches: 0,
+                    teamPoints: {}, exactsPerGw: {}, gwPoints: {}, badges: { sniper: false, giantSlayer: false, motw: false }
+                }; 
+            });
+
+            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب في كل جولة
+            const userActiveCaptains = {};
+            allUsernames.forEach(username => {
+                userActiveCaptains[username] = {};
+                for(let g=1; g<=38; g++) {
+                    userActiveCaptains[username][g] = getActiveCaptainId(username, g);
+                }
+            });
+
+            matches.forEach(m => {
+                const isPlayed = m.actualH !== null && m.actualA !== null;
+                allUsernames.forEach(username => {
+                    const p = (predictions[username] || {})[m.id];
+                    const userStats = statsMap[username];
+                    if (userStats && p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                        userStats.predictedCount++;
+                        if (isPlayed) {
+                            userStats.playedMatches++;
+                            
+                            // 🌟 استخدام الكابتن الفعلي لحساب النقاط
+                            const isEffectiveCaptain = (m.id === userActiveCaptains[username][m.gw]);
+                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain);
+                            
+                            userStats.totalPts += pts;
+                            
+                            const isOutcomeCorrect = (p.home > p.away && m.actualH > m.actualA) || (p.home < p.away && m.actualH < m.actualA) || (p.home === p.away && m.actualH === m.actualA);
+                            if (isOutcomeCorrect) userStats.correctOutcomes++;
+
+                            userStats.teamPoints[m.home] = (userStats.teamPoints[m.home] || 0) + pts;
+                            userStats.teamPoints[m.away] = (userStats.teamPoints[m.away] || 0) + pts;
+                            userStats.gwPoints[m.gw] = (userStats.gwPoints[m.gw] || 0) + pts;
+                            
+                            if (Number(p.home) === m.actualH && Number(p.away) === m.actualA) {
+                                userStats.exactsPerGw[m.gw] = (userStats.exactsPerGw[m.gw] || 0) + 1;
+                                if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
+                            }
+
+                            const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
+                            const bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
+                            if (Number(m.gw) === prevGw && bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
+                        }
+                    }
+                });
+            });
+
+            let highestGwPts = -1, motwUser = null;
+            Object.values(statsMap).forEach(userStats => {
+                const pts = userStats.gwPoints[prevGw] || 0;
+                if (pts > highestGwPts && pts > 0) { highestGwPts = pts; motwUser = userStats.username; }
+            });
+            if (motwUser) statsMap[motwUser].badges.motw = true;
+
+            Object.values(statsMap).forEach(userStats => {
+                userStats.hitRate = userStats.playedMatches > 0 ? Math.round((userStats.correctOutcomes / userStats.playedMatches) * 100) : 0;
+                let bestTeam = '-', maxTeamPts = -1;
+                for (const [team, pts] of Object.entries(userStats.teamPoints)) {
+                    if (pts > maxTeamPts) { maxTeamPts = pts; bestTeam = getTeamName(team); }
+                }
+                userStats.favTeam = maxTeamPts > 0 ? bestTeam : '-';
+            });
+
+            return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
+        }
 
         function getLeagueStandings(leagueCode, baseStats) {
     const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
@@ -899,21 +919,34 @@ function isMatchLocked(match) {
                     </button>
                 </div>
                 
-                <div class="space-y-3">
+                <div class="space-y-3 mt-4">
                     ${gwMatches.map(match => {
                         const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                         const matchType = getMatchType(match.home, match.away);
                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                         const isLocked = isMatchLocked(match);
                         
+                        // 🌟 التحقق مما إذا كانت هذه المباراة هي الكابتن الإجباري أو المختار
+                        const activeCapId = getActiveCaptainId(currentUser.username, activeGw);
+                        const isEffectiveCaptain = (match.id === activeCapId);
+                        
                         const displayDate = formatMatchDate(match.date);
                         
+                        // 🌟 تنسيق إطار الكابتن والجوكر
                         let badgeHtml = '';
-                        if (pred.isTripleCaptain) badgeHtml = `<div class="absolute top-3 ${isAr ? 'left-3' : 'right-3'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px] shadow-lg shadow-fuchsia-500/20"><i class="fa-solid fa-bolt"></i> <span class="hidden md:inline">${typeof t === 'function' ? t('tripleCaptain') : 'الجوكر x3'}</span></div>`;
-                        else if (pred.isCaptain) badgeHtml = `<div class="absolute top-3 ${isAr ? 'left-3' : 'right-3'} bg-amber-500 text-black w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shadow-lg shadow-amber-500/30">${typeof t === 'function' ? t('captain') : 'C'}</div>`;
+                        let borderClass = 'border border-white/5 hover:border-blue-500/30';
+                        
+                        if (pred.isTripleCaptain) {
+                            badgeHtml = `<div class="absolute -top-3 ${isAr ? '-right-3' : '-left-3'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px] shadow-lg shadow-fuchsia-500/30 border border-[#0f172a] z-10"><i class="fa-solid fa-bolt"></i> <span class="hidden md:inline">${typeof t === 'function' ? t('tripleCaptain') : 'الجوكر x3'}</span></div>`;
+                            borderClass = 'border-2 border-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.2)] bg-fuchsia-900/10';
+                        } 
+                        else if (isEffectiveCaptain) {
+                            badgeHtml = `<div class="absolute -top-3 ${isAr ? '-right-3' : '-left-3'} bg-amber-500 text-black w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-[0_0_15px_rgba(245,158,11,0.6)] border-2 border-[#0f172a] z-10" title="الكابتن (مضاعفة النقاط)">C</div>`;
+                            borderClass = 'border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)] bg-amber-900/10';
+                        }
 
                         return `
-                            <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md border border-white/5 relative hover:border-blue-500/30 transition-colors ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
+                            <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
                                 ${badgeHtml}
                                 <div class="flex justify-between items-center text-[10px] md:text-xs text-slate-400 border-b border-white/5 pb-2">
                                     <span class="font-bold ${matchType.color}">${matchType.label}</span>
@@ -1033,19 +1066,33 @@ function changeGw(gw) {
                         <h3 class="font-black text-sm text-blue-400">${gwText} ${activeGw}</h3>
                         <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-lg">${gwMatches.length} ${matchupsText}</span>
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-3 pt-2">
                         ${gwMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-8"><i class="fa-solid fa-futbol mb-2 text-2xl opacity-50 block"></i> لا توجد مباريات في هذه الجولة حالياً</div>` : ''}
                         
                         ${gwMatches.map(match => {
                             const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                             const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                             const isLocked = isMatchLocked(match);
+                            
+                            // 🌟 التحقق مما إذا كانت هذه المباراة هي الكابتن الإجباري أو المختار
+                            const activeCapId = getActiveCaptainId(currentUser.username, activeGw);
+                            const isEffectiveCaptain = (match.id === activeCapId);
+                            
                             const displayDate = formatMatchDate(match.date);
                             const displayTime = typeof formatDisplayTime === 'function' ? formatDisplayTime(match.time) : match.time;
                             
-                            let bMini = '';
-                            if(pred.isTripleCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-fuchsia-600 text-white w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]"><i class="fa-solid fa-bolt"></i></div>`;
-                            else if(pred.isCaptain) bMini = `<div class="absolute top-2 ${isAr ? 'left-2' : 'right-2'} bg-amber-500 text-black w-4 h-4 rounded-full flex items-center justify-center font-black text-[8px]">C</div>`;
+                            // 🌟 تنسيق إطار الكابتن والجوكر
+                            let badgeHtml = '';
+                            let borderClass = 'bg-slate-900/60 border border-white/5 hover:border-blue-500/30';
+                            
+                            if (pred.isTripleCaptain) {
+                                badgeHtml = `<div class="absolute -top-3 ${isAr ? '-right-2' : '-left-2'} bg-fuchsia-600 text-white px-2 py-0.5 rounded-lg flex items-center gap-1 font-black text-[10px] shadow-lg shadow-fuchsia-500/30 border border-[#0f172a] z-10"><i class="fa-solid fa-bolt"></i></div>`;
+                                borderClass = 'border-2 border-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.2)] bg-fuchsia-900/10';
+                            } 
+                            else if (isEffectiveCaptain) {
+                                badgeHtml = `<div class="absolute -top-3 ${isAr ? '-right-2' : '-left-2'} bg-amber-500 text-black w-7 h-7 rounded-full flex items-center justify-center font-black text-[11px] shadow-[0_0_15px_rgba(245,158,11,0.6)] border-2 border-[#0f172a] z-10" title="الكابتن (مضاعفة النقاط)">C</div>`;
+                                borderClass = 'border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)] bg-amber-900/10';
+                            }
 
                             const lockedText = typeof t === 'function' ? t('locked') : 'مقفلة';
                             const predictText = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
@@ -1065,7 +1112,7 @@ function changeGw(gw) {
                                     else if (Math.sign(h - a) === Math.sign(ph - pa)) pts = 1;
                                     
                                     if (pred.isTripleCaptain) pts *= 3;
-                                    else if (pred.isCaptain) pts *= 2;
+                                    else if (isEffectiveCaptain) pts *= 2;
                                     
                                     if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                     else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -1093,8 +1140,8 @@ function changeGw(gw) {
                             else btnContent = predictText;
 
                             return `
-                                <div class="bg-slate-900/60 p-3 rounded-xl flex flex-col gap-2 border border-white/5 relative ${isLocked ? 'opacity-70' : ''}">
-                                    ${bMini}
+                                <div class="p-3 rounded-xl flex flex-col gap-2 relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
+                                    ${badgeHtml}
                                     <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
                                         <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}
                                     </div>
@@ -1130,6 +1177,7 @@ function changeGw(gw) {
         return `<div class="text-center text-rose-400 mt-10">حدث خطأ بسيط في عرض المباريات.. ولكن التطبيق لم يتعطل! 🚀</div>`;
     }
 }
+        
         function renderStandingsTab() {
     const standings = getGlobalStandings();
     const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
@@ -1716,104 +1764,101 @@ function ruleRow(text, points, colorType) {
         function closeModal() { activeMatchModal = null; renderModal(); }
 
         function renderModal() {
-    const container = document.getElementById('modal-container');
-    if (!activeMatchModal) { container.innerHTML = ''; return; }
-    
-    // التحقق من لغة التطبيق لضبط الاتجاه
-    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
-    const isAr = direction === 'rtl';
+            const container = document.getElementById('modal-container');
+            if (!activeMatchModal) { container.innerHTML = ''; return; }
+            
+            const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+            const isAr = direction === 'rtl';
 
-    const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-    const hVal = pred.home !== undefined ? pred.home : '';
-    const aVal = pred.away !== undefined ? pred.away : '';
-    
-    const currentGw = Number(activeMatchModal.gw);
-    const userPreds = predictions[currentUser.username] || {};
-    let captainUsedInGw = false;
-    let tcUsedInCurrentHalf = false;
-    
-    Object.entries(userPreds).forEach(([mId, p]) => {
-        if (mId === activeMatchModal.id) return; 
-        const m = matches.find(x => x.id === mId);
-        if (m) {
-            if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
-            if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
+            const pred = (predictions[currentUser.username] || {})[activeMatchModal.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
+            const hVal = pred.home !== undefined ? pred.home : '';
+            const aVal = pred.away !== undefined ? pred.away : '';
+            
+            const currentGw = Number(activeMatchModal.gw);
+            const userPreds = predictions[currentUser.username] || {};
+            let captainUsedInGw = false;
+            let tcUsedInCurrentHalf = false;
+            
+            // 🌟 معرفة ما إذا كانت هذه المباراة هي الكابتن الإجباري الحالي
+            const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
+            const isEffectiveCaptain = (activeMatchModal.id === activeCapId);
+            
+            Object.entries(userPreds).forEach(([mId, p]) => {
+                if (mId === activeMatchModal.id) return; 
+                const m = matches.find(x => x.id === mId);
+                if (m) {
+                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
+                    if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
+                }
+            });
+
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain);
+
+            const matchPredTitle = typeof t === 'function' ? t('matchPrediction') : 'توقع نتيجة المباراة';
+            const vsText = typeof t === 'function' ? t('vs') : 'ضد';
+            const capText = typeof t === 'function' ? t('captain') : 'C كابتن (مضاعفة x2)';
+            const tcText = typeof t === 'function' ? t('tripleCaptain') : 'الجوكر (مضاعفة x3)';
+            const normalPredText = typeof t === 'function' ? t('normalPred') : 'توقع عادي (بدون مضاعفات)';
+            const usedText = typeof t === 'function' ? t('used') : 'مُستخدمة';
+            const potentialPtsText = typeof t === 'function' ? t('potentialPoints') : 'النقاط المحتملة للتوقع المثالي';
+            const ptText = isAr ? 'نقطة' : 'Pts';
+            const saveText = typeof t === 'function' ? t('savePred') : 'حفظ التوقع';
+            const cancelText = typeof t === 'function' ? t('cancel') : 'إلغاء';
+
+            // 🌟 إذا كانت هذه المباراة هي الكابتن الإجباري، نقوم بتحديد الزر تلقائياً
+            const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain);
+
+            container.innerHTML = `
+                <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="${direction}">
+                    <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
+                        <div class="text-center border-b border-white/5 pb-3">
+                            <h3 class="text-sm font-bold text-blue-400 mb-1">${matchPredTitle}</h3>
+                            <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
+                        </div>
+                        
+                        <div class="flex items-center justify-center gap-4 py-2" dir="ltr">
+                            <div class="text-center">
+                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
+                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
+                            </div>
+                            <span class="text-xl font-bold text-slate-500 mt-5">:</span>
+                            <div class="text-center">
+                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
+                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
+                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
+                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">${capText}</span> ${captainUsedInGw && !pred.isCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                            </label>
+                            
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
+                                <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
+                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                            </label>
+                            
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
+                                <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${(!isCapChecked && !pred.isTripleCaptain) ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
+                                <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">${normalPredText}</span></div>
+                            </label>
+                        </div>
+
+                        <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
+                            <span class="text-[10px] text-blue-300 font-bold mb-1">${potentialPtsText}</span>
+                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} ${ptText}</span>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">${saveText}</button>
+                            <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">${cancelText}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
-    });
-
-    // حساب متوقع للنقاط إذا تم اختيار هذه النتيجة بشكل مثالي
-    const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, pred.isCaptain, pred.isTripleCaptain);
-
-    // مفاتيح الترجمة أو النصوص الاحتياطية
-    const matchPredTitle = typeof t === 'function' ? t('matchPrediction') : 'توقع نتيجة المباراة';
-    const vsText = typeof t === 'function' ? t('vs') : 'ضد';
-    const capText = typeof t === 'function' ? t('captain') : 'C كابتن (مضاعفة x2)';
-    const tcText = typeof t === 'function' ? t('tripleCaptain') : 'الجوكر (مضاعفة x3)';
-    const normalPredText = typeof t === 'function' ? t('normalPred') : 'توقع عادي (بدون مضاعفات)';
-    const usedText = typeof t === 'function' ? t('used') : 'مُستخدمة';
-    const potentialPtsText = typeof t === 'function' ? t('potentialPoints') : 'النقاط المحتملة للتوقع المثالي';
-    const ptText = isAr ? 'نقطة' : 'Pts';
-    const saveText = typeof t === 'function' ? t('savePred') : 'حفظ التوقع';
-    const cancelText = typeof t === 'function' ? t('cancel') : 'إلغاء';
-
-    // ترتيب عرض الأرقام والأسماء ليناسب اللغة
-    const leftTeam = isAr ? activeMatchModal.home : activeMatchModal.home;
-    const rightTeam = isAr ? activeMatchModal.away : activeMatchModal.away;
-    const leftVal = isAr ? hVal : hVal;
-    const rightVal = isAr ? aVal : aVal;
-    const leftInputId = isAr ? 'modal-pred-h' : 'modal-pred-h';
-    const rightInputId = isAr ? 'modal-pred-a' : 'modal-pred-a';
-
-    container.innerHTML = `
-        <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="${direction}">
-            <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
-                <div class="text-center border-b border-white/5 pb-3">
-                    <h3 class="text-sm font-bold text-blue-400 mb-1">${matchPredTitle}</h3>
-                    <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
-                </div>
-                
-                <div class="flex items-center justify-center gap-4 py-2" dir="ltr"> <!-- يجب أن يبقى ltr لتجنب مشاكل الأرقام -->
-                    <div class="text-center">
-                        <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
-                        <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
-                    </div>
-                    <span class="text-xl font-bold text-slate-500 mt-5">:</span>
-                    <div class="text-center">
-                        <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
-                        <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" />
-                    </div>
-                </div>
-                
-                <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                    <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                        <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${pred.isCaptain ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
-                        <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">${capText}</span> ${captainUsedInGw && !pred.isCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
-                    </label>
-                    
-                    <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                        <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                        <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
-                    </label>
-                    
-                    <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
-                        <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${!pred.isCaptain && !pred.isTripleCaptain ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
-                        <div class="flex-1"><span class="text-xs font-bold text-slate-300 block">${normalPredText}</span></div>
-                    </label>
-                </div>
-
-                <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
-                    <span class="text-[10px] text-blue-300 font-bold mb-1">${potentialPtsText}</span>
-                    <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} ${ptText}</span>
-                </div>
-                
-                <div class="flex gap-2">
-                    <button onclick="saveModalPrediction()" class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-500/30 transition-all">${saveText}</button>
-                    <button onclick="closeModal()" class="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-all">${cancelText}</button>
-                </div>
-            </div>
-        </div>
-    `;
-}
+        
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
@@ -1828,35 +1873,57 @@ function ruleRow(text, points, colorType) {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
+            const isCap = (powerup === 'captain');
+            const isTC = (powerup === 'triple');
+
+            // 🌟 البحث عن الكابتن القديم الصريح لنفس الجولة لإلغائه إن وجد
+            let oldExplicitCapId = null;
+            const currentGw = Number(activeMatchModal.gw);
+            const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
+            gwMatches.forEach(m => {
+                if (m.id !== activeMatchModal.id && predictions[currentUser.username]?.[m.id]?.isCaptain) {
+                    oldExplicitCapId = m.id;
+                }
+            });
+
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+            
+            // 🌟 إزالة الكابتن محلياً من المباراة القديمة حتى يتحدث العرض فوراً
+            if (isCap && oldExplicitCapId) {
+                predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
+            }
+
             predictions[currentUser.username][activeMatchModal.id] = { 
-                home: Number(h), 
-                away: Number(a), 
-                isCaptain: powerup === 'captain', 
-                isTripleCaptain: powerup === 'triple'
+                home: Number(h), away: Number(a), isCaptain: isCap, isTripleCaptain: isTC 
             };
             
             const reqMatchId = activeMatchModal.id;
             closeModal();
-            render(); 
+            render(); // تحديث الواجهة فوراً لتبدو سريعة بدون انتظار السيرفر
 
             try {
-                // 🌟 استخراج المفتاح من جيب المتصفح
                 const token = localStorage.getItem('oracle_token_v8');
-                
+                const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+                // 🌟 1. إرسال طلب لإلغاء الكابتن القديم في قاعدة البيانات
+                if (isCap && oldExplicitCapId) {
+                    const oldPred = predictions[currentUser.username][oldExplicitCapId];
+                    await fetch(`${API_BASE_URL}/predict`, {
+                        method: 'POST', headers,
+                        body: JSON.stringify({ 
+                            username: currentUser.username, matchId: oldExplicitCapId, 
+                            predH: oldPred.home, predA: oldPred.away, 
+                            isCaptain: false, isTripleCaptain: oldPred.isTripleCaptain
+                        })
+                    });
+                }
+
+                // 🌟 2. حفظ التوقع الحالي (الكابتن الجديد أو التوقع العادي)
                 const response = await fetch(`${API_BASE_URL}/predict`, {
-                    method: 'POST', 
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}` // 🌟 إبراز المفتاح للسيرفر هنا
-                    },
+                    method: 'POST', headers,
                     body: JSON.stringify({ 
-                        username: currentUser.username, 
-                        matchId: reqMatchId, 
-                        predH: h, 
-                        predA: a, 
-                        isCaptain: powerup === 'captain', 
-                        isTripleCaptain: powerup === 'triple'
+                        username: currentUser.username, matchId: reqMatchId, 
+                        predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC
                     })
                 });
                 
@@ -1864,18 +1931,16 @@ function ruleRow(text, points, colorType) {
                 
                 if(!data.success) {
                     showCustomDialog(data.message || "حدث خطأ غير معروف");
-                    // إذا كان المفتاح منتهي الصلاحية، نسجل خروج المستخدم ليحصل على مفتاح جديد
-                    if(data.message.includes('منتهي') || data.message.includes('توقف')) {
-                        logout();
-                    }
+                    if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
                 } else {
-                    await syncData();
+                    await syncData(); // جلب البيانات المؤكدة كخطوة أخيرة
                 }
             } catch(e) {
                 console.error("Predict error:", e);
                 showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
             }
         }
+        
         async function createMiniLeague() {
             const name = document.getElementById('new-ml-name').value.trim();
             if (!name) { showCustomDialog('يرجى كتابة اسم الدوري أولاً.'); return; }
