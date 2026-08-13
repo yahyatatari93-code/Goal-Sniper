@@ -1277,135 +1277,128 @@ function changeGw(gw) {
 }
         
         function renderStandingsTab() {
-    const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
-    const isAr = direction === 'rtl';
+            const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+            const isAr = direction === 'rtl';
 
-    // 🌟 1. استخراج الأشهر المتاحة ديناميكياً من جدول المباريات 🌟
-    const availableMonths = [];
-    matches.forEach(m => {
-        const d = formatMatchDate(m.date);
-        if(d) {
-            const parts = d.split('/');
-            if(parts.length >= 3) {
-                const mStr = `${parts[1]}/${parts[2]}`; // MM/YYYY
-                if(!availableMonths.includes(mStr)) availableMonths.push(mStr);
-            }
-        }
-    });
-    
-    // ترتيب الأشهر (الأحدث أولاً)
-    availableMonths.sort((a, b) => {
-        const [mA, yA] = a.split('/').map(Number);
-        const [mB, yB] = b.split('/').map(Number);
-        return yB - yA || mB - mA;
-    });
-
-    // ضبط الشهر الافتراضي إذا لم يتم اختياره بعد
-    if (!selectedStandingsMonth && availableMonths.length > 0) {
-        const [defM, defY] = availableMonths[0].split('/');
-        selectedStandingsMonth = Number(defM);
-        selectedStandingsYear = Number(defY);
-    }
-
-    const isMonthly = standingsViewMode === 'monthly';
-    const standings = (isMonthly && selectedStandingsMonth) ? getMonthlyStandings(selectedStandingsMonth, selectedStandingsYear) : getGlobalStandings();
-
-    // قاموس أسماء الأشهر
-    const monthNames = {
-        ar: ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
-        en: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        tr: ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
-    };
-    const mNames = monthNames[typeof currentLang !== 'undefined' ? currentLang : 'ar'];
-
-    return `
-        <div class="glass p-4 md:p-6 rounded-3xl space-y-4" dir="${direction}">
+            const availableMonths = [];
+            matches.forEach(m => {
+                const d = formatMatchDate(m.date);
+                if(d) {
+                    const parts = d.split('/');
+                    if(parts.length >= 3) {
+                        const mStr = parts[1] + '/' + parts[2];
+                        if(!availableMonths.includes(mStr)) availableMonths.push(mStr);
+                    }
+                }
+            });
             
-            <!-- الهيدر وأزرار التبديل -->
-            <div class="flex flex-col gap-4 border-b border-white/10 pb-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-trophy ${isMonthly ? 'text-blue-400' : 'text-amber-400'}"></i> 
-                        ${isMonthly ? (isAr ? 'بطل الشهر' : 'Monthly Hero') : (typeof t === 'function' ? t('standings') : 'الترتيب العام')}
-                    </h2>
-                    <span class="text-xs font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-full border border-white/10 shadow-inner">
-                        ${isAr ? 'اللاعبون' : 'Players'}: ${standings.length}
-                    </span>
-                </div>
-                
-                <!-- أزرار التبديل -->
-                <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
-                    <button onclick="toggleStandingsMode('global')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!isMonthly ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'text-slate-400 hover:text-white'}">
-                        ${isAr ? 'الترتيب العام' : 'Overall'}
-                    </button>
-                    <button onclick="toggleStandingsMode('monthly')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${isMonthly ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
-                        ${isAr ? 'الترتيب الشهري' : 'Monthly'}
-                    </button>
-                </div>
+            availableMonths.sort((a, b) => {
+                const [mA, yA] = a.split('/').map(Number);
+                const [mB, yB] = b.split('/').map(Number);
+                return yB - yA || mB - mA;
+            });
 
-                <!-- قائمة اختيار الشهر (تظهر فقط في وضع الترتيب الشهري) -->
-                ${isMonthly && availableMonths.length > 0 ? `
-                <div class="relative mt-1 animate-fade-up">
-                    <select onchange="changeStandingsMonth(this.value)" class="w-full bg-slate-950 border border-blue-500/30 rounded-xl pl-4 pr-10 py-2.5 text-sm text-blue-400 font-black outline-none focus:border-blue-500 appearance-none shadow-inner cursor-pointer">
-                        ${availableMonths.map(mStr => {
-                            const [m, y] = mStr.split('/');
-                            const isSelected = (Number(m) === selectedStandingsMonth && Number(y) === selectedStandingsYear);
-                            // 🌟 تم إزالة الأخطاء القواعدية من هذا السطر نهائياً 🌟
-                            return \`<option value="\${mStr}" \${isSelected ? 'selected' : ''}>\${isAr ? 'شهر' : 'Month'} \${mNames[Number(m)]} - \${y}</option>\`;
-                        }).join('')}
-                    </select>
-                    <i class="fa-solid fa-calendar-days text-blue-500/50 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
-                </div>
-                ` : ''}
-            </div>
+            if (!selectedStandingsMonth && availableMonths.length > 0) {
+                const [defM, defY] = availableMonths[0].split('/');
+                selectedStandingsMonth = Number(defM);
+                selectedStandingsYear = Number(defY);
+            }
 
-            <!-- قائمة اللاعبين -->
-            <div class="space-y-2">
-                ${standings.map((user, idx) => {
-                    const isMe = user.username === currentUser.username;
-                    // تلوين المراكز الثلاثة الأولى
-                    let badgeColor = 'bg-slate-800 text-slate-300';
-                    let rowBorder = 'border-white/5 bg-slate-900/60';
+            const isMonthly = standingsViewMode === 'monthly';
+            const standings = (isMonthly && selectedStandingsMonth) ? getMonthlyStandings(selectedStandingsMonth, selectedStandingsYear) : getGlobalStandings();
+
+            const monthNames = {
+                ar: ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'],
+                en: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                tr: ['', 'Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+            };
+            const mNames = monthNames[typeof currentLang !== 'undefined' ? currentLang : 'ar'];
+
+            return `
+                <div class="glass p-4 md:p-6 rounded-3xl space-y-4" dir="${direction}">
                     
-                    if (idx === 0) { badgeColor = 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]'; rowBorder = 'border-amber-500/30 bg-amber-900/10'; }
-                    else if (idx === 1) { badgeColor = 'bg-slate-300 text-black'; rowBorder = 'border-slate-400/30 bg-slate-800/40'; }
-                    else if (idx === 2) { badgeColor = 'bg-amber-700 text-white'; rowBorder = 'border-amber-700/30 bg-amber-950/20'; }
-
-                    if (isMe) rowBorder = 'bg-blue-600/20 border-blue-500/50 shadow-lg'; // تمييز المستخدم الحالي
-
-                    return `
-                        <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${rowBorder}">
-                            <div class="flex items-center gap-3">
-                                <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${badgeColor}">
-                                    #${idx + 1}
-                                </span>
-                                <div>
-                                    <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                                        ${user.username} ${isMe ? `(${typeof t === 'function' ? t('you') || 'أنت' : 'أنت'})` : ''}
-                                        ${!isMonthly && user.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400"><i class="fa-solid fa-fire"></i></span>` : ''}
-                                        ${!isMonthly && user.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
-                                        ${!isMonthly && user.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
-                                    </h4>
-                                </div>
-                            </div>
-                            <div class="${isAr ? 'text-left' : 'text-right'}">
-                                <span class="text-base font-black ${idx === 0 ? 'text-amber-400' : (isMonthly ? 'text-blue-400' : 'text-amber-400')}">${user.totalPts}</span>
-                                <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
-                            </div>
+                    <div class="flex flex-col gap-4 border-b border-white/10 pb-4">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-trophy ${isMonthly ? 'text-blue-400' : 'text-amber-400'}"></i> 
+                                ${isMonthly ? (isAr ? 'بطل الشهر' : 'Monthly Hero') : (typeof t === 'function' ? t('standings') : 'الترتيب العام')}
+                            </h2>
+                            <span class="text-xs font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-full border border-white/10 shadow-inner">
+                                ${isAr ? 'اللاعبون' : 'Players'}: ${standings.length}
+                            </span>
                         </div>
-                    `;
-                }).join('')}
+                        
+                        <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                            <button onclick="toggleStandingsMode('global')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!isMonthly ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'text-slate-400 hover:text-white'}">
+                                ${isAr ? 'الترتيب العام' : 'Overall'}
+                            </button>
+                            <button onclick="toggleStandingsMode('monthly')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${isMonthly ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
+                                ${isAr ? 'الترتيب الشهري' : 'Monthly'}
+                            </button>
+                        </div>
 
-                ${standings.length === 0 ? `
-                    <div class="text-center flex flex-col items-center justify-center py-8 text-slate-500 gap-3">
-                        <i class="fa-solid fa-ghost text-4xl opacity-30"></i>
-                        <span class="text-xs font-bold">${isAr ? 'لا يوجد نقاط مسجلة في هذا الترتيب حتى الآن.' : 'No points recorded yet.'}</span>
+                        ${isMonthly && availableMonths.length > 0 ? `
+                        <div class="relative mt-1 animate-fade-up">
+                            <select onchange="changeStandingsMonth(this.value)" class="w-full bg-slate-950 border border-blue-500/30 rounded-xl pl-4 pr-10 py-2.5 text-sm text-blue-400 font-black outline-none focus:border-blue-500 appearance-none shadow-inner cursor-pointer">
+                                ${availableMonths.map(mStr => {
+                                    const parts = mStr.split('/');
+                                    const m = parts[0];
+                                    const y = parts[1];
+                                    const isSelected = (Number(m) === selectedStandingsMonth && Number(y) === selectedStandingsYear);
+                                    // 🌟 الحل السحري الآمن هنا (تم إزالة كل علامات \ نهائياً) 🌟
+                                    return '<option value="' + mStr + '" ' + (isSelected ? 'selected' : '') + '>' + (isAr ? 'شهر ' : 'Month ') + mNames[Number(m)] + ' - ' + y + '</option>';
+                                }).join('')}
+                            </select>
+                            <i class="fa-solid fa-calendar-days text-blue-500/50 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
+                        </div>
+                        ` : ''}
                     </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
-}
+
+                    <div class="space-y-2">
+                        ${standings.map((user, idx) => {
+                            const isMe = user.username === currentUser.username;
+                            let badgeColor = 'bg-slate-800 text-slate-300';
+                            let rowBorder = 'border-white/5 bg-slate-900/60';
+                            
+                            if (idx === 0) { badgeColor = 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]'; rowBorder = 'border-amber-500/30 bg-amber-900/10'; }
+                            else if (idx === 1) { badgeColor = 'bg-slate-300 text-black'; rowBorder = 'border-slate-400/30 bg-slate-800/40'; }
+                            else if (idx === 2) { badgeColor = 'bg-amber-700 text-white'; rowBorder = 'border-amber-700/30 bg-amber-950/20'; }
+
+                            if (isMe) rowBorder = 'bg-blue-600/20 border-blue-500/50 shadow-lg';
+
+                            return `
+                                <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${rowBorder}">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${badgeColor}">
+                                            #${idx + 1}
+                                        </span>
+                                        <div>
+                                            <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
+                                                ${user.username} ${isMe ? '(' + (typeof t === 'function' ? t('you') || 'أنت' : 'أنت') + ')' : ''}
+                                                ${!isMonthly && user.badges.motw ? '<span class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
+                                                ${!isMonthly && user.badges.sniper ? '<span class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
+                                                ${!isMonthly && user.badges.giantSlayer ? '<span class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                    <div class="${isAr ? 'text-left' : 'text-right'}">
+                                        <span class="text-base font-black ${idx === 0 ? 'text-amber-400' : (isMonthly ? 'text-blue-400' : 'text-amber-400')}">${user.totalPts}</span>
+                                        <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+
+                        ${standings.length === 0 ? `
+                            <div class="text-center flex flex-col items-center justify-center py-8 text-slate-500 gap-3">
+                                <i class="fa-solid fa-ghost text-4xl opacity-30"></i>
+                                <span class="text-xs font-bold">${isAr ? 'لا يوجد نقاط مسجلة في هذا الترتيب حتى الآن.' : 'No points recorded yet.'}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
 
 function renderMiniLeaguesTab() {
     const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
