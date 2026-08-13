@@ -2697,9 +2697,16 @@ async function deleteLeagueByAdmin() {
     if (!confirmShot) return;
 
     try {
+        // 🌟 الحل هنا: إرفاق مفتاح الأمان (Token) مع الرصاصة 🌟
+        const token = localStorage.getItem('oracle_token_v8');
+        const headers = { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}` 
+        };
+
         const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify({
                 leagueCode: leagueCode,
                 gw: gw,
@@ -2712,7 +2719,7 @@ async function deleteLeagueByAdmin() {
         const json = await res.json();
         if (json.success) {
             alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-            // 👇 هنا السر: ننتظر جلب البيانات الجديدة ثم نحدث الشاشة فوراً
+            // ننتظر جلب البيانات الجديدة ثم نحدث الشاشة فوراً
             await syncData(); 
             render(); 
         } else {
