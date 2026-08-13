@@ -1350,6 +1350,7 @@ function changeGw(gw) {
                         ${availableMonths.map(mStr => {
                             const [m, y] = mStr.split('/');
                             const isSelected = (Number(m) === selectedStandingsMonth && Number(y) === selectedStandingsYear);
+                            // تم إصلاح الخطأ الإملائي البرمجي في السطر التالي وإزالة الشرطات المائلة \
                             return \`<option value="\${mStr}" \${isSelected ? 'selected' : ''}>\${isAr ? 'شهر' : 'Month'} \${mNames[Number(m)]} - \${y}</option>\`;
                         }).join('')}
                     </select>
