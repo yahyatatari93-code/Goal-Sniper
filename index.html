@@ -1631,14 +1631,13 @@ function ruleRow(text, points, colorType) {
 }
 
         function renderPrizesTab() {
-            // تحديد اللغة والاتجاه
             const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
             const direction = lang === 'ar' ? 'rtl' : 'ltr';
 
             return `
                 <div class="space-y-6 pb-4" dir="${direction}">
                     
-                    <!-- الهيدر (العنوان الرئيسي) -->
+                    <!-- الهيدر -->
                     <div class="glass p-6 rounded-3xl text-center relative overflow-hidden border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#0f172a] to-amber-900/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
                         <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
                         <i class="fa-solid fa-gift text-5xl text-amber-400 mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]"></i>
@@ -1647,18 +1646,18 @@ function ruleRow(text, points, colorType) {
                     </div>
 
                     <!-- 🎁 الجوائز الشهرية -->
-                    <div class="glass p-5 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
-                        <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-4">
+                    <div class="glass p-4 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
+                        <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-medal"></i></div>
                             <h3 class="text-lg font-black text-white">الجوائز الشهرية</h3>
                         </div>
                         
-                        <!-- إزالة قفل الإخفاء والسحب ليظهر النص كاملاً -->
-                        <div class="flex items-center gap-3 md:gap-4 bg-blue-950/30 p-4 rounded-2xl border border-blue-500/20">
-                            <div class="text-4xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0"><i class="fa-solid fa-shirt"></i></div>
-                            <div class="flex-1">
-                                <h4 class="font-bold text-sm text-blue-300 mb-1">3 تيشيرتات رياضية</h4>
-                                <p class="text-[11px] md:text-xs text-slate-300 font-semibold leading-relaxed">
+                        <!-- 🌟 التعديل هنا: تصغير الأيقونة والهوامش والخط لتتسع في سطر واحد 🌟 -->
+                        <div class="flex items-center gap-2.5 bg-blue-950/30 p-3 rounded-2xl border border-blue-500/20">
+                            <div class="text-3xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0"><i class="fa-solid fa-shirt"></i></div>
+                            <div class="flex-1 overflow-hidden">
+                                <h4 class="font-bold text-[13px] text-blue-300 mb-0.5">3 تيشيرتات رياضية</h4>
+                                <p class="text-[10px] sm:text-xs text-slate-300 font-semibold whitespace-nowrap w-full">
                                     تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black">ترتيب الشهر</span>
                                 </p>
                             </div>
@@ -1673,7 +1672,6 @@ function ruleRow(text, points, colorType) {
                         </div>
 
                         <div class="space-y-3">
-                            <!-- المركز الأول -->
                             <div class="flex justify-between items-center bg-gradient-to-l from-amber-500/20 to-transparent p-3.5 rounded-2xl border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(245,158,11,0.8)]">1</span>
@@ -1682,7 +1680,6 @@ function ruleRow(text, points, colorType) {
                                 <span class="font-black text-xl text-white">300 <span class="text-xs text-amber-400">$</span></span>
                             </div>
 
-                            <!-- المركز الثاني -->
                             <div class="flex justify-between items-center bg-gradient-to-l from-slate-400/20 to-transparent p-3.5 rounded-2xl border border-slate-400/40">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-slate-300 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(203,213,225,0.5)]">2</span>
@@ -1691,7 +1688,6 @@ function ruleRow(text, points, colorType) {
                                 <span class="font-black text-xl text-white">200 <span class="text-xs text-slate-400">$</span></span>
                             </div>
 
-                            <!-- المركز الثالث -->
                             <div class="flex justify-between items-center bg-gradient-to-l from-amber-700/30 to-transparent p-3.5 rounded-2xl border border-amber-700/50">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(180,83,9,0.5)]">3</span>
@@ -1700,7 +1696,6 @@ function ruleRow(text, points, colorType) {
                                 <span class="font-black text-xl text-white">100 <span class="text-xs text-amber-600">$</span></span>
                             </div>
 
-                            <!-- المركز الرابع والخامس (جنب بعض) -->
                             <div class="grid grid-cols-2 gap-3 pt-2">
                                 <div class="flex flex-col items-center justify-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
                                     <span class="text-xs font-bold text-slate-400 mb-1">المركز الرابع</span>
@@ -1712,7 +1707,6 @@ function ruleRow(text, points, colorType) {
                                 </div>
                             </div>
 
-                            <!-- من 6 إلى 10 -->
                             <div class="flex justify-between items-center bg-slate-800/50 p-3.5 rounded-2xl border border-emerald-500/20 border-dashed mt-2">
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-users text-slate-500"></i>
