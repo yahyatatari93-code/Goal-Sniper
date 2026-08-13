@@ -827,7 +827,6 @@ function isMatchLocked(match) {
     const prevGw = activeGw > 1 ? activeGw - 1 : null;
     let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
     
-    // ترتيب المباريات
     gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
     
     const userPreds = predictions[currentUser.username] || {};
@@ -837,14 +836,12 @@ function isMatchLocked(match) {
     const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
     const motw = prevGw ? standings.find(u => u.badges.motw) : null;
 
-    // تحديد اتجاه النص
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
     const isAr = currentLang === 'ar';
 
     return `
         <div class="space-y-5" dir="${direction}">
             
-            <!-- 1. قسم الهوية والشعار (Hero Section) -->
             <div class="text-center flex flex-col items-center justify-center mt-2 mb-2">
                 <div class="relative">
                     <div class="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
@@ -854,7 +851,6 @@ function isMatchLocked(match) {
                 <span class="text-[11px] text-slate-400 mt-2 font-bold tracking-wide">${typeof t === 'function' ? t('slogan') : 'توقع بذكاء . تصدر بجدارة . اقنص بقوة'}</span>
             </div>
 
-            <!-- 2. شريط مجتمع القناصين (أزرار ذكية بدون روابط مباشرة) -->
             <div class="glass py-2.5 px-4 rounded-2xl border border-white/5 bg-slate-900/40 shadow-lg flex justify-center items-center gap-6 max-w-sm mx-auto relative z-20" dir="ltr">
                 <button onclick="openSocial('fb')" class="text-[#1877F2] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(24,119,242,0.8)] transition-all outline-none"><i class="fa-brands fa-facebook-f"></i></button>
                 <button onclick="openSocial('ig')" class="text-[#E4405F] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(228,64,95,0.8)] transition-all outline-none"><i class="fa-brands fa-instagram"></i></button>
@@ -862,7 +858,6 @@ function isMatchLocked(match) {
                 <button onclick="openSocial('yt')" class="text-[#FF0000] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] transition-all outline-none"><i class="fa-brands fa-youtube"></i></button>
             </div>
 
-            <!-- عراف الأسبوع (يظهر فقط إن وجد) -->
             ${motw ? `
                 <div class="glass p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-700/10 border border-amber-500/20 flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-3">
@@ -878,9 +873,7 @@ function isMatchLocked(match) {
                 </div>
             ` : ''}
 
-            <!-- 3. البطاقة الشخصية (Sniper Card) -->
             <div class="glass p-5 rounded-3xl relative overflow-hidden border border-blue-500/20 shadow-xl bg-gradient-to-br from-[#0a0f1c] via-[#11192b] to-blue-900/10">
-                <!-- إضاءة خلفية للبطاقة -->
                 <div class="absolute -top-10 -${isAr ? 'left' : 'right'}-10 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div class="flex justify-between items-start mb-5 relative z-10">
@@ -920,7 +913,6 @@ function isMatchLocked(match) {
                 </div>
             </div>
 
-            <!-- 4. قسم مباريات الجولة الحالية -->
             <div class="mt-2">
                 <div class="flex items-center justify-between mb-4 px-1 gap-2">
                     <h3 class="font-bold text-[13px] md:text-base flex items-center gap-1.5 flex-wrap">
@@ -957,6 +949,12 @@ function isMatchLocked(match) {
                             borderClass = 'border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)] bg-amber-900/10';
                         }
 
+                        // 🌟 إضافة span مع dir="ltr" لعدم انعكاس الأرقام 🌟
+                        let btnContent = '';
+                        if (isPredicted) btnContent = `<span class="tracking-widest inline-block" dir="ltr">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>`;
+                        else if (isLocked) btnContent = '<i class="fa-solid fa-lock"></i>';
+                        else btnContent = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
+
                         return `
                             <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
                                 ${badgeHtml}
@@ -964,22 +962,22 @@ function isMatchLocked(match) {
                                     <span class="font-bold ${matchType.color}">${matchType.label}</span>
                                     <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? (typeof t === 'function' ? t('locked') : 'مقفلة') : `${displayDate} - ${match.time}`}</span>
                                 </div>
-                                <div class="flex items-center justify-between mt-1 gap-2">
+                                <div class="flex items-center justify-between mt-1">
                                     
                                     <div class="flex-1 flex justify-start items-center gap-2">
                                         <img src="${getTeamLogo(match.home)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="font-bold text-[11px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.home)}</div>
+                                        <div class="${isAr ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight">${getTeamName(match.home)}</div>
                                     </div>
                                     
                                     <div class="shrink-0">
                                         <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-4 py-2 ${isPredicted ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30'} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-800 border-slate-700 bg-none shadow-none text-slate-400' : 'hover:scale-105 active:scale-95'} font-bold text-[11px] md:text-xs rounded-xl transition-all">
-                                            ${isPredicted ? `<span class="tracking-widest">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>` : (isLocked ? `<i class="fa-solid fa-lock"></i> ${typeof t === 'function' ? t('timeOver') : 'انتهى الوقت'}` : (typeof t === 'function' ? t('predictNow') : 'توقع الآن'))}
+                                            ${btnContent}
                                         </button>
                                     </div>
                                     
                                     <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
                                         <img src="${getTeamLogo(match.away)}" class="w-7 h-7 md:w-8 md:h-8 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                        <div class="font-bold text-[11px] md:text-sm text-slate-200 whitespace-normal leading-tight">${getTeamName(match.away)}</div>
+                                        <div class="${isAr ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight">${getTeamName(match.away)}</div>
                                     </div>
                                     
                                 </div>
@@ -1028,17 +1026,14 @@ function changeGw(gw) {
         const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
         const isAr = direction === 'rtl';
 
-        // تحديد الجولة المراد عرضها (إذا لم يقم المستخدم باختيار واحدة، نعرض الجولة الحالية تلقائياً)
         if (!selectedMatchesGw) {
             selectedMatchesGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
         }
         const activeGw = selectedMatchesGw;
 
-        // فلترة المباريات لجلب مباريات الجولة المحددة فقط
         let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
         gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
 
-        // نصوص الأزرار والتنقلات حسب اللغة
         const prevText = isAr ? 'السابق' : 'Prev';
         const nextText = isAr ? 'التالي' : 'Next';
         const gwText = typeof t === 'function' ? t('gw') : 'الجولة';
@@ -1052,7 +1047,6 @@ function changeGw(gw) {
                     </h2>
                 </div>
 
-                <!-- 🌟 شريط التنقل بين الجولات (Pagination) 🌟 -->
                 <div class="glass p-3 rounded-2xl flex justify-between items-center shadow-lg bg-slate-900/80">
                     <button onclick="changeMatchesGw(${activeGw - 1})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${activeGw <= 1 ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${activeGw <= 1 ? 'disabled' : ''}>
                         <i class="fa-solid fa-chevron-${isAr ? 'right' : 'left'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${prevText}
@@ -1072,7 +1066,6 @@ function changeGw(gw) {
                     </button>
                 </div>
 
-                <!-- عرض الجولة المحددة فقط -->
                 <div class="glass p-4 rounded-2xl space-y-3 animate-fade-up" id="matches-list-container">
                     <div class="border-b border-white/10 pb-2 flex justify-between items-center">
                         <h3 class="font-black text-sm text-blue-400">${gwText} ${activeGw}</h3>
@@ -1086,14 +1079,12 @@ function changeGw(gw) {
                             const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                             const isLocked = isMatchLocked(match);
                             
-                            // 🌟 التحقق مما إذا كانت هذه المباراة هي الكابتن الإجباري أو المختار
                             const activeCapId = getActiveCaptainId(currentUser.username, activeGw);
                             const isEffectiveCaptain = (match.id === activeCapId);
                             
                             const displayDate = formatMatchDate(match.date);
                             const displayTime = typeof formatDisplayTime === 'function' ? formatDisplayTime(match.time) : match.time;
                             
-                            // 🌟 تنسيق إطار الكابتن والجوكر
                             let badgeHtml = '';
                             let borderClass = 'bg-slate-900/60 border border-white/5 hover:border-blue-500/30';
                             
@@ -1109,7 +1100,6 @@ function changeGw(gw) {
                             const lockedText = typeof t === 'function' ? t('locked') : 'مقفلة';
                             const predictText = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
 
-                            // شريط النتائج
                             let resultBar = '';
                             if (match.actualH !== undefined && match.actualA !== undefined && match.actualH !== null && match.actualA !== null && match.actualH !== '' && match.actualA !== '') {
                                 const h = parseInt(match.actualH);
@@ -1146,10 +1136,11 @@ function changeGw(gw) {
                                 `;
                             }
 
+                            // 🌟 إضافة span مع dir="ltr" لعدم انعكاس الأرقام 🌟
                             let btnContent = '';
-                            if (isPredicted) btnContent = isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`;
+                            if (isPredicted) btnContent = `<span class="tracking-widest inline-block" dir="ltr">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>`;
                             else if (isLocked) btnContent = '<i class="fa-solid fa-lock"></i>';
-                            else btnContent = predictText;
+                            else btnContent = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
 
                             return `
                                 <div class="p-3 rounded-xl flex flex-col gap-2 relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
@@ -1883,7 +1874,6 @@ function ruleRow(text, points, colorType) {
             let captainUsedInGw = false;
             let tcUsedInCurrentHalf = false;
             
-            // 🌟 معرفة ما إذا كانت هذه المباراة هي الكابتن الإجباري الحالي
             const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
             const isEffectiveCaptain = (activeMatchModal.id === activeCapId);
             
@@ -1909,7 +1899,6 @@ function ruleRow(text, points, colorType) {
             const saveText = typeof t === 'function' ? t('savePred') : 'حفظ التوقع';
             const cancelText = typeof t === 'function' ? t('cancel') : 'إلغاء';
 
-            // 🌟 إذا كانت هذه المباراة هي الكابتن الإجباري، نقوم بتحديد الزر تلقائياً
             const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain);
 
             container.innerHTML = `
@@ -1920,17 +1909,15 @@ function ruleRow(text, points, colorType) {
                             <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
                         </div>
                         
-                        <!-- 🌟 الحل السحري هنا: تم إزالة dir="ltr" من الحاوية لكي تتطابق أماكن الفرق مع القائمة 🌟 -->
+                        <!-- 🌟 الحل هنا: أزلنا dir="ltr" ليبقى المضيف على اليمين 🌟 -->
                         <div class="flex items-center justify-center gap-4 py-2">
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
-                                <!-- 🌟 وضعنا dir="ltr" على الرقم فقط لكي لا ينعكس عند الكتابة 🌟 -->
                                 <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
                             </div>
                             <span class="text-xl font-bold text-slate-500 mt-5">:</span>
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
-                                <!-- 🌟 وضعنا dir="ltr" على الرقم فقط 🌟 -->
                                 <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
                             </div>
                         </div>
