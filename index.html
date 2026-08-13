@@ -2586,90 +2586,94 @@ async function deleteLeagueByAdmin() {
             const app = document.getElementById('app');
             if (!currentUser) { app.innerHTML = renderAuthScreen(); return; }
 
-            app.innerHTML = `
-                <!-- 🌟 الحاوية الذكية لتثبيت الهيدر والشريط معاً 🌟 -->
-                <div class="sticky top-0 z-50 w-full flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                    
-                    <!-- الهيدر العلوي -->
-                    <header class="p-4 glass rounded-none border-x-0 border-t-0 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]/95 backdrop-blur-xl">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/30 text-lg border border-white/10">${currentUser.username.substring(0, 1).toUpperCase()}</div>
-                            <div>
-                                <h1 class="text-sm font-bold text-slate-200 tracking-wide">Goal Sniper</h1>
-                             </div>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
-                            <div class="flex items-center gap-2">
-        
-                                <!-- أزرار اللغات المباشرة -->
-                                <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
-                                    <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
-                                    <span class="text-white/20 text-[10px] px-0.5">|</span>
-                                    <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
-                                    <span class="text-white/20 text-[10px] px-0.5">|</span>
-                                    <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
+            // 🌟 السحر هنا: بناء الهيكل الثابت (الهيدر والشريط) مرة واحدة فقط! 🌟
+            if (!document.getElementById('layout-wrapper')) {
+                app.innerHTML = `
+                    <div id="layout-wrapper" class="flex-1 flex flex-col w-full">
+                        <div class="sticky top-0 z-50 w-full flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+                            <header class="p-4 glass rounded-none border-x-0 border-t-0 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]/95 backdrop-blur-xl">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/30 text-lg border border-white/10">${currentUser.username.substring(0, 1).toUpperCase()}</div>
+                                    <div>
+                                        <h1 class="text-sm font-bold text-slate-200 tracking-wide">Goal Sniper</h1>
+                                    </div>
                                 </div>
+                                <div class="flex items-center gap-2">
+                                    ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
+                                    <div class="flex items-center gap-2">
+                                        <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
+                                            <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
+                                            <span class="text-white/20 text-[10px] px-0.5">|</span>
+                                            <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
+                                            <span class="text-white/20 text-[10px] px-0.5">|</span>
+                                            <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
+                                        </div>
+                                        <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
+                                            <i class="fa-solid fa-power-off text-sm"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </header>
 
-                                <!-- زر تسجيل الخروج -->
-                                <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
-                                    <i class="fa-solid fa-power-off text-sm"></i>
-                                </button>
+                            <div id="marquee-wrapper">
+                                ${marqueeTexts[currentLang] ? `
+                                <div class="marquee-container" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
+                                    <div class="marquee-content ${currentLang === 'ar' ? 'marquee-ltr' : 'marquee-rtl'}">
+                                        ${marqueeTexts[currentLang]}
+                                    </div>
+                                </div>
+                                ` : ''}
                             </div>
                         </div>
-                    </header>
 
-                    <!-- الشريط المتحرك -->
-                    ${marqueeTexts[currentLang] ? `
-                    <div class="marquee-container" dir="${currentLang === 'ar' ? 'rtl' : 'ltr'}">
-                        <div class="marquee-content ${currentLang === 'ar' ? 'marquee-ltr' : 'marquee-rtl'}">
-                            ${marqueeTexts[currentLang]}
-                        </div>
+                        <main id="main-content" class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20"></main>
+
+                        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2"></nav>
                     </div>
-                    ` : ''}
-                </div>
+                `;
+            }
 
-                <!-- مساحة المحتوى -->
-                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
-                    ${currentTab === 'home' ? renderHomeTab() : ''}
-                    ${currentTab === 'matches' ? renderMatchesTab() : ''}
-                    ${currentTab === 'standings' ? renderStandingsTab() : ''}
-                    ${currentTab === 'prizes' ? renderPrizesTab() : ''}
-                    ${currentTab === 'minileagues' ? renderMiniLeaguesTab() : ''}
-                    ${currentTab === 'rules' ? renderRulesTab() : ''}
-                    ${currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army' ? renderAdminTab() : ''}
-                </main>
+            // 🌟 تحديث المحتوى الداخلي فقط عند التنقل بين الصفحات (لا نقترب من الشريط المتحرك) 🌟
+            const mainContent = document.getElementById('main-content');
+            if (currentTab === 'home') mainContent.innerHTML = renderHomeTab();
+            else if (currentTab === 'matches') mainContent.innerHTML = renderMatchesTab();
+            else if (currentTab === 'standings') mainContent.innerHTML = renderStandingsTab();
+            else if (currentTab === 'prizes') mainContent.innerHTML = renderPrizesTab();
+            else if (currentTab === 'minileagues') mainContent.innerHTML = renderMiniLeaguesTab();
+            else if (currentTab === 'rules') mainContent.innerHTML = renderRulesTab();
+            else if (currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army') mainContent.innerHTML = renderAdminTab();
 
-                <!-- شريط التنقل السفلي -->
-                <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2">
-                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-house text-lg"></i>
-                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navHome') : 'الرئيسية'}</span>
-                    </button>
-                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-calendar-days text-lg"></i>
-                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navMatches') : 'المباريات'}</span>
-                    </button>
-                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-trophy text-lg"></i>
-                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navStandings') : 'الترتيب'}</span>
-                    </button>
-                    
-                    <button onclick="switchTab('prizes')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'prizes' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-gift text-lg"></i>
-                        <span class="text-[9px] font-bold">الجوائز</span>
-                    </button>
+            // 🌟 تحديث ألوان الأزرار في الشريط السفلي لتمييز الصفحة النشطة 🌟
+            const bottomNav = document.getElementById('bottom-nav');
+            bottomNav.innerHTML = `
+                <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-house text-lg"></i>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navHome') : 'الرئيسية'}</span>
+                </button>
+                <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-calendar-days text-lg"></i>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navMatches') : 'المباريات'}</span>
+                </button>
+                <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-trophy text-lg"></i>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navStandings') : 'الترتيب'}</span>
+                </button>
+                
+                <button onclick="switchTab('prizes')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'prizes' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-gift text-lg"></i>
+                    <span class="text-[9px] font-bold">الجوائز</span>
+                </button>
 
-                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-users text-lg"></i>
-                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navLeagues') : 'الدوريات'}</span>
-                    </button>
-                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                        <i class="fa-solid fa-scale-balanced text-lg"></i>
-                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navRules') : 'القوانين'}</span>
-                    </button>
-                </nav>
+                <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-users text-lg"></i>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navLeagues') : 'الدوريات'}</span>
+                </button>
+                <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                    <i class="fa-solid fa-scale-balanced text-lg"></i>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navRules') : 'القوانين'}</span>
+                </button>
             `;
+
             renderModal();
         }
 
