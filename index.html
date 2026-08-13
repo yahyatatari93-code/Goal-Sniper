@@ -1649,14 +1649,18 @@ function ruleRow(text, points, colorType) {
                     <!-- 🎁 الجوائز الشهرية -->
                     <div class="glass p-5 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
                         <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-4">
-                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-calendar-star"></i></div>
+                            <!-- تم تغيير الأيقونة هنا إلى ميدالية معبرة ومدعومة -->
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-medal"></i></div>
                             <h3 class="text-lg font-black text-white">الجوائز الشهرية</h3>
                         </div>
-                        <div class="flex items-center gap-4 bg-blue-950/30 p-4 rounded-2xl border border-blue-500/20">
-                            <div class="text-4xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]"><i class="fa-solid fa-shirt"></i></div>
-                            <div>
+                        <div class="flex items-center gap-3 md:gap-4 bg-blue-950/30 p-4 rounded-2xl border border-blue-500/20 overflow-hidden">
+                            <div class="text-4xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0"><i class="fa-solid fa-shirt"></i></div>
+                            <div class="flex-1 overflow-x-auto hide-scrollbar">
                                 <h4 class="font-bold text-sm text-blue-300 mb-1">3 تيشيرتات رياضية</h4>
-                                <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">تُقدم لأصحاب المراكز الثلاثة الأولى في ترتيب الشهر.</p>
+                                <!-- تم جعل النص في سطر واحد وإبراز الكلمة المطلوبة -->
+                                <p class="text-[10.5px] md:text-xs text-slate-300 font-semibold whitespace-nowrap">
+                                    تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black text-[11.5px] md:text-[13px]">ترتيب الشهر</span>
+                                </p>
                             </div>
                         </div>
                     </div>
