@@ -1920,15 +1920,17 @@ function ruleRow(text, points, colorType) {
                             <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
                         </div>
                         
-                        <!-- 🌟 تم إزالة dir="ltr" من الحاوية لكي لا تنعكس أسماء الفرق، وتم وضعه في الأرقام فقط 🌟 -->
+                        <!-- 🌟 الحل السحري هنا: تم إزالة dir="ltr" من الحاوية لكي تتطابق أماكن الفرق مع القائمة 🌟 -->
                         <div class="flex items-center justify-center gap-4 py-2">
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
+                                <!-- 🌟 وضعنا dir="ltr" على الرقم فقط لكي لا ينعكس عند الكتابة 🌟 -->
                                 <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
                             </div>
                             <span class="text-xl font-bold text-slate-500 mt-5">:</span>
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
+                                <!-- 🌟 وضعنا dir="ltr" على الرقم فقط 🌟 -->
                                 <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
                             </div>
                         </div>
