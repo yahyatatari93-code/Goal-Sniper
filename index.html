@@ -1615,6 +1615,98 @@ function ruleRow(text, points, colorType) {
     `;
 }
 
+        function renderPrizesTab() {
+            // تحديد اللغة والاتجاه
+            const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
+            const direction = lang === 'ar' ? 'rtl' : 'ltr';
+
+            return `
+                <div class="space-y-6 pb-4" dir="${direction}">
+                    
+                    <!-- الهيدر (العنوان الرئيسي) -->
+                    <div class="glass p-6 rounded-3xl text-center relative overflow-hidden border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#0f172a] to-amber-900/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                        <i class="fa-solid fa-gift text-5xl text-amber-400 mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]"></i>
+                        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600">قاعة الجوائز الكبرى</h2>
+                        <p class="text-xs text-slate-300 mt-2 font-bold">تنافس بشراسة، وتوج بطلاً لتحصد الجوائز!</p>
+                    </div>
+
+                    <!-- 🎁 الجوائز الشهرية -->
+                    <div class="glass p-5 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
+                        <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-calendar-star"></i></div>
+                            <h3 class="text-lg font-black text-white">الجوائز الشهرية</h3>
+                        </div>
+                        <div class="flex items-center gap-4 bg-blue-950/30 p-4 rounded-2xl border border-blue-500/20">
+                            <div class="text-4xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]"><i class="fa-solid fa-shirt"></i></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-blue-300 mb-1">3 تيشيرتات رياضية</h4>
+                                <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">تُقدم لأصحاب المراكز الثلاثة الأولى في ترتيب الشهر.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🏆 جوائز نهاية الموسم -->
+                    <div class="glass p-5 rounded-3xl relative overflow-hidden border border-amber-500/20 bg-slate-900/60 shadow-lg">
+                        <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl border border-amber-500/30"><i class="fa-solid fa-trophy"></i></div>
+                            <h3 class="text-lg font-black text-white">الجوائز الكبرى (نهاية الموسم)</h3>
+                        </div>
+
+                        <div class="space-y-3">
+                            <!-- المركز الأول -->
+                            <div class="flex justify-between items-center bg-gradient-to-l from-amber-500/20 to-transparent p-3.5 rounded-2xl border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(245,158,11,0.8)]">1</span>
+                                    <span class="font-bold text-amber-400 text-sm">المركز الأول</span>
+                                </div>
+                                <span class="font-black text-xl text-white">300 <span class="text-xs text-amber-400">$</span></span>
+                            </div>
+
+                            <!-- المركز الثاني -->
+                            <div class="flex justify-between items-center bg-gradient-to-l from-slate-400/20 to-transparent p-3.5 rounded-2xl border border-slate-400/40">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-full bg-slate-300 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(203,213,225,0.5)]">2</span>
+                                    <span class="font-bold text-slate-300 text-sm">المركز الثاني</span>
+                                </div>
+                                <span class="font-black text-xl text-white">200 <span class="text-xs text-slate-400">$</span></span>
+                            </div>
+
+                            <!-- المركز الثالث -->
+                            <div class="flex justify-between items-center bg-gradient-to-l from-amber-700/30 to-transparent p-3.5 rounded-2xl border border-amber-700/50">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(180,83,9,0.5)]">3</span>
+                                    <span class="font-bold text-amber-600 text-sm">المركز الثالث</span>
+                                </div>
+                                <span class="font-black text-xl text-white">100 <span class="text-xs text-amber-600">$</span></span>
+                            </div>
+
+                            <!-- المركز الرابع والخامس (جنب بعض) -->
+                            <div class="grid grid-cols-2 gap-3 pt-2">
+                                <div class="flex flex-col items-center justify-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                    <span class="text-xs font-bold text-slate-400 mb-1">المركز الرابع</span>
+                                    <span class="font-black text-lg text-emerald-400">75 $</span>
+                                </div>
+                                <div class="flex flex-col items-center justify-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                    <span class="text-xs font-bold text-slate-400 mb-1">المركز الخامس</span>
+                                    <span class="font-black text-lg text-emerald-400">75 $</span>
+                                </div>
+                            </div>
+
+                            <!-- من 6 إلى 10 -->
+                            <div class="flex justify-between items-center bg-slate-800/50 p-3.5 rounded-2xl border border-emerald-500/20 border-dashed mt-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid fa-users text-slate-500"></i>
+                                    <span class="font-bold text-slate-300 text-xs">من المركز 6 إلى 10</span>
+                                </div>
+                                <span class="font-black text-base text-emerald-400">50 $</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
         function renderAdminTab() {
     // تحديد الجولة الحالية في قسم الإدارة
     if (!selectedAdminGw) {
@@ -2335,21 +2427,21 @@ async function deleteLeagueByAdmin() {
                         ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
                         <div class="flex items-center gap-2">
     
-    <!-- أزرار اللغات المباشرة والذكية (ضغطة واحدة وبدون تعليق) -->
-    <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
-        <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
-        <span class="text-white/20 text-[10px] px-0.5">|</span>
-        <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
-        <span class="text-white/20 text-[10px] px-0.5">|</span>
-        <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
-    </div>
+                            <!-- أزرار اللغات المباشرة -->
+                            <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
+                                <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
+                                <span class="text-white/20 text-[10px] px-0.5">|</span>
+                                <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
+                                <span class="text-white/20 text-[10px] px-0.5">|</span>
+                                <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
+                            </div>
 
-    <!-- زر تسجيل الخروج الخاص بك -->
-    <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
-        <i class="fa-solid fa-power-off text-sm"></i>
-    </button>
-    
-</div>
+                            <!-- زر تسجيل الخروج -->
+                            <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
+                                <i class="fa-solid fa-power-off text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
                 </header>
 
                 ${marqueeTexts[currentLang] ? `
@@ -2360,37 +2452,46 @@ async function deleteLeagueByAdmin() {
                 </div>
                 ` : ''}
 
-                    <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
+                <main class="flex-1 max-w-4xl w-full mx-auto p-4 animate-fade-up pb-20">
                     ${currentTab === 'home' ? renderHomeTab() : ''}
                     ${currentTab === 'matches' ? renderMatchesTab() : ''}
                     ${currentTab === 'standings' ? renderStandingsTab() : ''}
+                    ${currentTab === 'prizes' ? renderPrizesTab() : ''} <!-- تم إضافة الجوائز هنا -->
                     ${currentTab === 'minileagues' ? renderMiniLeaguesTab() : ''}
                     ${currentTab === 'rules' ? renderRulesTab() : ''}
                     ${currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army' ? renderAdminTab() : ''}
                 </main>
 
+                <!-- شريط التنقل السفلي المحدث -->
                 <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 p-2 flex justify-around items-center z-40 bg-[#060b19]/95 backdrop-blur-xl pb-[calc(8px+env(safe-area-inset-bottom))] pt-2">
-    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-        <i class="fa-solid fa-house text-lg"></i>
-        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navHome') : 'الرئيسية'}</span>
-    </button>
-    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-        <i class="fa-solid fa-calendar-days text-lg"></i>
-        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navMatches') : 'المباريات'}</span>
-    </button>
-    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-        <i class="fa-solid fa-trophy text-lg"></i>
-        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navStandings') : 'الترتيب'}</span>
-    </button>
-    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-        <i class="fa-solid fa-users text-lg"></i>
-        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navLeagues') : 'الدوريات'}</span>
-    </button>
-    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-3 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-        <i class="fa-solid fa-scale-balanced text-lg"></i>
-        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navRules') : 'القوانين'}</span>
-    </button>
-</nav>
+                    <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-house text-lg"></i>
+                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navHome') : 'الرئيسية'}</span>
+                    </button>
+                    <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-calendar-days text-lg"></i>
+                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navMatches') : 'المباريات'}</span>
+                    </button>
+                    <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-trophy text-lg"></i>
+                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navStandings') : 'الترتيب'}</span>
+                    </button>
+                    
+                    <!-- 🌟 زر الجوائز الجديد بين الترتيب والدوريات 🌟 -->
+                    <button onclick="switchTab('prizes')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'prizes' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-gift text-lg"></i>
+                        <span class="text-[9px] font-bold">الجوائز</span>
+                    </button>
+
+                    <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-users text-lg"></i>
+                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navLeagues') : 'الدوريات'}</span>
+                    </button>
+                    <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
+                        <i class="fa-solid fa-scale-balanced text-lg"></i>
+                        <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navRules') : 'القوانين'}</span>
+                    </button>
+                </nav>
             `;
             renderModal();
         }
