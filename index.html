@@ -2079,7 +2079,6 @@ function ruleRow(text, points, colorType) {
                             <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">${vsText}</span> ${getTeamName(activeMatchModal.away)}</h2>
                         </div>
                         
-                        <!-- 🌟 الحل هنا: أزلنا dir="ltr" ليبقى المضيف على اليمين 🌟 -->
                         <div class="flex items-center justify-center gap-4 py-2">
                             <div class="text-center">
                                 <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
@@ -2093,9 +2092,13 @@ function ruleRow(text, points, colorType) {
                         </div>
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all ${captainUsedInGw && !pred.isCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${captainUsedInGw && !pred.isCaptain ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-amber-400 block">${capText}</span> ${captainUsedInGw && !pred.isCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                            <!-- 🌟 التعديل السحري هنا: جعلنا الزر قابلاً للضغط دائماً ليسمح بالانتقال 🌟 -->
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border border-transparent hover:border-amber-500/30 hover:bg-slate-800/80">
+                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} class="w-4 h-4 accent-amber-500" />
+                                <div class="flex-1 flex justify-between items-center">
+                                    <span class="text-xs font-bold text-amber-400 block">${capText}</span> 
+                                    ${(captainUsedInGw && !pred.isCaptain) ? `<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>` : ''}
+                                </div>
                             </label>
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
@@ -2211,8 +2214,12 @@ function ruleRow(text, points, colorType) {
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             
             try {
+                // 🌟 الحل هنا: إرفاق مفتاح الأمان مع الطلب 🌟
+                const token = localStorage.getItem('oracle_token_v8');
+                const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
                 const res = await fetch(`${API_BASE_URL}/leagues`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    method: 'POST', headers: headers,
                     body: JSON.stringify({ id: 'ml_' + Date.now(), name, code, creator: currentUser.username })
                 });
                 const data = await res.json();
@@ -2228,8 +2235,12 @@ function ruleRow(text, points, colorType) {
             const code = document.getElementById('join-ml-code').value.trim().toUpperCase();
             if(!code) { showCustomDialog('يرجى إدخال كود الدوري.'); return; }
             try {
+                // 🌟 إرفاق مفتاح الأمان هنا أيضاً 🌟
+                const token = localStorage.getItem('oracle_token_v8');
+                const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
                 const res = await fetch(`${API_BASE_URL}/leagues/join`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    method: 'POST', headers: headers,
                     body: JSON.stringify({ code, username: currentUser.username })
                 });
                 const data = await res.json();
