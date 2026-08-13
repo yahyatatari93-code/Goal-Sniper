@@ -949,11 +949,41 @@ function isMatchLocked(match) {
                             borderClass = 'border-2 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)] bg-amber-900/10';
                         }
 
-                        // 🌟 إضافة span مع dir="ltr" لعدم انعكاس الأرقام 🌟
                         let btnContent = '';
                         if (isPredicted) btnContent = `<span class="tracking-widest inline-block" dir="ltr">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>`;
                         else if (isLocked) btnContent = '<i class="fa-solid fa-lock"></i>';
                         else btnContent = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
+
+                        // شريط النتائج
+                        let resultBar = '';
+                        if (match.actualH !== undefined && match.actualA !== undefined && match.actualH !== null && match.actualA !== null && match.actualH !== '' && match.actualA !== '') {
+                            const ph = isPredicted ? parseInt(pred.home) : null;
+                            const pa = isPredicted ? parseInt(pred.away) : null;
+                            
+                            let badge = '';
+                            if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
+                                // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
+                                let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain);
+                                
+                                if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
+                                else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
+                                else badge = `<span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-[11px] font-bold border border-red-500/30"><i class="fa-solid fa-xmark ${isAr ? 'ml-1' : 'mr-1'}"></i>0 ${isAr ? 'نقطة' : 'Pts'}</span>`;
+                            } else {
+                                badge = `<span class="bg-slate-500/20 text-slate-400 px-2 py-1 rounded text-[11px] font-bold border border-slate-500/30">${isAr ? 'لم تتوقع (0)' : 'No Pred (0)'}</span>`;
+                            }
+
+                            const officialResultText = isAr ? 'النتيجة الرسمية:' : 'Official Result:';
+                            const visualActualScore = isAr ? `${match.actualA} - ${match.actualH}` : `${match.actualH} - ${match.actualA}`;
+                            
+                            resultBar = `
+                                <div class="mt-3 pt-3 border-t border-slate-700/50 flex justify-between items-center bg-slate-800/50 -mx-3 -mb-3 p-3 rounded-b-xl">
+                                    <div class="text-xs text-slate-300 font-bold flex items-center gap-2">
+                                        ${officialResultText} <span class="text-white bg-slate-950 px-2 py-0.5 rounded border border-slate-700 shadow-inner block" dir="ltr">${visualActualScore}</span>
+                                    </div>
+                                    <div>${badge}</div>
+                                </div>
+                            `;
+                        }
 
                         return `
                             <div class="glass p-4 rounded-2xl flex flex-col gap-3 shadow-md relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
@@ -981,6 +1011,7 @@ function isMatchLocked(match) {
                                     </div>
                                     
                                 </div>
+                                ${resultBar} 
                             </div>
                         `;
                     }).join('')}
@@ -1100,21 +1131,20 @@ function changeGw(gw) {
                             const lockedText = typeof t === 'function' ? t('locked') : 'مقفلة';
                             const predictText = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
 
+                            let btnContent = '';
+                            if (isPredicted) btnContent = `<span class="tracking-widest inline-block" dir="ltr">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>`;
+                            else if (isLocked) btnContent = '<i class="fa-solid fa-lock"></i>';
+                            else btnContent = predictText;
+
                             let resultBar = '';
                             if (match.actualH !== undefined && match.actualA !== undefined && match.actualH !== null && match.actualA !== null && match.actualH !== '' && match.actualA !== '') {
-                                const h = parseInt(match.actualH);
-                                const a = parseInt(match.actualA);
                                 const ph = isPredicted ? parseInt(pred.home) : null;
                                 const pa = isPredicted ? parseInt(pred.away) : null;
                                 
                                 let badge = '';
                                 if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
-                                    let pts = 0;
-                                    if (h === ph && a === pa) pts = 3;
-                                    else if (Math.sign(h - a) === Math.sign(ph - pa)) pts = 1;
-                                    
-                                    if (pred.isTripleCaptain) pts *= 3;
-                                    else if (isEffectiveCaptain) pts *= 2;
+                                    // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
+                                    let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain);
                                     
                                     if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                     else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -1135,12 +1165,6 @@ function changeGw(gw) {
                                     </div>
                                 `;
                             }
-
-                            // 🌟 إضافة span مع dir="ltr" لعدم انعكاس الأرقام 🌟
-                            let btnContent = '';
-                            if (isPredicted) btnContent = `<span class="tracking-widest inline-block" dir="ltr">${isAr ? `${pred.away} - ${pred.home}` : `${pred.home} - ${pred.away}`}</span>`;
-                            else if (isLocked) btnContent = '<i class="fa-solid fa-lock"></i>';
-                            else btnContent = typeof t === 'function' ? t('predictNow') : 'توقع الآن';
 
                             return `
                                 <div class="p-3 rounded-xl flex flex-col gap-2 relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
