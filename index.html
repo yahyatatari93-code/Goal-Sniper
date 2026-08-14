@@ -138,24 +138,25 @@ const TEAMS = [
     { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
 
-        // 🌟 محرك المؤثرات الصوتية الآمن 🌟
+        // 🌟 محرك المؤثرات الصوتية الآمن والمطور 🌟
         const appSounds = {
-            success: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'), // صوت نجاح سحري
-            sniper: new Audio('https://actions.google.com/sounds/v1/science_fiction/laser_pew.ogg') // صوت رصاصة قناص/ليزر
+            success: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'), // صوت الحفظ
+            sniper: new Audio('https://actions.google.com/sounds/v1/science_fiction/laser_pew.ogg'), // صوت القناص
+            captain: new Audio('https://actions.google.com/sounds/v1/weapons/barrel_cock.ogg') // صوت اختيار الكابتن (تذخير سلاح)
         };
+
+        // إجبار المتصفح على تحميل الأصوات مسبقاً لمنع أي تأخير
+        Object.values(appSounds).forEach(audio => {
+            audio.preload = 'auto';
+        });
 
         function playSound(type) {
             try {
                 if (appSounds[type]) {
-                    appSounds[type].currentTime = 0; // إعادة الصوت للبداية ليعمل فوراً عند التكرار
-                    // تشغيل الصوت مع اصطياد أي خطأ صامت من المتصفح (Autoplay policy)
-                    appSounds[type].play().catch(e => {
-                        // صمت تام: إذا فشل الصوت لا نفعل شيئاً ولا نعطل التطبيق
-                    });
+                    appSounds[type].currentTime = 0; // تصفير الوقت ليعمل فوراً
+                    appSounds[type].play().catch(e => {}); // تجاهل صامت لأي منع من المتصفح
                 }
-            } catch (err) {
-                // حماية إضافية
-            }
+            } catch (err) {}
         }
         
 // 2. إعدادات اللغة الافتراضية
@@ -2113,17 +2114,19 @@ function ruleRow(text, points, colorType) {
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
                             <!-- 🌟 التعديل السحري هنا: جعلنا الزر قابلاً للضغط دائماً ليسمح بالانتقال 🌟 -->
+                            <!-- 🌟 زر الكابتن 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border border-transparent hover:border-amber-500/30 hover:bg-slate-800/80">
-                                <input type="radio" name="powerup" value="captain" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} class="w-4 h-4 accent-amber-500" />
+                                <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} class="w-4 h-4 accent-amber-500" />
                                 <div class="flex-1 flex justify-between items-center">
                                     <span class="text-xs font-bold text-amber-400 block">${capText}</span> 
-                                    ${(captainUsedInGw && !pred.isCaptain) ? `<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>` : ''}
+                                    ${(captainUsedInGw && !pred.isCaptain) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>' : ''}
                                 </div>
                             </label>
                             
+                            <!-- 🌟 زر الجوكر 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
-                                <input type="radio" name="powerup" value="triple" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? `<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">${usedText}</span>` : ''}</div>
+                                <input type="radio" name="powerup" value="triple" onclick="playSound('captain')" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
+                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">' + usedText + '</span>' : ''}</div>
                             </label>
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
@@ -2160,10 +2163,12 @@ function ruleRow(text, points, colorType) {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
+            // 🎵 تشغيل الصوت فوراً لحظة الضغط (بدون انتظار السيرفر)
+            playSound('success');
+
             const isCap = (powerup === 'captain');
             const isTC = (powerup === 'triple');
 
-            // 🌟 البحث عن الكابتن القديم الصريح لنفس الجولة لإلغائه إن وجد
             let oldExplicitCapId = null;
             const currentGw = Number(activeMatchModal.gw);
             const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
@@ -2175,7 +2180,6 @@ function ruleRow(text, points, colorType) {
 
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             
-            // 🌟 إزالة الكابتن محلياً من المباراة القديمة حتى يتحدث العرض فوراً
             if (isCap && oldExplicitCapId) {
                 predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
             }
@@ -2186,13 +2190,12 @@ function ruleRow(text, points, colorType) {
             
             const reqMatchId = activeMatchModal.id;
             closeModal();
-            render(); // تحديث الواجهة فوراً لتبدو سريعة بدون انتظار السيرفر
+            render(); 
 
             try {
                 const token = localStorage.getItem('oracle_token_v8');
                 const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
-                // 🌟 1. إرسال طلب لإلغاء الكابتن القديم في قاعدة البيانات
                 if (isCap && oldExplicitCapId) {
                     const oldPred = predictions[currentUser.username][oldExplicitCapId];
                     await fetch(`${API_BASE_URL}/predict`, {
@@ -2205,7 +2208,6 @@ function ruleRow(text, points, colorType) {
                     });
                 }
 
-                // 🌟 2. حفظ التوقع الحالي (الكابتن الجديد أو التوقع العادي)
                 const response = await fetch(`${API_BASE_URL}/predict`, {
                     method: 'POST', headers,
                     body: JSON.stringify({ 
@@ -2220,8 +2222,7 @@ function ruleRow(text, points, colorType) {
                     showCustomDialog(data.message || "حدث خطأ غير معروف");
                     if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
                 } else {
-                    playSound('success'); // 🎵 إضافة صوت النجاح هنا
-                    await syncData(); // جلب البيانات المؤكدة كخطوة أخيرة
+                    await syncData(); 
                 }
             } catch(e) {
                 console.error("Predict error:", e);
@@ -2738,43 +2739,44 @@ async function deleteLeagueByAdmin() {
             render();
         };
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw) {
-    const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم ${penaltyPoints} نقاط منه؟\n\nتذكر: الميزة تستخدم مرة واحدة فقط في الجولة!`);
-    
-    if (!confirmShot) return;
+            const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم ${penaltyPoints} نقاط منه؟\n\nتذكر: الميزة تستخدم مرة واحدة فقط في الجولة!`);
+            
+            if (!confirmShot) return;
 
-    try {
-        // 🌟 الحل هنا: إرفاق مفتاح الأمان (Token) مع الرصاصة 🌟
-        const token = localStorage.getItem('oracle_token_v8');
-        const headers = { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${token}` 
-        };
+            // 🎵 تشغيل الصوت فوراً بمجرد تأكيد الضربة
+            playSound('sniper');
 
-        const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                leagueCode: leagueCode,
-                gw: gw,
-                sniper: currentUser.username,
-                victim: victimName,
-                pointsDeducted: penaltyPoints
-            })
-        });
-       
-        const json = await res.json();
-        if (json.success) {
-            playSound('sniper'); // 🎵 انطلاق رصاصة القناص!
-            alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-            await syncData(); 
-            render(); 
-        } else {
-            alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
+            try {
+                const token = localStorage.getItem('oracle_token_v8');
+                const headers = { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${token}` 
+                };
+
+                const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        leagueCode: leagueCode,
+                        gw: gw,
+                        sniper: currentUser.username,
+                        victim: victimName,
+                        pointsDeducted: penaltyPoints
+                    })
+                });
+               
+                const json = await res.json();
+                if (json.success) {
+                    alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
+                    await syncData(); 
+                    render(); 
+                } else {
+                    alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
+                }
+            } catch (e) {
+                alert("❌ لا يمكن الاتصال بالسيرفر حالياً. جرب لاحقاً.");
+            }
         }
-    } catch (e) {
-        alert("❌ لا يمكن الاتصال بالسيرفر حالياً. جرب لاحقاً.");
-    }
-}
     </script>
 </body>
 </html>
