@@ -4,9 +4,17 @@ const mysql = require('mysql2/promise');
 require('dotenv').config();
 
 const app = express();
-app.use(cors({ origin: '*' }));
+
+// 🌟 الجدار الأمني المطور (يسمح بمرور طلبات الآيفون و Vercel بأمان) 🌟
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
+// ... (باقي الكود الخاص بك كما هو بالأسفل)
 // إعداد الاتصال بقاعدة بيانات MySQL
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
