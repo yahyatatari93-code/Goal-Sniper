@@ -138,6 +138,26 @@ const TEAMS = [
     { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
 
+        // 🌟 محرك المؤثرات الصوتية الآمن 🌟
+        const appSounds = {
+            success: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'), // صوت نجاح سحري
+            sniper: new Audio('https://actions.google.com/sounds/v1/science_fiction/laser_pew.ogg') // صوت رصاصة قناص/ليزر
+        };
+
+        function playSound(type) {
+            try {
+                if (appSounds[type]) {
+                    appSounds[type].currentTime = 0; // إعادة الصوت للبداية ليعمل فوراً عند التكرار
+                    // تشغيل الصوت مع اصطياد أي خطأ صامت من المتصفح (Autoplay policy)
+                    appSounds[type].play().catch(e => {
+                        // صمت تام: إذا فشل الصوت لا نفعل شيئاً ولا نعطل التطبيق
+                    });
+                }
+            } catch (err) {
+                // حماية إضافية
+            }
+        }
+        
 // 2. إعدادات اللغة الافتراضية
 let currentLang = localStorage.getItem('appLang') || 'ar';
 
@@ -2200,6 +2220,7 @@ function ruleRow(text, points, colorType) {
                     showCustomDialog(data.message || "حدث خطأ غير معروف");
                     if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
                 } else {
+                    playSound('success'); // 🎵 إضافة صوت النجاح هنا
                     await syncData(); // جلب البيانات المؤكدة كخطوة أخيرة
                 }
             } catch(e) {
@@ -2743,8 +2764,8 @@ async function deleteLeagueByAdmin() {
        
         const json = await res.json();
         if (json.success) {
+            playSound('sniper'); // 🎵 انطلاق رصاصة القناص!
             alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-            // ننتظر جلب البيانات الجديدة ثم نحدث الشاشة فوراً
             await syncData(); 
             render(); 
         } else {
