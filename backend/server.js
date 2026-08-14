@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
@@ -34,7 +35,10 @@ app.post('/api/auth/login', async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM users WHERE username = ? AND pin = ?', [username, pin]);
         if (rows.length > 0) {
-            res.json({ success: true, user: rows[0] });
+            // 🌟 السحر هنا: توليد مفتاح أمان صالح لمدة سنة 🌟
+            const token = jwt.sign({ username: rows[0].username }, process.env.JWT_SECRET || 'sniper_secret_key_123', { expiresIn: '365d' });
+            
+            res.json({ success: true, user: rows[0], token: token });
         } else {
             res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
         }
@@ -47,15 +51,17 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
     const { username, pin } = req.body;
     try {
-        // التحقق مما إذا كان الاسم موجوداً مسبقاً
         const [existing] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
         if (existing.length > 0) {
             return res.status(400).json({ success: false, message: 'اسم المستخدم مستخدم مسبقاً، اختر اسماً آخر.' });
         }
         
-        // إنشاء الحساب الجديد
         await pool.query('INSERT INTO users (username, pin) VALUES (?, ?)', [username, pin]);
-        res.json({ success: true, user: { username, pin } });
+        
+        // 🌟 توليد مفتاح أمان للمستخدم الجديد 🌟
+        const token = jwt.sign({ username: username }, process.env.JWT_SECRET || 'sniper_secret_key_123', { expiresIn: '365d' });
+        
+        res.json({ success: true, user: { username, pin }, token: token });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
