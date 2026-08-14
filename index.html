@@ -2163,71 +2163,78 @@ function ruleRow(text, points, colorType) {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
-            // 🎵 تشغيل الصوت فوراً لحظة الضغط (بدون انتظار السيرفر)
-            playSound('success');
-
             const isCap = (powerup === 'captain');
             const isTC = (powerup === 'triple');
 
-            let oldExplicitCapId = null;
-            const currentGw = Number(activeMatchModal.gw);
-            const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
-            gwMatches.forEach(m => {
-                if (m.id !== activeMatchModal.id && predictions[currentUser.username]?.[m.id]?.isCaptain) {
-                    oldExplicitCapId = m.id;
-                }
-            });
-
-            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
-            
-            if (isCap && oldExplicitCapId) {
-                predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
+            // 🎵 التعديل الأول: التمييز بين الأصوات 🎵
+            if (isCap || isTC) {
+                playSound('captain'); // إطلاق صوت "تذخير السلاح" إذا كان كابتن أو جوكر
+            } else {
+                playSound('success'); // الصوت السحري الخفيف للتوقع العادي
             }
 
-            predictions[currentUser.username][activeMatchModal.id] = { 
-                home: Number(h), away: Number(a), isCaptain: isCap, isTripleCaptain: isTC 
-            };
-            
-            const reqMatchId = activeMatchModal.id;
-            closeModal();
-            render(); 
+            // 🌟 التعديل الثاني: تأخير الرسم الثقيل بأجزاء من الثانية لكي ينطلق الصوت بلا تقطيع 🌟
+            setTimeout(async () => {
+                let oldExplicitCapId = null;
+                const currentGw = Number(activeMatchModal.gw);
+                const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
+                gwMatches.forEach(m => {
+                    if (m.id !== activeMatchModal.id && predictions[currentUser.username]?.[m.id]?.isCaptain) {
+                        oldExplicitCapId = m.id;
+                    }
+                });
 
-            try {
-                const token = localStorage.getItem('oracle_token_v8');
-                const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-
+                if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+                
                 if (isCap && oldExplicitCapId) {
-                    const oldPred = predictions[currentUser.username][oldExplicitCapId];
-                    await fetch(`${API_BASE_URL}/predict`, {
+                    predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
+                }
+
+                predictions[currentUser.username][activeMatchModal.id] = { 
+                    home: Number(h), away: Number(a), isCaptain: isCap, isTripleCaptain: isTC 
+                };
+                
+                const reqMatchId = activeMatchModal.id;
+                closeModal();
+                render(); 
+
+                try {
+                    const token = localStorage.getItem('oracle_token_v8');
+                    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+                    if (isCap && oldExplicitCapId) {
+                        const oldPred = predictions[currentUser.username][oldExplicitCapId];
+                        await fetch(`${API_BASE_URL}/predict`, {
+                            method: 'POST', headers,
+                            body: JSON.stringify({ 
+                                username: currentUser.username, matchId: oldExplicitCapId, 
+                                predH: oldPred.home, predA: oldPred.away, 
+                                isCaptain: false, isTripleCaptain: oldPred.isTripleCaptain
+                            })
+                        });
+                    }
+
+                    const response = await fetch(`${API_BASE_URL}/predict`, {
                         method: 'POST', headers,
                         body: JSON.stringify({ 
-                            username: currentUser.username, matchId: oldExplicitCapId, 
-                            predH: oldPred.home, predA: oldPred.away, 
-                            isCaptain: false, isTripleCaptain: oldPred.isTripleCaptain
+                            username: currentUser.username, matchId: reqMatchId, 
+                            predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC
                         })
                     });
+                    
+                    const data = await response.json();
+                    
+                    if(!data.success) {
+                        showCustomDialog(data.message || "حدث خطأ غير معروف");
+                        if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
+                    } else {
+                        await syncData(); 
+                    }
+                } catch(e) {
+                    console.error("Predict error:", e);
+                    showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
                 }
-
-                const response = await fetch(`${API_BASE_URL}/predict`, {
-                    method: 'POST', headers,
-                    body: JSON.stringify({ 
-                        username: currentUser.username, matchId: reqMatchId, 
-                        predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if(!data.success) {
-                    showCustomDialog(data.message || "حدث خطأ غير معروف");
-                    if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
-                } else {
-                    await syncData(); 
-                }
-            } catch(e) {
-                console.error("Predict error:", e);
-                showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
-            }
+            }, 50); // تأخير 50 مللي ثانية فقط لإنعاش الصوت
         }
         
         async function createMiniLeague() {
