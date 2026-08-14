@@ -2574,14 +2574,12 @@ async function deleteLeagueByAdmin() {
             }
 
             try {
-                // إظهار شاشة تحميل مؤقتة
                 document.getElementById('app').innerHTML = `
                     <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                         <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
                         <span class="font-bold text-lg text-white">جاري الاتصال بالسيرفر...</span>
                     </div>`;
 
-                // 🌟 التعديل السحري: توجيه الطلب للمسار الصحيح بناءً على نوع العملية
                 const endpoint = authMode === 'register' ? '/auth/register' : '/auth/login';
 
                 const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -2607,9 +2605,17 @@ async function deleteLeagueByAdmin() {
                     
                     await syncData(); 
                     render();    
+                    
+                    // 🌟 التعديل هنا: استدعاء الرسالة الترحيبية مباشرة بعد الدخول الناجح 🌟
+                    setTimeout(() => {
+                        if (typeof showWelcomeMessage === 'function') {
+                            showWelcomeMessage();
+                        }
+                    }, 800);
+
                 } else {
                     showCustomDialog(data.message || 'خطأ في الدخول.');
-                    render(); // العودة لشاشة الدخول
+                    render(); 
                 }
             } catch (error) {
                 console.error("Auth Error:", error);
@@ -2617,7 +2623,7 @@ async function deleteLeagueByAdmin() {
                 render();
             }
         }
-
+        
         function logout() { 
             // استخدام دالة الرسائل المنبثقة الجاهزة لدينا لطلب التأكيد
             showCustomDialog('هل أنت متأكد أنك تريد المغادرة وتسجيل الخروج؟', 'confirm', () => {
