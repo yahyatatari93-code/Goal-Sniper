@@ -2273,13 +2273,13 @@ function ruleRow(text, points, colorType) {
                     });
                     
                     const data = await response.json();
-                    
-                    if(!data.success) {
-                        showCustomDialog(data.message || "حدث خطأ غير معروف");
-                        if(data.message.includes('منتهي') || data.message.includes('توقف')) logout();
-                    } else {
-                        await syncData(); 
-                    }
+                
+                if(!data.success) {
+                    // 🌟 الحل هنا: نعرض رسالة الخطأ الحقيقية القادمة من السيرفر فقط 🌟
+                    showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
+                } else {
+                    await syncData(); 
+                }
                 } catch(e) {
                     console.error("Predict error:", e);
                     showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
