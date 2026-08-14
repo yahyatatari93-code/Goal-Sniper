@@ -138,26 +138,76 @@ const TEAMS = [
     { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' }
 ];
 
-        // 🌟 محرك المؤثرات الصوتية الآمن والمطور 🌟
-        const appSounds = {
-            success: new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg'), // صوت الحفظ
-            sniper: new Audio('https://actions.google.com/sounds/v1/science_fiction/laser_pew.ogg'), // صوت القناص
-            captain: new Audio('https://actions.google.com/sounds/v1/weapons/barrel_cock.ogg') // صوت اختيار الكابتن (تذخير سلاح)
-        };
+        // 🌟 محرك الصوت الفوري (بدون ملفات انترنت، وبدون تأخير نهائياً) 🌟
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
 
-        // إجبار المتصفح على تحميل الأصوات مسبقاً لمنع أي تأخير
-        Object.values(appSounds).forEach(audio => {
-            audio.preload = 'auto';
-        });
+        // تهيئة محرك الصوت (لتجاوز حظر المتصفحات للصوت التلقائي)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
 
         function playSound(type) {
             try {
-                if (appSounds[type]) {
-                    appSounds[type].currentTime = 0; // تصفير الوقت ليعمل فوراً
-                    appSounds[type].play().catch(e => {}); // تجاهل صامت لأي منع من المتصفح
+                initAudio(); // التأكد من تفعيل المحرك
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                const now = audioCtx.currentTime;
+                
+                if (type === 'success') {
+                    // 🎵 صوت حفظ التوقع (نغمة تأكيد احتفالية قصيرة)
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // نغمة 1
+                    osc.frequency.setValueAtTime(659.25, now + 0.1); // نغمة 2 أعلى
+                    
+                    gainNode.gain.setValueAtTime(0, now);
+                    gainNode.gain.linearRampToValueAtTime(0.5, now + 0.05);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    
+                } else if (type === 'captain') {
+                    // 🔫 صوت اختيار الكابتن (ضغطة ميكانيكية ثقيلة مثل تذخير السلاح)
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+                    
+                    gainNode.gain.setValueAtTime(0.7, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                    
+                } else if (type === 'sniper') {
+                    // 🎯 صوت القناص (رصاصة ليزر سريعة)
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(880, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+                    
+                    gainNode.gain.setValueAtTime(0.7, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    
+                    osc.start(now);
+                    osc.stop(now + 0.3);
                 }
-            } catch (err) {}
+            } catch (e) {
+                console.error("Audio engine skipped", e); // صمت تام في حال الرفض
+            }
         }
+        
+        // ربط المحرك بأول لمسة للشاشة لتفعيله إجبارياً
+        document.addEventListener('click', initAudio, { once: true });
+        document.addEventListener('touchstart', initAudio, { once: true });
         
 // 2. إعدادات اللغة الافتراضية
 let currentLang = localStorage.getItem('appLang') || 'ar';
