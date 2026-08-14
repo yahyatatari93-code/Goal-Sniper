@@ -2691,6 +2691,18 @@ async function deleteLeagueByAdmin() {
                 render(); 
             });
         }
+
+        // 🌟 دالة التواصل مع الإدارة عبر واتساب (باستخدام اسم المستخدم) 🌟
+        function contactSupport() {
+            // ضع اسم المستخدم الخاص بك هنا (بدون علامة @)
+            // ملاحظة: إذا أعطاك واتساب رابطاً قصيراً جاهزاً (مثل wa.me/message/XYZ)، يمكنك استخدامه بالكامل
+            const waUsername = "@ali.tarakji"; 
+            
+            const text = encodeURIComponent("مرحباً إدارة Goal Sniper 🎯، لدي ملاحظة: \n");
+            
+            // فتح واتساب باستخدام اسم المستخدم
+            window.open(`https://wa.me/${waUsername}?text=${text}`, '_blank');
+        }
         
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
@@ -2781,12 +2793,18 @@ async function deleteLeagueByAdmin() {
                     <div id="layout-wrapper" class="flex-1 flex flex-col w-full">
                         <div class="sticky top-0 z-50 w-full flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
                             <header class="p-4 glass rounded-none border-x-0 border-t-0 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]/95 backdrop-blur-xl">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/30 text-lg border border-white/10">${currentUser.username.substring(0, 1).toUpperCase()}</div>
-                                    <div>
-                                        <h1 class="text-sm font-bold text-slate-200 tracking-wide">Goal Sniper</h1>
+                                
+                                <!-- 🌟 التعديل: زر واتساب الجديد في الهيدر 🌟 -->
+                                <button onclick="contactSupport()" class="flex items-center gap-3 group cursor-pointer bg-slate-800/40 hover:bg-slate-700/60 p-1.5 pr-4 rounded-full transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                                    <div class="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 group-hover:bg-emerald-500 hover:scale-105 transition-all duration-300">
+                                        <i class="fa-brands fa-whatsapp text-emerald-400 group-hover:text-white text-xl"></i>
                                     </div>
-                                </div>
+                                    <div class="flex flex-col items-start leading-none">
+                                        <span class="text-xs font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">تواصل معنا</span>
+                                        <span class="text-[9px] text-slate-400 font-bold mt-1">إدارة Goal Sniper</span>
+                                    </div>
+                                </button>
+                                
                                 <div class="flex items-center gap-2">
                                     ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
                                     <div class="flex items-center gap-2">
