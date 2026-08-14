@@ -2470,6 +2470,89 @@ async function deleteLeagueByAdmin() {
             if (type === 'confirm' && onConfirm) { document.getElementById('diag-yes').onclick = () => { container.innerHTML = ''; onConfirm(); }; }
         }
 
+        // 🌟 دالة الرسالة الترحيبية للمستخدمين الجدد (آمنة 100%) 🌟
+        function showWelcomeMessage() {
+            if (!currentUser) return;
+            
+            const storageKey = `oracle_welcome_v8_${currentUser.username}`;
+            // إذا كان المستخدم قد شاهدها مسبقاً، نتوقف فوراً
+            if (localStorage.getItem(storageKey)) return; 
+
+            // تسجيل أن المستخدم قد شاهد الرسالة لكي لا تظهر مجدداً
+            localStorage.setItem(storageKey, 'true');
+
+            // تشغيل صوت نجاح احتفالي عند ظهورها
+            playSound('success');
+
+            const container = document.getElementById('dialog-container');
+            const lang = typeof currentLang !== 'undefined' ? currentLang : 'ar';
+            const isAr = lang === 'ar';
+            const dir = isAr ? 'rtl' : 'ltr';
+
+            // النصوص مترجمة ومدمجة هنا لكي لا نلمس قاموس الترجمة الأساسي ونحافظ على استقراره
+            const content = {
+                ar: {
+                    title: "أهلاً بك في Goal Sniper 🎯",
+                    subtitle: "أنت الآن قناص رسمي! إليك 3 أسرار للنجاح:",
+                    step1: "1. توقع بذكاء:", desc1: "توقع النتائج قبل 60 دقيقة من المباراة. التطابق التام يمنحك أعلى النقاط!",
+                    step2: "2. الكابتن والجوكر:", desc2: "استخدم (C) لمضاعفة نقاط مباراة واحدة كل أسبوع، والجوكر (x3) مرتين بالموسم.",
+                    step3: "3. القناص (الدوريات):", desc3: "تصدر دوريك المصغر لتحصل على رصاصة تخصم بها نقاط منافسيك!",
+                    btn: "أنا جاهز للمنافسة! 🔥"
+                },
+                en: {
+                    title: "Welcome to Goal Sniper 🎯",
+                    subtitle: "You are now an official sniper! 3 secrets to success:",
+                    step1: "1. Predict Smartly:", desc1: "Predict 60 mins before kickoff. Exact scores give max points!",
+                    step2: "2. Captain & Joker:", desc2: "Use (C) to double points once a week, and (x3) twice a season.",
+                    step3: "3. The Sniper:", desc3: "Top your mini-league to get a bullet and deduct points from rivals!",
+                    btn: "I'm Ready! 🔥"
+                },
+                tr: {
+                    title: "Goal Sniper'a Hoş Geldiniz 🎯",
+                    subtitle: "Artık resmi bir nişancısın! Başarı için 3 sır:",
+                    step1: "1. Akıllıca Tahmin Et:", desc1: "Maçtan 60 dk önce tahmin yap. Tam skor en yüksek puanı verir!",
+                    step2: "2. Kaptan & Joker:", desc2: "Haftada bir kez (C) ile puanı ikiye katla, sezonda iki kez (x3) kullan.",
+                    step3: "3. Keskin Nişancı:", desc3: "Mini liginde birinci ol ve rakiplerinden puan düşürme mermisi kazan!",
+                    btn: "Hazırım! 🔥"
+                }
+            };
+
+            const t = content[lang] || content['ar'];
+
+            container.innerHTML = `
+                <div class="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="${dir}">
+                    <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-blue-500/40 animate-fade-up overflow-hidden relative bg-slate-900/90">
+                        <!-- تأثير إضاءة في الخلفية -->
+                        <div class="absolute -top-10 -${isAr ? 'left' : 'right'}-10 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="text-center border-b border-white/10 pb-4 mb-4 relative z-10">
+                            <h2 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">${t.title}</h2>
+                            <p class="text-xs text-slate-300 mt-2 font-bold">${t.subtitle}</p>
+                        </div>
+                        
+                        <div class="space-y-3 relative z-10">
+                            <div class="bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                <h3 class="text-sm font-bold text-emerald-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-brain"></i> ${t.step1}</h3>
+                                <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">${t.desc1}</p>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                <h3 class="text-sm font-bold text-amber-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-crown"></i> ${t.step2}</h3>
+                                <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">${t.desc2}</p>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-2xl border border-white/5">
+                                <h3 class="text-sm font-bold text-rose-400 mb-1 flex items-center gap-1.5"><i class="fa-solid fa-crosshairs"></i> ${t.step3}</h3>
+                                <p class="text-[11px] text-slate-300 leading-relaxed font-semibold">${t.desc3}</p>
+                            </div>
+                        </div>
+
+                        <button onclick="document.getElementById('dialog-container').innerHTML = ''" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/30 transition-all mt-5 relative z-10">
+                            ${t.btn}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
         function setAuthMode(mode) { authMode = mode; render(); }
 
         async function handleAuth(e) {
@@ -2737,7 +2820,13 @@ async function deleteLeagueByAdmin() {
                 await syncData(); 
             }
             render();
+            
+            // 🌟 السحر هنا: استدعاء الرسالة الترحيبية بلمسة تأخير أنيقة 🌟
+            setTimeout(() => {
+                showWelcomeMessage();
+            }, 800); // تأخير 0.8 ثانية لتعطي فرصة للواجهة لتظهر بشكل جميل أولاً
         };
+        
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw) {
             const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم ${penaltyPoints} نقاط منه؟\n\nتذكر: الميزة تستخدم مرة واحدة فقط في الجولة!`);
             
