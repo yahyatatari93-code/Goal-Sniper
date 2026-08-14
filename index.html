@@ -2581,6 +2581,22 @@ async function deleteLeagueByAdmin() {
         </div>
     `;
 }
+        // 🌟 دالة المزامنة اليدوية الآمنة 🌟
+        async function manualSync() {
+            const syncIcon = document.getElementById('sync-icon');
+            // تشغيل تأثير الدوران البصري
+            if (syncIcon) syncIcon.classList.add('fa-spin'); 
+            
+            try {
+                await syncData(); // جلب البيانات من قاعدة البيانات
+                render();         // تحديث الأرقام والواجهة
+            } catch (e) {
+                console.error("Manual sync failed", e);
+            } finally {
+                // إيقاف الدوران دائماً، سواء نجح التحديث أو فشل (لضمان استقرار الواجهة)
+                if (syncIcon) syncIcon.classList.remove('fa-spin'); 
+            }
+        }
         
         function render() {
             const app = document.getElementById('app');
@@ -2608,6 +2624,10 @@ async function deleteLeagueByAdmin() {
                                             <span class="text-white/20 text-[10px] px-0.5">|</span>
                                             <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
                                         </div>
+                                        <!-- زر المزامنة اليدوية -->
+                                        <button onclick="manualSync()" class="p-1.5 glass text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all border-emerald-500/20" title="${typeof t === 'function' ? t('refresh') || 'تحديث البيانات' : 'تحديث البيانات'}">
+                                            <i id="sync-icon" class="fa-solid fa-arrows-rotate text-sm"></i>
+                                        </button>
                                         <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
                                             <i class="fa-solid fa-power-off text-sm"></i>
                                         </button>
