@@ -2514,11 +2514,16 @@ async function deleteLeagueByAdmin() {
         }
 
         function logout() { 
-    currentUser = null; 
-    localStorage.removeItem('oracle_current_user_v8'); 
-    localStorage.removeItem('oracle_token_v8'); // 🌟 مسح المفتاح
-    render(); 
-}
+            // استخدام دالة الرسائل المنبثقة الجاهزة لدينا لطلب التأكيد
+            showCustomDialog('هل أنت متأكد أنك تريد المغادرة وتسجيل الخروج؟', 'confirm', () => {
+                // هذا الكود لن ينفذ إلا إذا ضغط المستخدم على "نعم، متأكد"
+                currentUser = null; 
+                localStorage.removeItem('oracle_current_user_v8'); 
+                localStorage.removeItem('oracle_token_v8'); 
+                render(); 
+            });
+        }
+        
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         function renderAuthScreen() {
