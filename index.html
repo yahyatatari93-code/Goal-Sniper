@@ -2707,76 +2707,65 @@ async function deleteLeagueByAdmin() {
         function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
         function renderAuthScreen() {
-            return `
-            <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#060b19]">
-                <!-- تأثيرات إضاءة خلفية -->
-                <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] animate-pulse"></div>
-                <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-600/20 rounded-full blur-[100px] animate-pulse" style="animation-delay: 2s;"></div>
-                
-                <div class="glass w-full max-w-md p-8 rounded-3xl z-10 border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.5)] transform animate-fade-up relative overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none"></div>
-                    
-                    <div class="text-center mb-10 relative">
-                        <div class="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-600 to-emerald-500 p-0.5 shadow-2xl shadow-blue-500/30 rotate-3 transition-transform hover:rotate-6">
-                            <div class="w-full h-full bg-[#0a0e17] rounded-xl flex items-center justify-center">
-                                <i class="fa-solid fa-crosshairs text-4xl text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-emerald-400"></i>
-                            </div>
-                        </div>
-                        <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">Goal Sniper</h2>
-                        <p class="text-slate-400 text-sm mt-3 font-medium">أثبت مهارتك.. توقع أهدافك.. واقنص الصدارة!</p>
+    // تحديد الاتجاه وأيقونة السهم بناءً على اللغة الحالية
+    const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    const arrowIcon = lang === 'ar' ? 'fa-arrow-left mr-2' : 'fa-arrow-right ml-2';
+
+    // دالة مساعدة لضمان جلب الترجمة أو إرجاع النص العربي كاحتياطي
+    const text = (key, fallback) => typeof t === 'function' && t(key) ? t(key) : fallback;
+
+    return `
+        <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative" dir="${dir}">
+            
+            <!-- أزرار تغيير اللغة (تطفو في الزاوية العلوية) -->
+            <div class="absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg z-50" dir="ltr">
+                <button onclick="changeLanguage('ar')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
+                <span class="text-white/20 text-xs px-1">|</span>
+                <button onclick="changeLanguage('en')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
+                <span class="text-white/20 text-xs px-1">|</span>
+                <button onclick="changeLanguage('tr')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
+            </div>
+
+            <div class="glass max-w-md w-full p-6 md:p-8 rounded-3xl shadow-2xl border border-white/10 animate-fade-up relative z-10">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-4 rounded-full bg-blue-500/10 mb-3 border border-blue-500/30">
+                        <i class="fa-solid fa-crosshairs text-4xl text-blue-500"></i>
                     </div>
-
-                    <form onsubmit="handleAuth(event)" class="space-y-6 relative">
-                        <div class="space-y-4">
-                            <div class="relative group">
-                                <i class="fa-solid fa-user absolute right-4 top-4 text-slate-500 group-focus-within:text-blue-400 transition-colors"></i>
-                                <input type="text" id="auth-name" placeholder="${typeof t === 'function' ? t('username') : 'اسم المستخدم'}" required
-                                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-bold text-center">
-                            </div>
-                            
-                            <div class="relative group">
-                                <i class="fa-solid fa-lock absolute right-4 top-4 text-slate-500 group-focus-within:text-blue-400 transition-colors"></i>
-                                <input type="number" id="auth-pin" placeholder="كلمة المرور (أرقام فقط)" required
-                                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-bold text-center"
-                                    style="-moz-appearance: textfield;">
-                            </div>
-
-                            <div id="register-fields" class="hidden animate-fade-in relative group mt-4">
-                                <i class="fa-solid fa-shield-check absolute right-4 top-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors"></i>
-                                <input type="number" id="auth-pin-confirm" placeholder="تأكيد كلمة المرور"
-                                    class="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-12 py-3.5 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all font-bold text-center">
-                                <p class="text-[10px] text-emerald-400 mt-2 text-center opacity-80"><i class="fa-solid fa-circle-info ml-1"></i> اختر أرقاماً يسهل عليك تذكرها</p>
-                            </div>
-                        </div>
-
-                        <button type="submit" id="auth-btn" 
-                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/25 active:scale-[0.98]">
-                            ${typeof t === 'function' ? t('login') : 'تسجيل الدخول'}
-                        </button>
-                    </form>
-
-                    <div class="mt-8 flex items-center justify-center gap-4">
-                        <div class="h-[1px] flex-1 bg-slate-800"></div>
-                        <span class="text-xs text-slate-500 font-bold">أو</span>
-                        <div class="h-[1px] flex-1 bg-slate-800"></div>
-                    </div>
-
-                    <button onclick="toggleAuthMode()" id="auth-toggle-btn"
-                        class="w-full mt-6 bg-slate-800/50 hover:bg-slate-800 border border-slate-700 text-slate-300 font-bold py-3.5 rounded-xl transition-all active:scale-[0.98]">
-                        إنشاء حساب قناص جديد
-                    </button>
-                    
-                    <!-- 🌟 التعديل: زر الدعم الفني (نسيان كلمة المرور) 🌟 -->
-                    <div class="mt-6 flex justify-center">
-                        <button onclick="contactSupport()" class="group flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors bg-transparent border-none">
-                            <i class="fa-brands fa-whatsapp text-lg text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
-                            هل نسيت كلمة المرور؟ تواصل معنا
-                        </button>
-                    </div>
-
+                    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 tracking-wider">Goal Sniper</h1>
+                    <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
-            </div>`;
-        }
+                
+                <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                    <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
+                    <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
+                </div>
+
+                <form onsubmit="handleAuth(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('usernameLabel', 'اسم المستخدم')}</label>
+                        <input type="text" id="auth-name" placeholder="${text('usernamePh', 'مثال: Ahmed99')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
+                        <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                    </div>
+                    
+                    ${authMode === 'register' ? `
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('confirmPasswordLabel', 'تأكيد كلمة المرور')}</label>
+                            <input type="password" id="auth-pin-confirm" placeholder="${text('confirmPasswordPh', 'أعد كتابة الرمز السري')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                        </div>
+                    ` : ''}
+
+                    <button type="submit" class="w-full py-4 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                        ${authMode === 'login' ? `${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>` : `${text('registerSubmit', 'إنشاء الحساب والبدء')} <i class="fa-solid fa-check ${lang === 'ar' ? 'mr-2' : 'ml-2'}"></i>`}
+                    </button>
+                </form>
+            </div>
+        </div>
+    `;
+}
         // 🌟 دالة المزامنة اليدوية الآمنة 🌟
         async function manualSync() {
             const syncIcon = document.getElementById('sync-icon');
