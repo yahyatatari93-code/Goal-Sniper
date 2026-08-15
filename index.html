@@ -2762,6 +2762,15 @@ async function deleteLeagueByAdmin() {
                         ${authMode === 'login' ? `${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>` : `${text('registerSubmit', 'إنشاء الحساب والبدء')} <i class="fa-solid fa-check ${lang === 'ar' ? 'mr-2' : 'ml-2'}"></i>`}
                     </button>
                 </form>
+
+                <!-- 🌟 زر التواصل مع الإدارة المضاف حديثاً 🌟 -->
+                <div class="mt-6 flex justify-center">
+                    <button type="button" onclick="contactSupport()" class="group flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors bg-transparent border-none">
+                        <i class="fa-brands fa-whatsapp text-lg text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
+                        ${text('forgotPasswordHelp', 'هل نسيت كلمة المرور؟ تواصل معنا')}
+                    </button>
+                </div>
+
             </div>
         </div>
     `;
