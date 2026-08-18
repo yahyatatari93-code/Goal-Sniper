@@ -2216,14 +2216,12 @@ function ruleRow(text, points, colorType) {
             const isCap = (powerup === 'captain');
             const isTC = (powerup === 'triple');
 
-            // 🎵 التعديل الأول: التمييز بين الأصوات 🎵
             if (isCap || isTC) {
-                playSound('captain'); // إطلاق صوت "تذخير السلاح" إذا كان كابتن أو جوكر
+                playSound('captain'); 
             } else {
-                playSound('success'); // الصوت السحري الخفيف للتوقع العادي
+                playSound('success'); 
             }
 
-            // 🌟 التعديل الثاني: تأخير الرسم الثقيل بأجزاء من الثانية لكي ينطلق الصوت بلا تقطيع 🌟
             setTimeout(async () => {
                 let oldExplicitCapId = null;
                 const currentGw = Number(activeMatchModal.gw);
@@ -2234,19 +2232,11 @@ function ruleRow(text, points, colorType) {
                     }
                 });
 
-                if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
-                
-                if (isCap && oldExplicitCapId) {
-                    predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
-                }
-
-                predictions[currentUser.username][activeMatchModal.id] = { 
-                    home: Number(h), away: Number(a), isCaptain: isCap, isTripleCaptain: isTC 
-                };
-                
                 const reqMatchId = activeMatchModal.id;
+                
+                // 🌟 التعديل الأول: نغلق النافذة ونظهر أيقونة تحميل بسيطة لتجربة مستخدم سريعة 🌟
                 closeModal();
-                render(); 
+                showCustomDialog("جاري إرسال التوقع للقاعدة...", "alert");
 
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
@@ -2275,16 +2265,23 @@ function ruleRow(text, points, colorType) {
                     const data = await response.json();
                 
                 if(!data.success) {
-                    // 🌟 الحل هنا: نعرض رسالة الخطأ الحقيقية القادمة من السيرفر فقط 🌟
+                    // 🌟 التعديل الثاني: نعرض الخطأ، ونقوم بمزامنة البيانات لمسح أي تحديث وهمي 🌟
                     showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
+                    await syncData();
+                    render();
                 } else {
+                    // 🌟 التعديل الثالث: نغلق رسالة "جاري التحميل" ونرسم الواجهة فقط بعد النجاح الحقيقي 🌟
+                    document.getElementById('dialog-container').innerHTML = '';
                     await syncData(); 
+                    render();
                 }
                 } catch(e) {
                     console.error("Predict error:", e);
                     showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
+                    await syncData();
+                    render();
                 }
-            }, 50); // تأخير 50 مللي ثانية فقط لإنعاش الصوت
+            }, 50); 
         }
         
         async function createMiniLeague() {
