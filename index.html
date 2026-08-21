@@ -554,11 +554,21 @@ function changeLanguage(langCode) {
 }
         
         async function syncData() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/sync`);
-        const json = await res.json();
-        if (json.success) {
-            users = json.data.users || [];
+            try {
+                // 🌟 التعديل السحري: إضافة طابع زمني (Timestamp) لمنع الكاش نهائياً 🌟
+                const url = `${API_BASE_URL}/sync?t=${new Date().getTime()}`;
+                const res = await fetch(url, {
+                    cache: 'no-store', // إجبار المتصفح على عدم التخزين
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                const json = await res.json();
+                
+                if (json.success) {
+                    users = json.data.users || [];
             
             matches = (json.data.matches || []).map(m => ({
                 id: m.id,
