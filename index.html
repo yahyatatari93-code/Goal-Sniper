@@ -789,73 +789,82 @@ function changeLanguage(langCode) {
         }
 
         function getLeagueStandings(leagueCode, baseStats) {
-    const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-    
-    // 🌟 التعديل الذكي: تحديد "جولة القنص"
-    // إذا انتقلنا لجولة جديدة ولم يسجل فيها أحد أي نقطة بعد، نمنح الرصاصة لبطل الجولة السابقة
-    let evaluationGw = activeGw;
-    let currentGwHasPoints = baseStats.some(s => (s.gwPoints[activeGw] || 0) > 0);
-    if (!currentGwHasPoints && activeGw > 1) {
-        evaluationGw = activeGw - 1;
-    }
+            const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+            
+            // 🌟 التعديل السحري: البحث عن آخر جولة "مكتملة 100%" 🌟
+            let lastCompletedGw = null;
+            for (let g = activeGw; g >= 1; g--) {
+                const gwMatches = matches.filter(m => Number(m.gw) === g);
+                // الجولة تعتبر مكتملة فقط إذا كان "كل" مبارياتها تحتوي على نتيجة حقيقية
+                if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                    lastCompletedGw = g;
+                    break;
+                }
+            }
 
-    const league = miniLeagues.find(l => l.code === leagueCode);
-    if (!league) return null;
+            const league = miniLeagues.find(l => l.code === leagueCode);
+            if (!league) return null;
 
-    // 1. استنساخ البيانات وعزلها عن الترتيب العام
-    let leagueMembers = baseStats
-        .filter(s => league.members.includes(s.username))
-        .map(s => ({
-            ...s,
-            mlTotalPts: s.totalPts, 
-            mlGwPts: s.gwPoints[evaluationGw] || 0 // نستخدم الجولة الذكية هنا
-        }));
+            // نعرض دائماً نقاط الجولة النشطة للمستخدم في الجدول (حتى لو كانت تلعب الآن)
+            let displayGw = activeGw;
 
-    // 2. تحليل رصاصات القناص في هذا الدوري فقط
-    const currentLeagueShots = (sniperShots || []).filter(shot => 
-        (shot.league_code === leagueCode || shot.leagueCode === leagueCode)
-    );
+            let leagueMembers = baseStats
+                .filter(s => league.members.includes(s.username))
+                .map(s => ({
+                    ...s,
+                    mlTotalPts: s.totalPts, 
+                    mlGwPts: s.gwPoints[displayGw] || 0 
+                }));
 
-    const victimsLastGw = new Set(); // لتسجيل الحصانة
-    const snipersThisGw = new Set(); // لتسجيل من استخدم الميزة 
+            const currentLeagueShots = (sniperShots || []).filter(shot => 
+                (shot.league_code === leagueCode || shot.leagueCode === leagueCode)
+            );
 
-    currentLeagueShots.forEach(shot => {
-        const victim = leagueMembers.find(m => m.username === shot.victim);
-        // حماية ذكية: سواء أرسله السيرفر بـ _ أو كحرف كبير، سيتم خصم الرقم
-        const penalty = shot.points_deducted || shot.pointsDeducted || 0; 
-        if (victim) victim.mlTotalPts -= penalty;
+            const victimsLastGw = new Set(); 
+            const snipersThisGw = new Set(); 
 
-        // تسجيل الحصانة إذا تم قنصه في الجولة السابقة
-        if (shot.gw === evaluationGw - 1) victimsLastGw.add(shot.victim);
+            currentLeagueShots.forEach(shot => {
+                const victim = leagueMembers.find(m => m.username === shot.victim);
+                const penalty = shot.points_deducted || shot.pointsDeducted || 0; 
+                if (victim) victim.mlTotalPts -= penalty;
 
-        // تسجيل من أطلق النار في جولة التقييم الحالية
-        if (shot.gw === evaluationGw) snipersThisGw.add(shot.sniper);
-    });
+                // الحصانة تعتمد على القنص الذي حدث في الجولة السابقة للمكتملة
+                if (shot.gw === lastCompletedGw - 1) victimsLastGw.add(shot.victim);
 
-    // 3. إعادة ترتيب الأعضاء بناءً على نقاط الدوري (بعد الخصومات)
-    leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
+                // من قنص في الجولة المكتملة الحالية؟
+                if (shot.gw === lastCompletedGw) snipersThisGw.add(shot.sniper);
+            });
 
-    // 4. تحديد المتصدرين في الجولة (أعلى نقاط)
-    let maxGwPts = -1;
-    leagueMembers.forEach(m => {
-        if (m.mlGwPts > maxGwPts) maxGwPts = m.mlGwPts;
-    });
+            leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
 
-    // جلب أسماء المتصدرين بشرط أن تكون نقاطهم أكبر من صفر
-    const topScorers = leagueMembers.filter(m => m.mlGwPts === maxGwPts && maxGwPts > 0).map(m => m.username);
-    
-    // تحديد قوة الرصاصة (4 للانفراد، 2 للتعادل)
-    const sniperPenalty = topScorers.length > 1 ? 2 : 4; 
+            // 🌟 تحديد المتصدرين لإعطائهم الرصاصة بناءً على الجولة المكتملة "فقط" 🌟
+            let topScorers = [];
+            let sniperPenalty = 0;
+            let sniperEligibilityGw = lastCompletedGw;
 
-    return {
-        members: leagueMembers,
-        topScorers,
-        sniperPenalty,
-        victimsLastGw,
-        snipersThisGw,
-        activeGw: evaluationGw // نمرر الجولة الذكية لكي تُحفظ الرصاصة فيها
-    };
-}
+            if (lastCompletedGw !== null) {
+                let maxCompletedGwPts = -1;
+                leagueMembers.forEach(m => {
+                    const pts = m.gwPoints[lastCompletedGw] || 0;
+                    if (pts > maxCompletedGwPts) maxCompletedGwPts = pts;
+                });
+
+                if (maxCompletedGwPts > 0) {
+                    topScorers = leagueMembers.filter(m => (m.gwPoints[lastCompletedGw] || 0) === maxCompletedGwPts).map(m => m.username);
+                    sniperPenalty = topScorers.length > 1 ? 2 : 4;
+                }
+            }
+
+            return {
+                members: leagueMembers,
+                topScorers,
+                sniperPenalty,
+                victimsLastGw,
+                snipersThisGw,
+                activeGw: displayGw,
+                sniperEligibilityGw // الجولة التي سيتم تسجيل الرصاصة باسمها
+            };
+        }
 
         // 1. دالة تجميل التاريخ (تحوله إلى أرقام أنيقة وموحدة DD/MM/YYYY)
 function formatMatchDate(dateStr) {
@@ -1546,7 +1555,7 @@ function renderMiniLeaguesTab() {
                                             if (leagueData.victimsLastGw.has(mem.username)) {
                                                 actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`;
                                             } else if (canCurrentUseSniper) {
-                                                actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.activeGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
+                                                actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
                                                     <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
                                                 </button>`;
                                             }
