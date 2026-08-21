@@ -301,7 +301,10 @@ normalPred: "توقع عادي (بدون مضاعفات)",
 used: "مُستخدمة",
 potentialPoints: "النقاط المحتملة للتوقع المثالي",
 savePred: "حفظ التوقع",
-cancel: "إلغاء"
+cancel: "إلغاء",
+        navPrizes: "الجوائز",
+        contactUs: "تواصل معنا",
+        mgmtGoalSniper: "إدارة Goal Sniper"
     },
     en: {
         slogan: "Predict Smartly . Lead Deservedly . Strike Hard",
@@ -391,6 +394,9 @@ used: "Used",
 potentialPoints: "Potential Points for Perfect Guess",
 savePred: "Save Prediction",
 cancel: "Cancel",
+        navPrizes: "Prizes",
+        contactUs: "Contact Us",
+        mgmtGoalSniper: "Goal Sniper Mgmt"
     },
     tr: {
         slogan: "Akıllıca Tahmin Et . Zirveye Çık . Sert Vur",
@@ -480,6 +486,9 @@ used: "Kullanıldı",
 potentialPoints: "Kusursuz Tahmin Puanı",
 savePred: "Tahmini Kaydet",
 cancel: "İptal",
+        navPrizes: "Ödüller",
+        contactUs: "Bize Ulaşın",
+        mgmtGoalSniper: "Goal Sniper Yön.",
     }
 };
         
@@ -1850,7 +1859,41 @@ function ruleRow(text, points, colorType) {
 }
 
         function renderPrizesTab() {
+            const prizesTranslations = {
+                ar: {
+                    title: "قاعة الجوائز الكبرى",
+                    subtitle: "تنافس بشراسة، وتوج بطلاً لتحصد الجوائز!",
+                    monthlyTitle: "الجوائز الشهرية",
+                    monthlyItem: "3 تيشيرتات رياضية",
+                    monthlyDesc: 'تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black">ترتيب الشهر</span>',
+                    seasonTitle: "الجوائز الكبرى (نهاية الموسم)",
+                    p1: "المركز الأول", p2: "المركز الثاني", p3: "المركز الثالث",
+                    p4: "المركز الرابع", p5: "المركز الخامس", p6_10: "من المركز 6 إلى 10"
+                },
+                en: {
+                    title: "Grand Prizes Hall",
+                    subtitle: "Compete fiercely and be the champion to claim prizes!",
+                    monthlyTitle: "Monthly Prizes",
+                    monthlyItem: "3 Sports Jerseys",
+                    monthlyDesc: 'Awarded to the top 3 in the <span class="text-amber-400 font-black">Monthly Standings</span>',
+                    seasonTitle: "Grand Prizes (End of Season)",
+                    p1: "1st Place", p2: "2nd Place", p3: "3rd Place",
+                    p4: "4th Place", p5: "5th Place", p6_10: "6th to 10th Place"
+                },
+                tr: {
+                    title: "Büyük Ödüller Salonu",
+                    subtitle: "Şiddetle yarış ve ödülleri kazanmak için şampiyon ol!",
+                    monthlyTitle: "Aylık Ödüller",
+                    monthlyItem: "3 Spor Forması",
+                    monthlyDesc: '<span class="text-amber-400 font-black">Aylık Sıralamada</span> ilk 3\'e verilir',
+                    seasonTitle: "Büyük Ödüller (Sezon Sonu)",
+                    p1: "1. Sıra", p2: "2. Sıra", p3: "3. Sıra",
+                    p4: "4. Sıra", p5: "5. Sıra", p6_10: "6. - 10. Sıralar"
+                }
+            };
+
             const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
+            const pt = prizesTranslations[lang] || prizesTranslations['ar'];
             const direction = lang === 'ar' ? 'rtl' : 'ltr';
 
             return `
@@ -1858,27 +1901,24 @@ function ruleRow(text, points, colorType) {
                     
                     <!-- الهيدر -->
                     <div class="glass p-6 rounded-3xl text-center relative overflow-hidden border border-amber-500/30 bg-gradient-to-br from-amber-950/40 via-[#0f172a] to-amber-900/20 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-                        <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
+                        <div class="absolute -top-10 -${lang === 'ar' ? 'right' : 'left'}-10 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl pointer-events-none"></div>
                         <i class="fa-solid fa-gift text-5xl text-amber-400 mb-3 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]"></i>
-                        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600">قاعة الجوائز الكبرى</h2>
-                        <p class="text-xs text-slate-300 mt-2 font-bold">تنافس بشراسة، وتوج بطلاً لتحصد الجوائز!</p>
+                        <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600">${pt.title}</h2>
+                        <p class="text-xs text-slate-300 mt-2 font-bold">${pt.subtitle}</p>
                     </div>
 
                     <!-- 🎁 الجوائز الشهرية -->
                     <div class="glass p-4 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
                         <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-medal"></i></div>
-                            <h3 class="text-lg font-black text-white">الجوائز الشهرية</h3>
+                            <h3 class="text-lg font-black text-white">${pt.monthlyTitle}</h3>
                         </div>
                         
-                        <!-- 🌟 التعديل هنا: تصغير الأيقونة والهوامش والخط لتتسع في سطر واحد 🌟 -->
                         <div class="flex items-center gap-2.5 bg-blue-950/30 p-3 rounded-2xl border border-blue-500/20">
                             <div class="text-3xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0"><i class="fa-solid fa-shirt"></i></div>
                             <div class="flex-1 overflow-hidden">
-                                <h4 class="font-bold text-[13px] text-blue-300 mb-0.5">3 تيشيرتات رياضية</h4>
-                                <p class="text-[10px] sm:text-xs text-slate-300 font-semibold whitespace-nowrap w-full">
-                                    تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black">ترتيب الشهر</span>
-                                </p>
+                                <h4 class="font-bold text-[13px] text-blue-300 mb-0.5">${pt.monthlyItem}</h4>
+                                <p class="text-[10px] sm:text-xs text-slate-300 font-semibold whitespace-nowrap w-full">${pt.monthlyDesc}</p>
                             </div>
                         </div>
                     </div>
@@ -1887,41 +1927,41 @@ function ruleRow(text, points, colorType) {
                     <div class="glass p-5 rounded-3xl relative overflow-hidden border border-amber-500/20 bg-slate-900/60 shadow-lg">
                         <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-4">
                             <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl border border-amber-500/30"><i class="fa-solid fa-trophy"></i></div>
-                            <h3 class="text-lg font-black text-white">الجوائز الكبرى (نهاية الموسم)</h3>
+                            <h3 class="text-lg font-black text-white">${pt.seasonTitle}</h3>
                         </div>
 
                         <div class="space-y-3">
-                            <div class="flex justify-between items-center bg-gradient-to-l from-amber-500/20 to-transparent p-3.5 rounded-2xl border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+                            <div class="flex justify-between items-center bg-gradient-to-${lang === 'ar' ? 'l' : 'r'} from-amber-500/20 to-transparent p-3.5 rounded-2xl border border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)]">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-amber-500 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(245,158,11,0.8)]">1</span>
-                                    <span class="font-bold text-amber-400 text-sm">المركز الأول</span>
+                                    <span class="font-bold text-amber-400 text-sm">${pt.p1}</span>
                                 </div>
                                 <span class="font-black text-xl text-white">300 <span class="text-xs text-amber-400">$</span></span>
                             </div>
 
-                            <div class="flex justify-between items-center bg-gradient-to-l from-slate-400/20 to-transparent p-3.5 rounded-2xl border border-slate-400/40">
+                            <div class="flex justify-between items-center bg-gradient-to-${lang === 'ar' ? 'l' : 'r'} from-slate-400/20 to-transparent p-3.5 rounded-2xl border border-slate-400/40">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-slate-300 text-black flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(203,213,225,0.5)]">2</span>
-                                    <span class="font-bold text-slate-300 text-sm">المركز الثاني</span>
+                                    <span class="font-bold text-slate-300 text-sm">${pt.p2}</span>
                                 </div>
                                 <span class="font-black text-xl text-white">200 <span class="text-xs text-slate-400">$</span></span>
                             </div>
 
-                            <div class="flex justify-between items-center bg-gradient-to-l from-amber-700/30 to-transparent p-3.5 rounded-2xl border border-amber-700/50">
+                            <div class="flex justify-between items-center bg-gradient-to-${lang === 'ar' ? 'l' : 'r'} from-amber-700/30 to-transparent p-3.5 rounded-2xl border border-amber-700/50">
                                 <div class="flex items-center gap-3">
                                     <span class="w-8 h-8 rounded-full bg-amber-700 text-white flex items-center justify-center font-black text-sm shadow-[0_0_10px_rgba(180,83,9,0.5)]">3</span>
-                                    <span class="font-bold text-amber-600 text-sm">المركز الثالث</span>
+                                    <span class="font-bold text-amber-600 text-sm">${pt.p3}</span>
                                 </div>
                                 <span class="font-black text-xl text-white">100 <span class="text-xs text-amber-600">$</span></span>
                             </div>
 
                             <div class="grid grid-cols-2 gap-3 pt-2">
                                 <div class="flex flex-col items-center justify-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
-                                    <span class="text-xs font-bold text-slate-400 mb-1">المركز الرابع</span>
+                                    <span class="text-xs font-bold text-slate-400 mb-1">${pt.p4}</span>
                                     <span class="font-black text-lg text-emerald-400">75 $</span>
                                 </div>
                                 <div class="flex flex-col items-center justify-center bg-slate-800/50 p-3 rounded-2xl border border-white/5">
-                                    <span class="text-xs font-bold text-slate-400 mb-1">المركز الخامس</span>
+                                    <span class="text-xs font-bold text-slate-400 mb-1">${pt.p5}</span>
                                     <span class="font-black text-lg text-emerald-400">75 $</span>
                                 </div>
                             </div>
@@ -1929,7 +1969,7 @@ function ruleRow(text, points, colorType) {
                             <div class="flex justify-between items-center bg-slate-800/50 p-3.5 rounded-2xl border border-emerald-500/20 border-dashed mt-2">
                                 <div class="flex items-center gap-2">
                                     <i class="fa-solid fa-users text-slate-500"></i>
-                                    <span class="font-bold text-slate-300 text-xs">من المركز 6 إلى 10</span>
+                                    <span class="font-bold text-slate-300 text-xs">${pt.p6_10}</span>
                                 </div>
                                 <span class="font-black text-base text-emerald-400">50 $</span>
                             </div>
@@ -2806,8 +2846,8 @@ async function deleteLeagueByAdmin() {
                                         <i class="fa-brands fa-whatsapp text-emerald-400 group-hover:text-white text-xl"></i>
                                     </div>
                                     <div class="flex flex-col items-start leading-none">
-                                        <span class="text-xs font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">تواصل معنا</span>
-                                        <span class="text-[9px] text-slate-400 font-bold mt-1">إدارة Goal Sniper</span>
+                                        <span class="text-xs font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">${typeof t === 'function' ? t('contactUs') : 'تواصل معنا'}</span>
+                                        <span class="text-[9px] text-slate-400 font-bold mt-1">${typeof t === 'function' ? t('mgmtGoalSniper') : 'إدارة Goal Sniper'}</span>
                                     </div>
                                 </button>
                                 
@@ -2878,7 +2918,7 @@ async function deleteLeagueByAdmin() {
                 
                 <button onclick="switchTab('prizes')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'prizes' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-slate-200'}">
                     <i class="fa-solid fa-gift text-lg"></i>
-                    <span class="text-[9px] font-bold">الجوائز</span>
+                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navPrizes') : 'الجوائز'}</span>
                 </button>
 
                 <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
