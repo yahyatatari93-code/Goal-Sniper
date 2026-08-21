@@ -2167,11 +2167,22 @@ function ruleRow(text, points, colorType) {
             const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
             const isEffectiveCaptain = (activeMatchModal.id === activeCapId);
             
+            // 🌟 التعديل السحري: هل الكابتن محجوز في مباراة أخرى مقفلة؟ 🌟
+            let isCaptainLockedByAnotherMatch = false;
+
+            if (!isEffectiveCaptain && activeCapId) {
+                const capMatch = matches.find(m => m.id === activeCapId);
+                // إذا كان الكابتن (صريح أو افتراضي) على مباراة أخرى، وتلك المباراة مقفلة، نمنع النقل!
+                if (capMatch && isMatchLocked(capMatch)) {
+                    isCaptainLockedByAnotherMatch = true;
+                }
+                captainUsedInGw = true; // لكي نعرض له إمكانية "نقل الشارة" إذا لم تكن مقفلة
+            }
+            
             Object.entries(userPreds).forEach(([mId, p]) => {
                 if (mId === activeMatchModal.id) return; 
                 const m = matches.find(x => x.id === mId);
                 if (m) {
-                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
                     if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
                 }
             });
@@ -2212,20 +2223,25 @@ function ruleRow(text, points, colorType) {
                         </div>
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
-                            <!-- 🌟 التعديل السحري هنا: جعلنا الزر قابلاً للضغط دائماً ليسمح بالانتقال 🌟 -->
-                            <!-- 🌟 زر الكابتن 🌟 -->
-                            <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border border-transparent hover:border-amber-500/30 hover:bg-slate-800/80">
-                                <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} class="w-4 h-4 accent-amber-500" />
+                            
+                            <!-- 🌟 زر الكابتن (محمي من الثغرة) 🌟 -->
+                            <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
+                                <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${isCaptainLockedByAnotherMatch ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
                                 <div class="flex-1 flex justify-between items-center">
                                     <span class="text-xs font-bold text-amber-400 block">${capText}</span> 
-                                    ${(captainUsedInGw && !pred.isCaptain) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>' : ''}
+                                    ${isCaptainLockedByAnotherMatch ? 
+                                        '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded shadow-inner border border-rose-500/30"><i class="fa-solid fa-lock"></i> مقفل بمباراة أخرى</span>' :
+                                        (captainUsedInGw && !isCapChecked) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>' : ''}
                                 </div>
                             </label>
                             
                             <!-- 🌟 زر الجوكر 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="triple" onclick="playSound('captain')" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
-                                <div class="flex-1 flex justify-between items-center"><span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded">' + usedText + '</span>' : ''}</div>
+                                <div class="flex-1 flex justify-between items-center">
+                                    <span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> 
+                                    ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 shadow-inner"><i class="fa-solid fa-lock"></i> ' + usedText + '</span>' : ''}
+                                </div>
                             </label>
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
