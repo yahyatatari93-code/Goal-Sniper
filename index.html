@@ -2177,23 +2177,23 @@ function ruleRow(text, points, colorType) {
             const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
             const isEffectiveCaptain = (activeMatchModal.id === activeCapId);
             
-            // 🌟 التعديل السحري: هل الكابتن محجوز في مباراة أخرى مقفلة؟ 🌟
+            // 🛡️ حماية الواجهة: فحص إقفال الكابتن والجوكر في مباريات أخرى
             let isCaptainLockedByAnotherMatch = false;
-
             if (!isEffectiveCaptain && activeCapId) {
                 const capMatch = matches.find(m => m.id === activeCapId);
-                // إذا كان الكابتن (صريح أو افتراضي) على مباراة أخرى، وتلك المباراة مقفلة، نمنع النقل!
-                if (capMatch && isMatchLocked(capMatch)) {
-                    isCaptainLockedByAnotherMatch = true;
-                }
-                captainUsedInGw = true; // لكي نعرض له إمكانية "نقل الشارة" إذا لم تكن مقفلة
+                if (capMatch && isMatchLocked(capMatch)) isCaptainLockedByAnotherMatch = true;
             }
-            
+
+            let isTcLockedByAnotherMatch = false;
             Object.entries(userPreds).forEach(([mId, p]) => {
                 if (mId === activeMatchModal.id) return; 
                 const m = matches.find(x => x.id === mId);
                 if (m) {
-                    if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) tcUsedInCurrentHalf = true;
+                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
+                    if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) {
+                        tcUsedInCurrentHalf = true;
+                        if (isMatchLocked(m)) isTcLockedByAnotherMatch = true;
+                    }
                 }
             });
 
@@ -2234,23 +2234,24 @@ function ruleRow(text, points, colorType) {
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
                             
-                            <!-- 🌟 زر الكابتن (محمي من الثغرة) 🌟 -->
+                            <!-- 🌟 زر الكابتن محمي 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${isCaptainLockedByAnotherMatch ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
                                 <div class="flex-1 flex justify-between items-center">
                                     <span class="text-xs font-bold text-amber-400 block">${capText}</span> 
                                     ${isCaptainLockedByAnotherMatch ? 
-                                        '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded shadow-inner border border-rose-500/30"><i class="fa-solid fa-lock"></i> مقفل بمباراة أخرى</span>' :
-                                        (captainUsedInGw && !isCapChecked) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة هنا</span>' : ''}
+                                        '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded shadow-inner border border-rose-500/30"><i class="fa-solid fa-lock"></i> مقفل</span>' :
+                                        (captainUsedInGw && !isCapChecked) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة</span>' : ''}
                                 </div>
                             </label>
                             
-                            <!-- 🌟 زر الجوكر 🌟 -->
+                            <!-- 🌟 زر الجوكر محمي 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="triple" onclick="playSound('captain')" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
                                 <div class="flex-1 flex justify-between items-center">
                                     <span class="text-xs font-bold text-fuchsia-400 block">${tcText}</span> 
-                                    ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 shadow-inner"><i class="fa-solid fa-lock"></i> ' + usedText + '</span>' : ''}
+                                    ${isTcLockedByAnotherMatch && !pred.isTripleCaptain ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 shadow-inner"><i class="fa-solid fa-lock"></i> مقفل</span>' : 
+                                     (tcUsedInCurrentHalf && !pred.isTripleCaptain) ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 shadow-inner"><i class="fa-solid fa-lock"></i> ' + usedText + '</span>' : ''}
                                 </div>
                             </label>
                             
@@ -2288,8 +2289,49 @@ function ruleRow(text, points, colorType) {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
+            // 🚨 حماية الجدار الناري 1: منع الحفظ إذا ترك اللاعب النافذة مفتوحة وأُقفلت المباراة!
+            if (isMatchLocked(activeMatchModal)) {
+                showCustomDialog("عذراً، انتهى الوقت وأُقفلت هذه المباراة!");
+                closeModal();
+                render();
+                return;
+            }
+
             const isCap = (powerup === 'captain');
             const isTC = (powerup === 'triple');
+            const currentGw = Number(activeMatchModal.gw);
+            const userPreds = predictions[currentUser.username] || {};
+
+            // 🚨 حماية الجدار الناري 2: منع سحب الكابتن من مباراة مقفلة (سواء صريح أو افتراضي)
+            const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
+            if (isCap && activeCapId && activeCapId !== activeMatchModal.id) {
+                const capMatch = matches.find(m => m.id === activeCapId);
+                if (capMatch && isMatchLocked(capMatch)) {
+                    showCustomDialog("لا يمكنك سحب شارة الكابتن لأن مباراة الكابتن الحالي قد أُقفلت!");
+                    closeModal();
+                    render();
+                    return;
+                }
+            }
+
+            // 🚨 حماية الجدار الناري 3: منع سحب الجوكر من مباراة مقفلة
+            if (isTC) {
+                let isTcLocked = false;
+                Object.entries(userPreds).forEach(([mId, p]) => {
+                    if (mId !== activeMatchModal.id && p.isTripleCaptain) {
+                        const m = matches.find(x => x.id === mId);
+                        if (m && ((currentGw <= 18 && Number(m.gw) <= 18) || (currentGw >= 19 && Number(m.gw) >= 19))) {
+                            if (isMatchLocked(m)) isTcLocked = true;
+                        }
+                    }
+                });
+                if (isTcLocked) {
+                    showCustomDialog("لا يمكنك سحب الجوكر لأنه مرتبط بمباراة مقفلة!");
+                    closeModal();
+                    render();
+                    return;
+                }
+            }
 
             if (isCap || isTC) {
                 playSound('captain'); 
