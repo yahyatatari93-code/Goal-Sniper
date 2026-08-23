@@ -1521,27 +1521,27 @@ function changeGw(gw) {
                             const displayPoints = isGw ? user.gwSpecificPts : user.totalPts;
                             const ptsColor = idx === 0 ? 'text-amber-400' : (isMonthly ? 'text-blue-400' : (isGw ? 'text-emerald-400' : 'text-amber-400'));
 
-                            return \`
-                                <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all \${rowBorder}">
+                            return `
+                                <div class="p-3.5 rounded-2xl flex items-center justify-between border transition-all ${rowBorder}">
                                     <div class="flex items-center gap-3">
-                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs \${badgeColor}">
-                                            #\${idx + 1}
+                                        <span class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${badgeColor}">
+                                            #${idx + 1}
                                         </span>
                                         <div>
-                                            <h4 class="font-bold text-sm \${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                                                \${user.username} \${isMe ? '(' + (typeof t === 'function' ? t('you') || 'أنت' : 'أنت') + ')' : ''}
-                                                \${(!isMonthly && !isGw) && user.badges.motw ? '<span class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
-                                                \${(!isMonthly && !isGw) && user.badges.sniper ? '<span class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
-                                                \${(!isMonthly && !isGw) && user.badges.giantSlayer ? '<span class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
+                                            <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
+                                                ${user.username} ${isMe ? '(' + (typeof t === 'function' ? t('you') || 'أنت' : 'أنت') + ')' : ''}
+                                                ${(!isMonthly && !isGw) && user.badges.motw ? '<span class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
+                                                ${(!isMonthly && !isGw) && user.badges.sniper ? '<span class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
+                                                ${(!isMonthly && !isGw) && user.badges.giantSlayer ? '<span class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
                                             </h4>
                                         </div>
                                     </div>
-                                    <div class="\${isAr ? 'text-left' : 'text-right'}">
-                                        <span class="text-base font-black \${ptsColor}">\${displayPoints}</span>
-                                        <span class="text-[10px] text-slate-400 block">\${typeof t === 'function' ? t('point') : 'نقطة'}</span>
+                                    <div class="${isAr ? 'text-left' : 'text-right'}">
+                                        <span class="text-base font-black ${ptsColor}">${displayPoints}</span>
+                                        <span class="text-[10px] text-slate-400 block">${typeof t === 'function' ? t('point') : 'نقطة'}</span>
                                     </div>
                                 </div>
-                            \`;
+                            `;
                         }).join('')}
 
                         ${standings.length === 0 ? `
