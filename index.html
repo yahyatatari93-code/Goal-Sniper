@@ -3186,7 +3186,21 @@ async function deleteLeagueByAdmin() {
             window.open(`https://wa.me/${waUsername}?text=${text}`, '_blank');
         }
         
-        function switchTab(tab) { currentTab = tab; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function switchTab(tab) { 
+            currentTab = tab; 
+            
+            // 1. تفريغ الشاشة ووضع علامة تحميل أنيقة لكي لا يتجمد التطبيق
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
+            }
+            
+            // 2. إعطاء المتصفح استراحة (30 ملي ثانية) لرسم الانتقال بنعومة، ثم تشغيل الحسابات الثقيلة
+            setTimeout(() => {
+                render(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }, 30); 
+        }
 
         function renderAuthScreen() {
     // تحديد الاتجاه وأيقونة السهم بناءً على اللغة الحالية
