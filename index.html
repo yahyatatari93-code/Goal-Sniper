@@ -752,8 +752,8 @@ function changeLanguage(langCode) {
         }
 
         // 🌟 محرك حساب ترتيب الجولة (يعزل نقاط الجولة المحددة فقط) 🌟
-        function getGwStandings(gw) {
-            const baseStats = getGlobalStandings();
+        function getGwStandings(gw, leagueFilter = 'EPL') {
+            const baseStats = getGlobalStandings(leagueFilter);
             return baseStats
                 .map(u => ({ ...u, gwSpecificPts: u.gwPoints[gw] || 0 }))
                 .filter(u => u.gwSpecificPts > 0) // تجاهل من لم يسجل أي نقطة في هذه الجولة
@@ -773,7 +773,7 @@ function changeLanguage(langCode) {
         }
 
         // 🌟 محرك حساب الترتيب الشهري 🌟
-        function getMonthlyStandings(month, year) {
+        function getMonthlyStandings(month, year, leagueFilter = 'EPL') {
             const allUsernames = new Set();
             Object.keys(predictions).forEach(u => allUsernames.add(u));
             users.forEach(u => allUsernames.add(u.username));
@@ -783,8 +783,9 @@ function changeLanguage(langCode) {
                 statsMap[username] = { username: username, totalPts: 0, badges: {} }; 
             });
 
-            // 1. استخراج المباريات التي لُعبت في هذا الشهر والسنة فقط
+            // 1. استخراج المباريات التي لُعبت في هذا الشهر والسنة فقط + (فلتر البطولة)
             const monthlyMatches = matches.filter(m => {
+                if ((m.league || 'EPL') !== leagueFilter) return false;
                 const dateStr = formatMatchDate(m.date);
                 if (!dateStr) return false;
                 const parts = dateStr.split('/'); // النتيجة: [DD, MM, YYYY]
@@ -805,7 +806,7 @@ function changeLanguage(langCode) {
                 });
             });
 
-            // 3. حساب النقاط (للمباريات الملعوبة في هذا الشهر فقط)
+            // 3. حساب النقاط
             monthlyMatches.forEach(m => {
                 const isPlayed = m.actualH !== null && m.actualA !== null;
                 if (!isPlayed) return;
@@ -814,19 +815,18 @@ function changeLanguage(langCode) {
                     const p = (predictions[username] || {})[m.id];
                     if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
                         const isEffectiveCaptain = (m.id === userActiveCaptains[username][m.gw]);
-                        const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain);
+                        const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain, leagueFilter);
                         statsMap[username].totalPts += pts;
                     }
                 });
             });
 
-            // 4. ترتيب اللاعبين وتجاهل من يملك (0) نقطة في هذا الشهر
             return Object.values(statsMap)
-                .filter(u => u.totalPts > 0) // نعرض النشطين في الشهر فقط
+                .filter(u => u.totalPts > 0) 
                 .sort((a, b) => b.totalPts - a.totalPts);
         }
         
-        function getGlobalStandings() {
+        function getGlobalStandings(leagueFilter = 'EPL') {
             const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
             const prevGw = activeGw > 1 ? activeGw - 1 : 1;
 
@@ -842,7 +842,7 @@ function changeLanguage(langCode) {
                 }; 
             });
 
-            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب في كل جولة
+            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب
             const userActiveCaptains = {};
             allUsernames.forEach(username => {
                 userActiveCaptains[username] = {};
@@ -851,7 +851,10 @@ function changeLanguage(langCode) {
                 }
             });
 
-            matches.forEach(m => {
+            // 🌟 فلترة المباريات حسب البطولة المطلوبة 🌟
+            const filteredMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
+
+            filteredMatches.forEach(m => {
                 const isPlayed = m.actualH !== null && m.actualA !== null;
                 allUsernames.forEach(username => {
                     const p = (predictions[username] || {})[m.id];
@@ -861,9 +864,8 @@ function changeLanguage(langCode) {
                         if (isPlayed) {
                             userStats.playedMatches++;
                             
-                            // 🌟 استخدام الكابتن الفعلي لحساب النقاط
                             const isEffectiveCaptain = (m.id === userActiveCaptains[username][m.gw]);
-                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain);
+                            const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain, leagueFilter);
                             
                             userStats.totalPts += pts;
                             
@@ -879,8 +881,16 @@ function changeLanguage(langCode) {
                                 if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
                             }
 
-                            const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
-                            const bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
+                            // منطق وسام "قاهر العمالقة" يعمل للبطولتين!
+                            let bigLost = false;
+                            if (leagueFilter === 'EPL') {
+                                const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
+                                bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
+                            } else {
+                                const tH = TEAMS.find(t => t.code === m.home), tA = TEAMS.find(t => t.code === m.away);
+                                const lH = tH && tH.uclLevel ? tH.uclLevel : 2, lA = tA && tA.uclLevel ? tA.uclLevel : 2;
+                                bigLost = (lH < lA && m.actualH < m.actualA) || (lA < lH && m.actualA < m.actualH);
+                            }
                             if (Number(m.gw) === prevGw && bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
                         }
                     }
@@ -909,11 +919,11 @@ function changeLanguage(langCode) {
         function getLeagueStandings(leagueCode, baseStats) {
             const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
             
-            // 🌟 التعديل السحري: البحث عن آخر جولة "مكتملة 100%" 🌟
             let lastCompletedGw = null;
             for (let g = activeGw; g >= 1; g--) {
-                const gwMatches = matches.filter(m => Number(m.gw) === g);
-                // الجولة تعتبر مكتملة فقط إذا كان "كل" مبارياتها تحتوي على نتيجة حقيقية
+                // 🛑 فلترة مباريات الدوري الإنجليزي فقط لضمان النزاهة 🛑
+                const gwMatches = matches.filter(m => Number(m.gw) === g && (m.league || 'EPL') === 'EPL');
+                
                 if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
                     lastCompletedGw = g;
                     break;
@@ -923,7 +933,6 @@ function changeLanguage(langCode) {
             const league = miniLeagues.find(l => l.code === leagueCode);
             if (!league) return null;
 
-            // نعرض دائماً نقاط الجولة النشطة للمستخدم في الجدول (حتى لو كانت تلعب الآن)
             let displayGw = activeGw;
 
             let leagueMembers = baseStats
@@ -946,16 +955,12 @@ function changeLanguage(langCode) {
                 const penalty = shot.points_deducted || shot.pointsDeducted || 0; 
                 if (victim) victim.mlTotalPts -= penalty;
 
-                // الحصانة تعتمد على القنص الذي حدث في الجولة السابقة للمكتملة
                 if (shot.gw === lastCompletedGw - 1) victimsLastGw.add(shot.victim);
-
-                // من قنص في الجولة المكتملة الحالية؟
                 if (shot.gw === lastCompletedGw) snipersThisGw.add(shot.sniper);
             });
 
             leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
 
-            // 🌟 تحديد المتصدرين لإعطائهم الرصاصة بناءً على الجولة المكتملة "فقط" 🌟
             let topScorers = [];
             let sniperPenalty = 0;
             let sniperEligibilityGw = lastCompletedGw;
@@ -980,7 +985,7 @@ function changeLanguage(langCode) {
                 victimsLastGw,
                 snipersThisGw,
                 activeGw: displayGw,
-                sniperEligibilityGw // الجولة التي سيتم تسجيل الرصاصة باسمها
+                sniperEligibilityGw 
             };
         }
 
