@@ -1529,7 +1529,8 @@ function changeGw(gw) {
                                         </span>
                                         <div>
                                             <h4 class="font-bold text-sm ${isMe ? 'text-blue-300' : 'text-slate-100'} flex items-center gap-1.5">
-                                                ${user.username} ${isMe ? '(' + (typeof t === 'function' ? t('you') || 'أنت' : 'أنت') + ')' : ''}
+                                                ${isMe ? user.username : `<button onclick="openComparison('${user.username}')" class="hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none text-left md:text-right" title="${isAr ? 'كشف الأوراق والمقارنة' : 'Compare'}">${user.username}</button>`}
+                                                ${isMe ? '(' + (typeof t === 'function' ? t('you') || 'أنت' : 'أنت') + ')' : ''}
                                                 ${(!isMonthly && !isGw) && user.badges.motw ? '<span class="text-amber-400"><i class="fa-solid fa-fire"></i></span>' : ''}
                                                 ${(!isMonthly && !isGw) && user.badges.sniper ? '<span class="text-emerald-400"><i class="fa-solid fa-crosshairs"></i></span>' : ''}
                                                 ${(!isMonthly && !isGw) && user.badges.giantSlayer ? '<span class="text-rose-400"><i class="fa-solid fa-shield-halved"></i></span>' : ''}
@@ -1633,7 +1634,10 @@ function renderMiniLeaguesTab() {
                                                 <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs ${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
                                             </td>
                                             <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2">
-                                                <span class="font-bold text-[12px] ${isMe ? 'text-blue-300' : 'text-slate-200'}">${mem.username}</span>
+                                                ${isMe ? 
+                                                    `<span class="font-bold text-[12px] text-blue-300">${mem.username}</span>` : 
+                                                    `<button onclick="openComparison('${mem.username}')" class="font-bold text-[12px] text-slate-200 hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none" title="${isAr ? 'كشف الأوراق' : 'Compare'}">${mem.username}</button>`
+                                                }
                                                 ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] ml-1"></i>' : ''}
                                             </td>
                                             <td class="py-2.5">
@@ -2211,6 +2215,181 @@ function ruleRow(text, points, colorType) {
     `;
 }
 
+        // 🌟 متغيرات ودوال المقارنة (Head-to-Head) 🌟
+        let comparisonUser = null;
+        let comparisonGw = null;
+
+        function getCompletedGws() {
+            const completed = [];
+            for (let g = 1; g <= 38; g++) {
+                const gwMatches = matches.filter(m => Number(m.gw) === g);
+                // الجولة تضاف للقائمة فقط إذا كان لها مباريات، وكل مبارياتها تمتلك نتيجة حقيقية مسجلة
+                if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                    completed.push(g);
+                }
+            }
+            return completed;
+        }
+
+        function openComparison(otherUser) {
+            if (!currentUser || otherUser === currentUser.username) return; // منع مقارنة اللاعب بنفسه
+            const compGws = getCompletedGws();
+            if (compGws.length === 0) {
+                showCustomDialog("لا توجد جولات مكتملة حتى الآن. المراقبة والمقارنة تُفتح فقط بعد إطلاق صافرة النهاية لآخر مباراة في الجولة لضمان النزاهة!", "alert");
+                return;
+            }
+            comparisonUser = otherUser;
+            comparisonGw = compGws[compGws.length - 1]; // فتح المقارنة على آخر جولة مكتملة افتراضياً
+            renderComparisonModal();
+        }
+
+        function closeComparison() {
+            comparisonUser = null;
+            document.getElementById('dialog-container').innerHTML = '';
+        }
+
+        function changeComparisonGw(gw) {
+            comparisonGw = Number(gw);
+            renderComparisonModal();
+        }
+
+        function renderComparisonModal() {
+            if (!comparisonUser) return;
+            const container = document.getElementById('dialog-container');
+            
+            const compGws = getCompletedGws();
+            const gwMatches = matches.filter(m => Number(m.gw) === comparisonGw).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+
+            const myPreds = predictions[currentUser.username] || {};
+            const theirPreds = predictions[comparisonUser] || {};
+
+            let myTotalPts = 0;
+            let theirTotalPts = 0;
+
+            const myCapId = getActiveCaptainId(currentUser.username, comparisonGw);
+            const theirCapId = getActiveCaptainId(comparisonUser, comparisonGw);
+
+            const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
+            const isAr = direction === 'rtl';
+
+            let html = `
+                <div class="fixed inset-0 z-[80] bg-[#060b19]/95 backdrop-blur-xl flex flex-col p-2 md:p-4 animate-fade-up" dir="${direction}">
+                    <!-- Header -->
+                    <div class="glass p-4 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 shadow-lg border-blue-500/30 mt-2 md:mt-0">
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between">
+                            <button onclick="closeComparison()" class="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/30 shrink-0">
+                                <i class="fa-solid fa-arrow-${isAr ? 'right' : 'left'}"></i>
+                            </button>
+                            <h2 class="text-base md:text-lg font-black text-white flex items-center gap-2">
+                                <i class="fa-solid fa-code-compare text-blue-400"></i> ${isAr ? 'كشف الأوراق والمقارنة' : 'Head-to-Head'}
+                            </h2>
+                        </div>
+
+                        <div class="flex bg-slate-900/80 rounded-xl p-1 w-full md:w-auto border border-white/10 relative">
+                            <select onchange="changeComparisonGw(this.value)" class="w-full bg-transparent pl-4 pr-10 py-2 text-sm text-blue-400 font-black outline-none appearance-none cursor-pointer text-center">
+                                ${compGws.map(g => `<option value="${g}" ${g === comparisonGw ? 'selected' : ''}>${isAr ? 'الجولة' : 'GW'} ${g}</option>`).join('')}
+                            </select>
+                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+
+                    <!-- Scoreboard Header -->
+                    <div class="flex justify-between items-center mt-4 glass p-4 rounded-3xl shrink-0 border-white/5 shadow-inner bg-slate-900/40">
+                        <div class="flex-1 text-center border-r border-white/10 ${isAr ? 'border-r-0 border-l' : ''}">
+                            <span class="text-[10px] text-emerald-400 font-bold block mb-1">${isAr ? 'أنت' : 'You'}</span>
+                            <span class="text-sm md:text-base font-black text-white truncate block px-2">${currentUser.username}</span>
+                            <span class="text-2xl md:text-3xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" id="comp-my-total">0</span>
+                        </div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-800 flex items-center justify-center font-black text-slate-400 text-xs md:text-sm border border-white/5 shadow-inner shrink-0 mx-2">VS</div>
+                        <div class="flex-1 text-center border-l border-white/10 ${isAr ? 'border-l-0 border-r' : ''}">
+                            <span class="text-[10px] text-amber-400 font-bold block mb-1">${isAr ? 'الخصم' : 'Opponent'}</span>
+                            <span class="text-sm md:text-base font-black text-white truncate block px-2">${comparisonUser}</span>
+                            <span class="text-2xl md:text-3xl font-black text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" id="comp-their-total">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Matches List -->
+                    <div class="flex-1 overflow-y-auto hide-scrollbar mt-4 space-y-3 pb-6">
+            `;
+
+            gwMatches.forEach(m => {
+                const myP = myPreds[m.id] || {home: '', away: '', isCaptain: false, isTripleCaptain: false};
+                const theirP = theirPreds[m.id] || {home: '', away: '', isCaptain: false, isTripleCaptain: false};
+
+                const myHasPred = myP.home !== '' && myP.away !== '' && myP.home !== null && myP.away !== null;
+                const theirHasPred = theirP.home !== '' && theirP.away !== '' && theirP.home !== null && theirP.away !== null;
+
+                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, m.id === myCapId, myP.isTripleCaptain);
+                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, m.id === theirCapId, theirP.isTripleCaptain);
+
+                myTotalPts += myPts;
+                theirTotalPts += theirPts;
+
+                const actualScore = `${m.actualH} - ${m.actualA}`;
+                const visualActualScore = isAr ? `${m.actualA} - ${m.actualH}` : actualScore;
+
+                const myVisualPred = myHasPred ? (isAr ? `${myP.away} - ${myP.home}` : `${myP.home} - ${myP.away}`) : '-';
+                const theirVisualPred = theirHasPred ? (isAr ? `${theirP.away} - ${theirP.home}` : `${theirP.home} - ${theirP.away}`) : '-';
+
+                const myPower = myP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md ml-1 font-black shadow-lg">x3</span>' : (m.id === myCapId ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md ml-1 font-black shadow-lg">C</span>' : '');
+                const theirPower = theirP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md mr-1 font-black shadow-lg">x3</span>' : (m.id === theirCapId ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md mr-1 font-black shadow-lg">C</span>' : '');
+
+                const myPtsColor = myPts >= 3 ? 'text-emerald-400' : (myPts > 0 ? 'text-yellow-400' : 'text-slate-500');
+                const theirPtsColor = theirPts >= 3 ? 'text-emerald-400' : (theirPts > 0 ? 'text-yellow-400' : 'text-slate-500');
+
+                html += `
+                    <div class="bg-slate-900/60 rounded-2xl border border-white/5 p-3 flex flex-col relative overflow-hidden transition-all hover:bg-slate-800/60">
+                        <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-2">
+                            <div class="flex items-center gap-1.5 flex-1">
+                                <img src="${getTeamLogo(m.home)}" class="w-5 h-5 object-contain drop-shadow-md" />
+                                <span class="text-[10px] md:text-xs font-bold text-slate-300 truncate">${getTeamName(m.home)}</span>
+                            </div>
+                            <div class="bg-slate-950 px-2 py-0.5 rounded-lg border border-white/10 text-xs font-black text-white shrink-0 shadow-inner tracking-widest" dir="ltr">
+                                ${visualActualScore}
+                            </div>
+                            <div class="flex items-center gap-1.5 flex-1 justify-end flex-row-reverse">
+                                <img src="${getTeamLogo(m.away)}" class="w-5 h-5 object-contain drop-shadow-md" />
+                                <span class="text-[10px] md:text-xs font-bold text-slate-300 truncate">${getTeamName(m.away)}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-1">
+                            <!-- أنا -->
+                            <div class="flex-1 text-center bg-emerald-950/20 rounded-xl p-2 border border-emerald-500/10 flex flex-col items-center justify-center">
+                                <div class="flex items-center justify-center mb-1">
+                                    ${myPower}
+                                    <span class="text-sm md:text-base font-black text-slate-200 tracking-widest" dir="ltr">${myVisualPred}</span>
+                                </div>
+                                <span class="block text-[10px] font-bold ${myPtsColor}">${myPts} ${isAr ? 'نقطة' : 'pt'}</span>
+                            </div>
+                            
+                            <div class="w-6 shrink-0 text-center text-slate-600 text-[10px]"><i class="fa-solid fa-arrows-left-right"></i></div>
+                            
+                            <!-- الخصم -->
+                            <div class="flex-1 text-center bg-amber-950/20 rounded-xl p-2 border border-amber-500/10 flex flex-col items-center justify-center">
+                                <div class="flex items-center justify-center mb-1 flex-row-reverse">
+                                    ${theirPower}
+                                    <span class="text-sm md:text-base font-black text-slate-200 tracking-widest" dir="ltr">${theirVisualPred}</span>
+                                </div>
+                                <span class="block text-[10px] font-bold ${theirPtsColor}">${theirPts} ${isAr ? 'نقطة' : 'pt'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            
+            // تحديث المجاميع بتأثير بصري بسيط
+            document.getElementById('comp-my-total').innerText = myTotalPts;
+            document.getElementById('comp-their-total').innerText = theirTotalPts;
+        }
+        
         function openModal(matchId) { activeMatchModal = matches.find(m => m.id === matchId); renderModal(); }
         function closeModal() { activeMatchModal = null; renderModal(); }
 
