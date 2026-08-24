@@ -1264,7 +1264,7 @@ function isMatchLocked(match) {
                             let badge = '';
                             if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
                                 // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
-                                let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain);
+                            let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');
                                 
                                 if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                 else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -1461,7 +1461,7 @@ function changeGw(gw) {
                                 let badge = '';
                                 if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
                                     // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
-                                    let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain);
+                                    let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');
                                     
                                     if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                     else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -2271,24 +2271,35 @@ function ruleRow(text, points, colorType) {
                 <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة يدوية</h2>
                 
                 <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- الحقل الجديد: اختيار البطولة -->
+                        <div class="md:col-span-3">
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5">البطولة</label>
+                            <select id="adm-league" required class="w-full bg-slate-950 border border-blue-500/30 rounded-xl p-2.5 text-sm text-blue-400 font-bold outline-none">
+                                <option value="EPL">الدوري الإنجليزي (EPL)</option>
+                                <option value="UCL">دوري أبطال أوروبا (UCL)</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-1">
                             <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
                             <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
                                 <option value="" disabled selected>-- اختر الفريق المضيف --</option>
                                 ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
                             </select>
                         </div>
-                        <div>
+                        <div class="md:col-span-1">
                             <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
                             <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
                                 <option value="" disabled selected>-- اختر الفريق الضيف --</option>
                                 ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
                             </select>
                         </div>
+                        <div class="md:col-span-1">
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة</label>
+                            <input type="number" id="adm-gw" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white" />
+                        </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-3">
-                        <div><label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة</label><input type="number" id="adm-gw" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
+                    <div class="grid grid-cols-2 gap-3">
                         <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label><input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
                         <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label><input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
                     </div>
@@ -2579,7 +2590,7 @@ function ruleRow(text, points, colorType) {
                 }
             });
 
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain);
+            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL');
 
             const matchPredTitle = typeof t === 'function' ? t('matchPrediction') : 'توقع نتيجة المباراة';
             const vsText = typeof t === 'function' ? t('vs') : 'ضد';
@@ -2661,7 +2672,7 @@ function ruleRow(text, points, colorType) {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             // نحسب النقاط بافتراض أن النتيجة الفعلية جاءت مطابقة تماماً (h, a, h, a)
-            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple');
+            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL');
             if (h === '' || a === '') possiblePts = 0;
             document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
         }
@@ -2829,6 +2840,7 @@ function ruleRow(text, points, colorType) {
             const gw = document.getElementById('adm-gw').value, home = document.getElementById('adm-home').value;
             const away = document.getElementById('adm-away').value, dateInput = document.getElementById('adm-date').value;
             const timeInput = document.getElementById('adm-time').value;
+            const league = document.getElementById('adm-league').value; // جلب البطولة
             if(!gw || !home || !away || !dateInput || !timeInput) return;
 
             const formattedDate = dateInput.replace(/-/g, '/');
@@ -2839,7 +2851,8 @@ function ruleRow(text, points, colorType) {
             try {
                 await fetch(`${API_BASE_URL}/admin/match`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime})
+                    // إرسال نوع البطولة إلى قاعدة البيانات
+                    body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime, league: league})
                 });
                 showCustomDialog(`تمت إضافة المباراة بنجاح!`);
                 await syncData(); render();
