@@ -1546,12 +1546,27 @@ function changeGw(gw) {
             const isGw = standingsViewMode === 'gw'; // إضافة وضع الجولة
             
             let standings = [];
+            // تمرير البطولة المحددة (activeStandingsLeague) لمحركات الحساب
             if (isMonthly && selectedStandingsMonth) {
-                standings = getMonthlyStandings(selectedStandingsMonth, selectedStandingsYear);
+                standings = getMonthlyStandings(selectedStandingsMonth, selectedStandingsYear, activeStandingsLeague);
             } else if (isGw && selectedStandingsGw) {
-                standings = getGwStandings(selectedStandingsGw);
+                standings = getGwStandings(selectedStandingsGw, activeStandingsLeague);
             } else {
-                standings = getGlobalStandings();
+                standings = getGlobalStandings(activeStandingsLeague);
+            }
+
+            // أزرار تبديل البطولات (تظهر فقط إذا كان المفتاح السري مفعلاً)
+            let leagueSwitcher = '';
+            if (typeof isUclVisible === 'function' && isUclVisible()) {
+                leagueSwitcher = `
+                <div class="flex gap-2 mb-1 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                    <button onclick="setStandingsLeague('EPL')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${activeStandingsLeague === 'EPL' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
+                        <i class="fa-solid fa-trophy"></i> ${isAr ? 'الدوري الإنجليزي' : 'Premier League'}
+                    </button>
+                    <button onclick="setStandingsLeague('UCL')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${activeStandingsLeague === 'UCL' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'text-slate-400 hover:text-white'}">
+                        <i class="fa-solid fa-star"></i> ${isAr ? 'أبطال أوروبا' : 'Champions League'}
+                    </button>
+                </div>`;
             }
 
             const monthNames = {
@@ -1567,9 +1582,9 @@ function changeGw(gw) {
             if (isMonthly) { headerTitle = isAr ? 'ترتيب الشهر' : 'Monthly Rank'; headerIconColor = 'text-blue-400'; }
             if (isGw) { headerTitle = isAr ? 'بطل الجولة' : 'GW Hero'; headerIconColor = 'text-emerald-400'; }
 
-            return `
+           return `
                 <div class="glass p-4 md:p-6 rounded-3xl space-y-4" dir="${direction}">
-                    
+                    ${leagueSwitcher}
                     <div class="flex flex-col gap-4 border-b border-white/10 pb-4">
                         <div class="flex justify-between items-center">
                             <h2 class="text-lg font-bold flex items-center gap-2">
