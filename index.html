@@ -581,8 +581,20 @@ function changeLanguage(langCode) {
         let sniperShots = [];
         let activeMatchesLeague = 'EPL';
         let activeStandingsLeague = 'EPL';
-        function setMatchesLeague(league) { activeMatchesLeague = league; render(); }
-        function setStandingsLeague(league) { activeStandingsLeague = league; render(); }
+
+        function setMatchesLeague(league) { 
+            activeMatchesLeague = league; 
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
+            setTimeout(() => { render(); }, 30); 
+        }
+
+        function setStandingsLeague(league) { 
+            activeStandingsLeague = league; 
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
+            setTimeout(() => { render(); }, 30); 
+        }
         
         // مفتاح الإطلاق الخفي لدوري الأبطال
         const ENABLE_UCL_GLOBALLY = false; 
@@ -766,7 +778,9 @@ function changeLanguage(langCode) {
 
         function toggleStandingsMode(mode) { 
             standingsViewMode = mode; 
-            render(); 
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
+            setTimeout(() => { render(); }, 30); 
         }
 
         function changeStandingsMonth(val) {
