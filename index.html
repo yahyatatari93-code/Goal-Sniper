@@ -654,20 +654,59 @@ function changeLanguage(langCode) {
 }
 
         
-        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false) => {
+        const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false, matchLeague = 'EPL') => {
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
             const ph = Number(predH), pa = Number(predA);
-            const homeIsBig = BIG_TEAMS.includes(homeCode), awayIsBig = BIG_TEAMS.includes(awayCode);
             let ah = actualH !== null ? Number(actualH) : ph;
             let aa = actualA !== null ? Number(actualA) : pa;
 
             const isExact = (ph === ah && pa === aa);
             const isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
             const isDraw = (ah === aa);
-            const totalGoals = ah + aa;
-
+            
             let pts = 0;
-            if (isOutcomeCorrect || isExact) {
+
+            // 🛑 إذا كان التوقع خاطئاً بالكامل، لا داعي للحساب
+            if (!isOutcomeCorrect && !isExact) return 0;
+
+            // 🌟 1. نظام نقاط دوري أبطال أوروبا (صراع المستويات) 🌟
+            if (matchLeague === 'UCL') {
+                const tH = TEAMS.find(t => t.code === homeCode);
+                const tA = TEAMS.find(t => t.code === awayCode);
+                // جلب المستويات (لو حدث خطأ ولم يوجد مستوى، نعتبره 2 احتياطياً)
+                const lH = tH && tH.uclLevel ? tH.uclLevel : 2; 
+                const lA = tA && tA.uclLevel ? tA.uclLevel : 2;
+
+                const levelDiff = Math.abs(lH - lA);
+
+                if (isDraw) {
+                    if (levelDiff === 0) pts = isExact ? 5 : 3;
+                    else if (levelDiff === 1) pts = isExact ? 4 : 2;
+                    else pts = isExact ? 5 : 3; // تعادل مفاجئ جداً بين مستويات متباعدة
+                } else {
+                    const homeWon = ah > aa;
+                    const winnerLevel = homeWon ? lH : lA;
+                    const loserLevel = homeWon ? lA : lH;
+
+                    if (winnerLevel === loserLevel) {
+                        // متكافئين (نفس المستوى)
+                        pts = isExact ? 5 : 3;
+                    } else if (winnerLevel < loserLevel) {
+                        // المنطق السائد (الأقوى تصنيفاً فاز) - تذكر: الرقم الأصغر يعني مستوى أقوى
+                        pts = isExact ? 3 : 1;
+                    } else {
+                        // مفاجأة (الأضعف تصنيفاً فاز)
+                        const upsetDiff = winnerLevel - loserLevel;
+                        if (upsetDiff === 1) pts = isExact ? 5 : 3; // مفاجأة عادية
+                        else pts = isExact ? 7 : 4; // قاهر أوروبا (مفاجأة كبرى بمستويين أو 3)
+                    }
+                }
+            } 
+            // ⚽ 2. نظام نقاط الدوري الإنجليزي (الكلاسيكي) ⚽
+            else {
+                const homeIsBig = BIG_TEAMS.includes(homeCode), awayIsBig = BIG_TEAMS.includes(awayCode);
+                const totalGoals = ah + aa;
+
                 if (!homeIsBig && !awayIsBig) {
                     if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 5 : (isDraw ? 3 : 3);
                     else if (isOutcomeCorrect) pts = 1;
@@ -683,6 +722,7 @@ function changeLanguage(langCode) {
                 }
             }
 
+            // مضاعفات الكابتن والجوكر تطبق على كلا البطولتين
             if (isTripleCaptain) return pts * 3; 
             if (isCaptain) return pts * 2; 
             return pts;
