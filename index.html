@@ -579,7 +579,11 @@ function changeLanguage(langCode) {
         };
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
         let sniperShots = [];
-
+        let activeMatchesLeague = 'EPL';
+        let activeStandingsLeague = 'EPL';
+        function setMatchesLeague(league) { activeMatchesLeague = league; render(); }
+        function setStandingsLeague(league) { activeStandingsLeague = league; render(); }
+        
         // مفتاح الإطلاق الخفي لدوري الأبطال
         const ENABLE_UCL_GLOBALLY = false; 
         function isUclVisible() {
@@ -1345,7 +1349,8 @@ function changeGw(gw) {
         }
         const activeGw = selectedMatchesGw;
 
-        let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
+        // فلترة المباريات حسب الجولة والبطولة المحددة
+        let gwMatches = matches.filter(m => Number(m.gw) === activeGw && (m.league || 'EPL') === activeMatchesLeague);
         gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
 
         const prevText = isAr ? 'السابق' : 'Prev';
@@ -1353,8 +1358,23 @@ function changeGw(gw) {
         const gwText = typeof t === 'function' ? t('gw') : 'الجولة';
         const matchupsText = typeof t === 'function' ? t('matchups') : 'مواجهات';
 
+        // أزرار تبديل البطولات (تظهر فقط إذا كان المفتاح السري مفعلاً)
+        let leagueSwitcher = '';
+        if (typeof isUclVisible === 'function' && isUclVisible()) {
+            leagueSwitcher = `
+            <div class="flex gap-2 mb-1 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                <button onclick="setMatchesLeague('EPL')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeMatchesLeague === 'EPL' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
+                    <i class="fa-solid fa-trophy"></i> ${isAr ? 'الدوري الإنجليزي' : 'Premier League'}
+                </button>
+                <button onclick="setMatchesLeague('UCL')" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeMatchesLeague === 'UCL' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'text-slate-400 hover:text-white'}">
+                    <i class="fa-solid fa-star"></i> ${isAr ? 'أبطال أوروبا' : 'Champions League'}
+                </button>
+            </div>`;
+        }
+
         return `
             <div class="space-y-6" dir="${direction}">
+                ${leagueSwitcher}
                 <div class="glass p-4 rounded-2xl flex justify-between items-center">
                     <h2 class="text-lg font-bold flex items-center gap-2">
                         <i class="fa-solid fa-calendar-days text-blue-400"></i> ${typeof t === 'function' ? t('fixtures') : 'المباريات'}
@@ -1656,7 +1676,7 @@ function changeGw(gw) {
 
 function renderMiniLeaguesTab() {
     const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
-    const baseStats = getGlobalStandings();
+    const baseStats = getGlobalStandings('EPL'); // تأمين الدوري الإنجليزي حصراً 
     const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
     const isAr = direction === 'rtl';
     
