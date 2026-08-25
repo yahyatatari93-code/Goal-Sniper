@@ -1873,10 +1873,16 @@ function renderMiniLeaguesTab() {
                                             <td class="py-2.5">
                                                 <span class="bg-emerald-900/20 text-emerald-400 font-bold px-2 py-1 rounded text-xs">${mem.mlGwPts}</span>
                                             </td>
+                                            <!-- 🌟 عمود نقاط الجولة (تم توحيد حجم المربع بـ w-10 ليستوعب 3 خانات مستقبلاً) -->
+                                            <td class="py-2.5 text-center">
+                                                <span class="bg-emerald-900/20 text-emerald-400 font-bold w-10 py-1 rounded text-xs inline-block text-center">${mem.mlGwPts}</span>
+                                            </td>
+                                            
+                                            <!-- 🌟 عمود النقاط الكلية (مربع ثابت الحجم w-10 والدرع يطفو بجانبه) -->
                                             <td class="py-2.5 text-center">
                                                 <div class="relative inline-flex items-center justify-center">
-                                                    <span class="bg-amber-900/20 text-amber-400 font-black px-2 py-1 rounded text-xs border border-amber-500/20 shadow-inner">${mem.mlTotalPts}</span>
-                                                    <!-- 🌟 الدرع يطفو على اليسار دون إزاحة المربع الأساسي -->
+                                                    <span class="bg-amber-900/20 text-amber-400 font-black w-10 py-1 rounded text-xs border border-amber-500/20 shadow-inner inline-block text-center">${mem.mlTotalPts}</span>
+                                                    <!-- الدرع يطفو على اليسار دون إزاحة المربع الأساسي -->
                                                     ${leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px] absolute top-1/2 -translate-y-1/2 -left-4 md:-left-5" title="محمي من القنص الجولة القادمة"></i>` : ''}
                                                 </div>
                                             </td>
