@@ -1715,24 +1715,28 @@ function changeGw(gw) {
                             ${(() => {
                                 const isUCL = activeStandingsLeague === 'UCL';
                                 const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
+                                const bColor = isUCL ? 'border-purple-500/30 text-purple-400 focus:border-purple-500' : 'border-emerald-500/30 text-emerald-400 focus:border-emerald-500';
+                                const iColor = isUCL ? 'text-purple-500/50' : 'text-emerald-500/50';
+                                const iPos = isAr ? 'left-4' : 'right-4';
                                 
-                                return `
-                                <select onchange="changeStandingsGw(this.value)" class="w-full bg-slate-950 border ${isUCL ? 'border-purple-500/30 text-purple-400 focus:border-purple-500' : 'border-emerald-500/30 text-emerald-400 focus:border-emerald-500'} rounded-xl pl-4 pr-10 py-2.5 text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
-                                    ${gwList.map(g => {
-                                        let label = '';
-                                        if (g <= 38) label = (isAr ? 'الجولة ' : 'Gameweek ') + g;
-                                        else if (g >= 101 && g <= 108) label = (isAr ? 'أبطال ' : 'UCL MD ') + (g - 100);
-                                        else if (g === 109) label = isAr ? 'الملحق المؤهل' : 'Play-offs';
-                                        else if (g === 110) label = isAr ? 'دور الـ 16' : 'Round of 16';
-                                        else if (g === 111) label = isAr ? 'ربع النهائي' : 'Quarter-finals';
-                                        else if (g === 112) label = isAr ? 'نصف النهائي' : 'Semi-finals';
-                                        else if (g === 113) label = isAr ? 'النهائي' : 'Final';
-                                        
-                                        return \`<option value="\${g}" \${g === selectedStandingsGw ? 'selected' : ''}>\${label}</option>\`;
-                                    }).join('')}
-                                </select>
-                                <i class="fa-solid fa-sort ${isUCL ? 'text-purple-500/50' : 'text-emerald-500/50'} absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
-                                `;
+                                let selectHtml = '<select onchange="changeStandingsGw(this.value)" class="w-full bg-slate-950 border ' + bColor + ' rounded-xl pl-4 pr-10 py-2.5 text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">';
+                                
+                                selectHtml += gwList.map(g => {
+                                    let label = '';
+                                    if (g <= 38) label = (isAr ? 'الجولة ' : 'Gameweek ') + g;
+                                    else if (g >= 101 && g <= 108) label = (isAr ? 'أبطال ' : 'UCL MD ') + (g - 100);
+                                    else if (g === 109) label = isAr ? 'الملحق المؤهل' : 'Play-offs';
+                                    else if (g === 110) label = isAr ? 'دور الـ 16' : 'Round of 16';
+                                    else if (g === 111) label = isAr ? 'ربع النهائي' : 'Quarter-finals';
+                                    else if (g === 112) label = isAr ? 'نصف النهائي' : 'Semi-finals';
+                                    else if (g === 113) label = isAr ? 'النهائي' : 'Final';
+                                    
+                                    const selected = (g === selectedStandingsGw) ? 'selected' : '';
+                                    return '<option value="' + g + '" ' + selected + '>' + label + '</option>';
+                                }).join('');
+                                
+                                selectHtml += '</select><i class="fa-solid fa-sort ' + iColor + ' absolute top-1/2 -translate-y-1/2 ' + iPos + ' pointer-events-none"></i>';
+                                return selectHtml;
                             })()}
                         </div>
                         ` : ''}
