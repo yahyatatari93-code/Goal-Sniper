@@ -2549,11 +2549,14 @@ function ruleRow(text, points, colorType) {
                         
                         <!-- 🌟 شريط التنقل بين الجولات للإدارة 🌟 -->
                         ${(() => {
-                            const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws() : [1];
-                            if (availableGws.length === 0) availableGws.push(1);
-                            const currentIndex = availableGws.indexOf(activeAdminGw) !== -1 ? availableGws.indexOf(activeAdminGw) : 0;
-                            const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
-                            const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
+                            // للإدارة، يجب إظهار جميع الجولات لكي يتنقل بحرية حتى لو كانت فارغة
+                            const adminGwList = [
+                                ...Array.from({ length: 38 }, (_, i) => i + 1),
+                                101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113
+                            ];
+                            const currentIndex = adminGwList.indexOf(activeAdminGw) !== -1 ? adminGwList.indexOf(activeAdminGw) : 0;
+                            const prevGw = currentIndex > 0 ? adminGwList[currentIndex - 1] : null;
+                            const nextGw = currentIndex < adminGwList.length - 1 ? adminGwList[currentIndex + 1] : null;
                             
                             return `
                             <div class="glass p-2 rounded-xl flex justify-between items-center bg-slate-900/80 mb-4 border border-white/10">
@@ -2563,8 +2566,15 @@ function ruleRow(text, points, colorType) {
                                 
                                 <div class="relative">
                                     <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
-                                        ${availableGws.map(g => {
-                                            const label = g >= 101 ? 'أبطال ' + (g - 100) : 'الجولة ' + g;
+                                        ${adminGwList.map(g => {
+                                            let label = '';
+                                            if (g <= 38) label = 'الجولة ' + g;
+                                            else if (g >= 101 && g <= 108) label = 'أبطال ' + (g - 100);
+                                            else if (g === 109) label = 'الملحق';
+                                            else if (g === 110) label = 'دور الـ 16';
+                                            else if (g === 111) label = 'ربع النهائي';
+                                            else if (g === 112) label = 'نصف النهائي';
+                                            else if (g === 113) label = 'النهائي';
                                             return '<option value="' + g + '" ' + (g === activeAdminGw ? 'selected' : '') + '>' + label + '</option>';
                                         }).join('')}
                                     </select>
