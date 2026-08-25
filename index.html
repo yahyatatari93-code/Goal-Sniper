@@ -1873,11 +1873,11 @@ function renderMiniLeaguesTab() {
                                             <td class="py-2.5">
                                                 <span class="bg-emerald-900/20 text-emerald-400 font-bold px-2 py-1 rounded text-xs">${mem.mlGwPts}</span>
                                             </td>
-                                            <td class="py-2.5">
-                                                <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                            <td class="py-2.5 text-center">
+                                                <div class="relative inline-flex items-center justify-center">
                                                     <span class="bg-amber-900/20 text-amber-400 font-black px-2 py-1 rounded text-xs border border-amber-500/20 shadow-inner">${mem.mlTotalPts}</span>
-                                                    <!-- 🌟 درع الحصانة بجانب النقاط للمقنوص -->
-                                                    ${leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px]" title="محمي من القنص الجولة القادمة"></i>` : ''}
+                                                    <!-- 🌟 الدرع يطفو على اليسار دون إزاحة المربع الأساسي -->
+                                                    ${leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px] absolute top-1/2 -translate-y-1/2 -left-4 md:-left-5" title="محمي من القنص الجولة القادمة"></i>` : ''}
                                                 </div>
                                             </td>
                                             <td class="py-2.5 text-center">
