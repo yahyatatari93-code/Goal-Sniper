@@ -3701,43 +3701,46 @@ async function deleteLeagueByAdmin() {
         };
         
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw) {
-            const confirmShot = confirm(`🎯 تأكيد القنص:\nهل أنت متأكد أنك تريد قنص [ ${victimName} ] وخصم ${penaltyPoints} نقاط منه؟\n\nتذكر: الميزة تستخدم مرة واحدة فقط في الجولة!`);
-            
-            if (!confirmShot) return;
+            // 🎯 استخدام نافذة الحوار الاحترافية بدلاً من رسائل المتصفح البدائية
+            showCustomDialog(
+                `🎯 <b>تأكيد القنص</b><br><br>هل أنت متأكد أنك تريد قنص <span class="text-rose-400 font-bold">[ ${victimName} ]</span> وخصم <span class="text-amber-400 font-bold">${penaltyPoints} نقاط</span> منه؟<br><br><span class="text-[11px] text-slate-400">تذكر: الميزة تستخدم مرة واحدة فقط في الجولة!</span>`,
+                'confirm',
+                async () => {
+                    // 🎵 تشغيل الصوت فوراً بمجرد تأكيد الضربة
+                    playSound('sniper');
 
-            // 🎵 تشغيل الصوت فوراً بمجرد تأكيد الضربة
-            playSound('sniper');
+                    try {
+                        const token = localStorage.getItem('oracle_token_v8');
+                        const headers = { 
+                            'Content-Type': 'application/json', 
+                            'Authorization': `Bearer ${token}` 
+                        };
 
-            try {
-                const token = localStorage.getItem('oracle_token_v8');
-                const headers = { 
-                    'Content-Type': 'application/json', 
-                    'Authorization': `Bearer ${token}` 
-                };
-
-                const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({
-                        leagueCode: leagueCode,
-                        gw: gw,
-                        sniper: currentUser.username,
-                        victim: victimName,
-                        pointsDeducted: penaltyPoints
-                    })
-                });
-               
-                const json = await res.json();
-                if (json.success) {
-                    alert(`🔥 تمت العملية بنجاح!\nتم إرسال رصاصة القناص نحو ${victimName}.`);
-                    await syncData(); 
-                    render(); 
-                } else {
-                    alert(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
+                        const res = await fetch(`${API_BASE_URL}/sniper/shoot`, {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                leagueCode: leagueCode,
+                                gw: gw,
+                                sniper: currentUser.username,
+                                victim: victimName,
+                                pointsDeducted: penaltyPoints
+                            })
+                        });
+                       
+                        const json = await res.json();
+                        if (json.success) {
+                            showCustomDialog(`🔥 <b>تمت العملية بنجاح!</b><br><br>تم إرسال رصاصة القناص نحو <span class="text-emerald-400 font-bold">${victimName}</span> بدقة.`);
+                            await syncData(); 
+                            render(); 
+                        } else {
+                            showCustomDialog(json.message || "⚠️ فشلت عملية القنص، ربما استخدمته مسبقاً!");
+                        }
+                    } catch (e) {
+                        showCustomDialog("❌ لا يمكن الاتصال بالسيرفر حالياً. جرب لاحقاً.");
+                    }
                 }
-            } catch (e) {
-                alert("❌ لا يمكن الاتصال بالسيرفر حالياً. جرب لاحقاً.");
-            }
+            );
         }
     </script>
 </body>
