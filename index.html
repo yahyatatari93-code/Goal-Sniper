@@ -2380,8 +2380,7 @@ function ruleRow(text, points, colorType) {
                 <div class="space-y-6 max-w-2xl mx-auto pb-10" dir="rtl">
                     
                     <!-- ========================================== -->
-                    <!-- 0. قسم الإحصائيات التحليلية (رادار الجولة) -->
-                    <!-- ========================================== -->
+                    <!-- 0. رادار الإحصائيات -->
                     <div class="glass p-5 rounded-3xl space-y-4 border border-blue-500/30 bg-gradient-to-br from-[#0a0f1c] to-blue-950/40 relative overflow-hidden shadow-lg shadow-blue-900/20">
                         <div class="absolute -left-4 -top-4 text-6xl text-blue-500/10"><i class="fa-solid fa-chart-pie"></i></div>
                         <div class="flex items-center justify-between border-b border-blue-500/30 pb-3 relative z-10">
@@ -2393,45 +2392,54 @@ function ruleRow(text, points, colorType) {
                         </div>
                         
                         <div class="space-y-4 relative z-10">
-                            <!-- التوقع الدقيق -->
-                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
-                                <div class="w-12 h-12 shrink-0 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30 shadow-inner"><i class="fa-solid fa-crosshairs"></i></div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-xs text-slate-400 font-bold mb-1.5">المباراة الأسهل (أعلى دقة رقمية)</div>
-                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                            <!-- 1. التوقع الدقيق -->
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex justify-between items-start gap-3 hover:bg-slate-800/80 transition-all shadow-md relative">
+                                <div class="flex-1 min-w-0 pr-1">
+                                    <div class="text-xs font-black text-slate-200">المباراة الأسهل</div>
+                                    <div class="text-[10px] text-slate-400 font-bold mt-0.5 mb-3">(أعلى دقة رقمية)</div>
+                                    <div class="text-xs font-black text-slate-100 whitespace-nowrap overflow-x-visible">
                                         ${bestExactMatch ? getTeamName(bestExactMatch.home) + ' <span class="text-emerald-500 mx-1">VS</span> ' + getTeamName(bestExactMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
-                                    <span class="block text-2xl font-black text-emerald-400 drop-shadow-md" dir="ltr">${maxExactPct >= 0 ? maxExactPct.toFixed(1) : 0}%</span>
+                                <div class="flex items-center gap-3 shrink-0 pl-1 border-r border-white/10 pr-3">
+                                    <div class="text-left">
+                                        <span class="block text-2xl font-black text-emerald-400 drop-shadow-md -mt-1" dir="ltr">${maxExactPct >= 0 ? maxExactPct.toFixed(1) : 0}%</span>
+                                    </div>
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/30 shadow-inner"><i class="fa-solid fa-crosshairs"></i></div>
                                 </div>
                             </div>
 
-                            <!-- مخالفة التوقعات -->
-                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
-                                <div class="w-12 h-12 shrink-0 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl border border-rose-500/30 shadow-inner"><i class="fa-solid fa-bolt"></i></div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-xs text-slate-400 font-bold mb-1.5">صدمة الجماهير (مخالفة للتوقعات)</div>
-                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                            <!-- 2. مخالفة التوقعات -->
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex justify-between items-start gap-3 hover:bg-slate-800/80 transition-all shadow-md relative">
+                                <div class="flex-1 min-w-0 pr-1">
+                                    <div class="text-xs font-black text-slate-200">صدمة الجماهير</div>
+                                    <div class="text-[10px] text-slate-400 font-bold mt-0.5 mb-3">(مخالفة للتوقعات)</div>
+                                    <div class="text-xs font-black text-slate-100 whitespace-nowrap overflow-x-visible">
                                         ${mostDefyingMatch ? getTeamName(mostDefyingMatch.home) + ' <span class="text-rose-500 mx-1">VS</span> ' + getTeamName(mostDefyingMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
-                                    <span class="block text-2xl font-black text-rose-400 drop-shadow-md" dir="ltr">${maxWrongPct >= 0 ? maxWrongPct.toFixed(1) : 0}%</span>
+                                <div class="flex items-center gap-3 shrink-0 pl-1 border-r border-white/10 pr-3">
+                                    <div class="text-left">
+                                        <span class="block text-2xl font-black text-rose-400 drop-shadow-md -mt-1" dir="ltr">${maxWrongPct >= 0 ? maxWrongPct.toFixed(1) : 0}%</span>
+                                    </div>
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg border border-rose-500/30 shadow-inner"><i class="fa-solid fa-bolt"></i></div>
                                 </div>
                             </div>
 
-                            <!-- الكابتن -->
-                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
-                                <div class="w-12 h-12 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl border border-amber-500/30 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="text-xs text-slate-400 font-bold mb-1.5">المباراة الموثوقة (الأكثر كبتنة)</div>
-                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                            <!-- 3. الكابتن -->
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex justify-between items-start gap-3 hover:bg-slate-800/80 transition-all shadow-md relative">
+                                <div class="flex-1 min-w-0 pr-1">
+                                    <div class="text-xs font-black text-slate-200">المباراة الموثوقة</div>
+                                    <div class="text-[10px] text-slate-400 font-bold mt-0.5 mb-3">(الأكثر كبتنة)</div>
+                                    <div class="text-xs font-black text-slate-100 whitespace-nowrap overflow-x-visible">
                                         ${mostCaptainedMatch ? getTeamName(mostCaptainedMatch.home) + ' <span class="text-amber-500 mx-1">VS</span> ' + getTeamName(mostCaptainedMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
-                                    <span class="block text-2xl font-black text-amber-400 drop-shadow-md" dir="ltr">${maxCapPct >= 0 ? maxCapPct.toFixed(1) : 0}%</span>
+                                <div class="flex items-center gap-3 shrink-0 pl-1 border-r border-white/10 pr-3">
+                                    <div class="text-left">
+                                        <span class="block text-2xl font-black text-amber-400 drop-shadow-md -mt-1" dir="ltr">${maxCapPct >= 0 ? maxCapPct.toFixed(1) : 0}%</span>
+                                    </div>
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
                                 </div>
                             </div>
                         </div>
