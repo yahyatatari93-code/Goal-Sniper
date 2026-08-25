@@ -1831,11 +1831,11 @@ function renderMiniLeaguesTab() {
                             <table class="w-full text-sm text-center">
                                 <thead>
                                     <tr class="border-b border-white/10 text-[11px] text-slate-400">
-                                        <th class="pb-2 w-8 font-bold">#</th>
+                                        <th class="pb-2 w-8 font-bold text-center">#</th>
                                         <th class="pb-2 text-${isAr ? 'right' : 'left'} font-bold px-2">${typeof t === 'function' ? t('player') : 'القناص'}</th>
-                                        <th class="pb-2 font-bold text-emerald-400 w-16">${typeof t === 'function' ? t('gwPts') : 'نقاط الجولة'}</th>
-                                        <th class="pb-2 font-bold text-amber-400 w-16">${typeof t === 'function' ? t('totalPts') : 'النقاط الكلية'}</th>
-                                        <th class="pb-2 w-12"></th> <!-- عمود للأزرار (قناص/حصانة) -->
+                                        <th class="pb-2 font-bold text-emerald-400 w-16 text-center">${typeof t === 'function' ? t('gwPts') : 'نقاط الجولة'}</th>
+                                        <th class="pb-2 font-bold text-amber-400 w-20 text-center">${typeof t === 'function' ? t('totalPts') : 'النقاط الكلية'}</th>
+                                        <th class="pb-2 w-12 text-center"></th> <!-- عمود زر القنص -->
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1845,7 +1845,7 @@ function renderMiniLeaguesTab() {
                                         // تجهيز زر القناص أو الحصانة
                                         let actionBtn = '';
                                         if (!isMe) {
-                                            if (leagueData.victimsLastGw.has(mem.username)) {
+                                            if (leagueData.victimsLastGw && leagueData.victimsLastGw.has(mem.username)) {
                                                 actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`;
                                             } else if (canCurrentUseSniper) {
                                                 actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
@@ -1856,36 +1856,37 @@ function renderMiniLeaguesTab() {
 
                                         return `
                                         <tr class="border-b border-white/5 transition-colors hover:bg-white/5 ${isMe ? 'bg-blue-900/20' : ''}">
-                                            <td class="py-2.5">
+                                            
+                                            <!-- 1. الترتيب -->
+                                            <td class="py-2.5 text-center">
                                                 <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs ${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
                                             </td>
+                                            
+                                            <!-- 2. اسم اللاعب والأيقونات -->
                                             <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2 whitespace-nowrap">
                                                 ${isMe ? 
                                                     `<span class="font-bold text-[12px] text-blue-300">${mem.username}</span>` : 
                                                     `<button onclick="openComparison('${mem.username}')" class="font-bold text-[12px] text-slate-200 hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none" title="${isAr ? 'كشف الأوراق' : 'Compare'}">${mem.username}</button>`
                                                 }
                                                 ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] mx-0.5" title="متصدر"></i>' : ''}
-                                                <!-- 🌟 أيقونة القناص -->
-                                                ${leagueData.snipersThisGw.has(mem.username) ? '<i class="fa-solid fa-crosshairs text-rose-500 text-[10px] mx-0.5 animate-pulse" title="استخدم القناص"></i>' : ''}
-                                                <!-- 🌟 أيقونة المقنوص -->
-                                                ${leagueData.victimsThisGw.has(mem.username) ? '<i class="fa-solid fa-heart-crack text-red-500 text-[10px] mx-0.5" title="تعرض للقنص"></i>' : ''}
+                                                ${leagueData.snipersThisGw && leagueData.snipersThisGw.has(mem.username) ? '<i class="fa-solid fa-crosshairs text-rose-500 text-[10px] mx-0.5 animate-pulse" title="استخدم القناص"></i>' : ''}
+                                                ${leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username) ? '<i class="fa-solid fa-heart-crack text-red-500 text-[10px] mx-0.5" title="تعرض للقنص"></i>' : ''}
                                             </td>
-                                            <td class="py-2.5">
-                                                <span class="bg-emerald-900/20 text-emerald-400 font-bold px-2 py-1 rounded text-xs">${mem.mlGwPts}</span>
-                                            </td>
-                                            <!-- 🌟 عمود نقاط الجولة (تم توحيد حجم المربع بـ w-10 ليستوعب 3 خانات مستقبلاً) -->
+                                            
+                                            <!-- 3. نقاط الجولة (مربع أخضر مقاس 10) -->
                                             <td class="py-2.5 text-center">
                                                 <span class="bg-emerald-900/20 text-emerald-400 font-bold w-10 py-1 rounded text-xs inline-block text-center">${mem.mlGwPts}</span>
                                             </td>
                                             
-                                            <!-- 🌟 عمود النقاط الكلية (مربع ثابت الحجم w-10 والدرع يطفو بجانبه) -->
-                                            <td class="py-2.5 text-center">
+                                            <!-- 4. النقاط الكلية (مربع ذهبي مقاس 10 + درع الحماية) -->
+                                            <td class="py-2.5 text-center px-4">
                                                 <div class="relative inline-flex items-center justify-center">
                                                     <span class="bg-amber-900/20 text-amber-400 font-black w-10 py-1 rounded text-xs border border-amber-500/20 shadow-inner inline-block text-center">${mem.mlTotalPts}</span>
-                                                    <!-- الدرع يطفو على اليسار دون إزاحة المربع الأساسي -->
-                                                    ${leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px] absolute top-1/2 -translate-y-1/2 -left-4 md:-left-5" title="محمي من القنص الجولة القادمة"></i>` : ''}
+                                                    ${leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px] absolute top-1/2 -translate-y-1/2 -left-4" title="محمي من القنص الجولة القادمة"></i>` : ''}
                                                 </div>
                                             </td>
+                                            
+                                            <!-- 5. زر الإجراءات (قنص) -->
                                             <td class="py-2.5 text-center">
                                                 ${actionBtn}
                                             </td>
