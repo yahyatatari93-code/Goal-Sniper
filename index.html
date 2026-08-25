@@ -672,7 +672,8 @@ function changeLanguage(langCode) {
                 time: m.match_time || m.time,
                 actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
                 actualA: m.actual_a !== undefined ? m.actual_a : m.actualA,
-                league: m.league || 'EPL' // 🌟 قراءة نوع البطولة من السيرفر
+                // 🌟 السحر هنا: التطبيق سيستنتج البطولة تلقائياً من رقم الجولة
+                league: Number(m.gw) >= 101 ? 'UCL' : 'EPL' 
             }));
             
             predictions = json.data.predictions || {};
