@@ -994,6 +994,7 @@ function changeLanguage(langCode) {
 
             const victimsLastGw = new Set(); 
             const snipersThisGw = new Set(); 
+            const victimsThisGw = new Set(); // 🌟 تتبع من تم قنصهم في هذه الجولة
 
             currentLeagueShots.forEach(shot => {
                 const victim = leagueMembers.find(m => m.username === shot.victim);
@@ -1001,7 +1002,10 @@ function changeLanguage(langCode) {
                 if (victim) victim.mlTotalPts -= penalty;
 
                 if (shot.gw === lastCompletedGw - 1) victimsLastGw.add(shot.victim);
-                if (shot.gw === lastCompletedGw) snipersThisGw.add(shot.sniper);
+                if (shot.gw === lastCompletedGw) {
+                    snipersThisGw.add(shot.sniper);
+                    victimsThisGw.add(shot.victim); // 🌟 إضافة الضحية
+                }
             });
 
             leagueMembers.sort((a, b) => b.mlTotalPts - a.mlTotalPts);
@@ -1029,6 +1033,7 @@ function changeLanguage(langCode) {
                 sniperPenalty,
                 victimsLastGw,
                 snipersThisGw,
+                victimsThisGw, // 🌟 تصدير قائمة الضحايا للواجهة
                 activeGw: displayGw,
                 sniperEligibilityGw 
             };
@@ -1854,18 +1859,24 @@ function renderMiniLeaguesTab() {
                                             <td class="py-2.5">
                                                 <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs ${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
                                             </td>
-                                            <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2">
+                                            <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2 whitespace-nowrap">
                                                 ${isMe ? 
                                                     `<span class="font-bold text-[12px] text-blue-300">${mem.username}</span>` : 
                                                     `<button onclick="openComparison('${mem.username}')" class="font-bold text-[12px] text-slate-200 hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none" title="${isAr ? 'كشف الأوراق' : 'Compare'}">${mem.username}</button>`
                                                 }
-                                                ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] ml-1"></i>' : ''}
+                                                ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] mx-0.5" title="متصدر"></i>' : ''}
+                                                <!-- 🌟 أيقونة القناص -->
+                                                ${leagueData.snipersThisGw.has(mem.username) ? '<i class="fa-solid fa-crosshairs text-rose-500 text-[10px] mx-0.5 animate-pulse" title="استخدم القناص"></i>' : ''}
+                                                <!-- 🌟 أيقونة المقنوص -->
+                                                ${leagueData.victimsThisGw.has(mem.username) ? '<i class="fa-solid fa-heart-crack text-red-500 text-[10px] mx-0.5" title="تعرض للقنص"></i>' : ''}
                                             </td>
                                             <td class="py-2.5">
                                                 <span class="bg-emerald-900/20 text-emerald-400 font-bold px-2 py-1 rounded text-xs">${mem.mlGwPts}</span>
                                             </td>
-                                            <td class="py-2.5">
+                                            <td class="py-2.5 whitespace-nowrap">
                                                 <span class="bg-amber-900/20 text-amber-400 font-black px-2 py-1 rounded text-xs border border-amber-500/20 shadow-inner">${mem.mlTotalPts}</span>
+                                                <!-- 🌟 درع الحصانة بجانب النقاط للمقنوص -->
+                                                ${leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[10px] ${isAr ? 'mr-0.5' : 'ml-0.5'}" title="محمي من القنص الجولة القادمة"></i>` : ''}
                                             </td>
                                             <td class="py-2.5 text-center">
                                                 ${actionBtn}
