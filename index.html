@@ -2547,14 +2547,15 @@ function ruleRow(text, points, colorType) {
                     <div class="glass p-6 rounded-3xl space-y-4">
                         <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
                         
-                        <!-- 🌟 شريط التنقل بين الجولات للإدارة 🌟 -->
+                        <!-- 🌟 شريط التنقل المحرر 🌟 -->
                         ${(() => {
-                            // للإدارة، يجب إظهار جميع الجولات لكي يتنقل بحرية حتى لو كانت فارغة
                             const adminGwList = [
                                 ...Array.from({ length: 38 }, (_, i) => i + 1),
                                 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113
                             ];
-                            const currentIndex = adminGwList.indexOf(activeAdminGw) !== -1 ? adminGwList.indexOf(activeAdminGw) : 0;
+                            // 🌟 الإصلاح السحري: إجبار المتغير ليكون رقماً لمنع تعليق شريط التنقل
+                            const currentNum = Number(activeAdminGw);
+                            const currentIndex = adminGwList.indexOf(currentNum) !== -1 ? adminGwList.indexOf(currentNum) : 0;
                             const prevGw = currentIndex > 0 ? adminGwList[currentIndex - 1] : null;
                             const nextGw = currentIndex < adminGwList.length - 1 ? adminGwList[currentIndex + 1] : null;
                             
@@ -2575,7 +2576,7 @@ function ruleRow(text, points, colorType) {
                                             else if (g === 111) label = 'ربع النهائي';
                                             else if (g === 112) label = 'نصف النهائي';
                                             else if (g === 113) label = 'النهائي';
-                                            return '<option value="' + g + '" ' + (g === activeAdminGw ? 'selected' : '') + '>' + label + '</option>';
+                                            return '<option value="' + g + '" ' + (g === currentNum ? 'selected' : '') + '>' + label + '</option>';
                                         }).join('')}
                                     </select>
                                     <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 left-2 pointer-events-none text-xs"></i>
