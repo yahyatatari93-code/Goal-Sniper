@@ -2382,63 +2382,56 @@ function ruleRow(text, points, colorType) {
                     <!-- ========================================== -->
                     <!-- 0. قسم الإحصائيات التحليلية (رادار الجولة) -->
                     <!-- ========================================== -->
-                    <div class="glass p-6 rounded-3xl space-y-4 border border-blue-500/30 bg-gradient-to-br from-[#0a0f1c] to-blue-950/40 relative overflow-hidden shadow-lg shadow-blue-900/20">
+                    <div class="glass p-5 rounded-3xl space-y-4 border border-blue-500/30 bg-gradient-to-br from-[#0a0f1c] to-blue-950/40 relative overflow-hidden shadow-lg shadow-blue-900/20">
                         <div class="absolute -left-4 -top-4 text-6xl text-blue-500/10"><i class="fa-solid fa-chart-pie"></i></div>
-                        
                         <div class="flex items-center justify-between border-b border-blue-500/30 pb-3 relative z-10">
                             <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-chart-simple text-blue-400 text-xl"></i>
-                                <h2 class="text-lg font-black text-white">رادار الإحصائيات</h2>
+                                <i class="fa-solid fa-chart-simple text-blue-400 text-lg"></i>
+                                <h2 class="text-base font-black text-white">رادار الإحصائيات</h2>
                             </div>
-                            <div class="bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 rounded-lg text-xs font-bold text-blue-300">الجولة ${activeAdminGw}</div>
+                            <div class="bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 rounded-lg text-xs font-bold text-blue-300 shadow-inner">الجولة ${activeAdminGw}</div>
                         </div>
                         
-                        <div class="space-y-3 relative z-10">
+                        <div class="space-y-4 relative z-10">
                             <!-- التوقع الدقيق -->
-                            <div class="bg-slate-900/60 border border-white/5 p-3.5 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all gap-4">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/20 shadow-inner"><i class="fa-solid fa-crosshairs"></i></div>
-                                    <div class="flex-1">
-                                        <div class="text-[10px] text-slate-400 font-bold">المباراة الأسهل (أعلى دقة رقمية)</div>
-                                        <div class="text-sm md:text-base font-black text-slate-200 whitespace-normal leading-tight mt-1">
-                                            ${bestExactMatch ? getTeamName(bestExactMatch.home) + ' ضد ' + getTeamName(bestExactMatch.away) : 'لا توجد مباريات ملعوبة'}
-                                        </div>
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
+                                <div class="w-12 h-12 shrink-0 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30 shadow-inner"><i class="fa-solid fa-crosshairs"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs text-slate-400 font-bold mb-1.5">المباراة الأسهل (أعلى دقة رقمية)</div>
+                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                                        ${bestExactMatch ? getTeamName(bestExactMatch.home) + ' <span class="text-emerald-500 mx-1">VS</span> ' + getTeamName(bestExactMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-left shrink-0">
-                                    <span class="text-xl md:text-2xl font-black text-emerald-400 drop-shadow-md" dir="ltr">${maxExactPct >= 0 ? maxExactPct.toFixed(1) : 0}%</span>
+                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
+                                    <span class="block text-2xl font-black text-emerald-400 drop-shadow-md" dir="ltr">${maxExactPct >= 0 ? maxExactPct.toFixed(1) : 0}%</span>
                                 </div>
                             </div>
 
                             <!-- مخالفة التوقعات -->
-                            <div class="bg-slate-900/60 border border-white/5 p-3.5 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all gap-4">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg border border-rose-500/20 shadow-inner"><i class="fa-solid fa-bolt"></i></div>
-                                    <div class="flex-1">
-                                        <div class="text-[10px] text-slate-400 font-bold">صدمة الجماهير (الأكثر مخالفة للتوقعات)</div>
-                                        <div class="text-sm md:text-base font-black text-slate-200 whitespace-normal leading-tight mt-1">
-                                            ${mostDefyingMatch ? getTeamName(mostDefyingMatch.home) + ' ضد ' + getTeamName(mostDefyingMatch.away) : 'لا توجد مباريات ملعوبة'}
-                                        </div>
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
+                                <div class="w-12 h-12 shrink-0 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-xl border border-rose-500/30 shadow-inner"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs text-slate-400 font-bold mb-1.5">صدمة الجماهير (مخالفة للتوقعات)</div>
+                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                                        ${mostDefyingMatch ? getTeamName(mostDefyingMatch.home) + ' <span class="text-rose-500 mx-1">VS</span> ' + getTeamName(mostDefyingMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-left shrink-0">
-                                    <span class="text-xl md:text-2xl font-black text-rose-400 drop-shadow-md" dir="ltr">${maxWrongPct >= 0 ? maxWrongPct.toFixed(1) : 0}%</span>
+                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
+                                    <span class="block text-2xl font-black text-rose-400 drop-shadow-md" dir="ltr">${maxWrongPct >= 0 ? maxWrongPct.toFixed(1) : 0}%</span>
                                 </div>
                             </div>
 
                             <!-- الكابتن -->
-                            <div class="bg-slate-900/60 border border-white/5 p-3.5 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all gap-4">
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/20 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
-                                    <div class="flex-1">
-                                        <div class="text-[10px] text-slate-400 font-bold">المباراة الموثوقة (الأكثر كبتنة)</div>
-                                        <div class="text-sm md:text-base font-black text-slate-200 whitespace-normal leading-tight mt-1">
-                                            ${mostCaptainedMatch ? getTeamName(mostCaptainedMatch.home) + ' ضد ' + getTeamName(mostCaptainedMatch.away) : 'لا توجد توقعات'}
-                                        </div>
+                            <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex items-center gap-4 hover:bg-slate-800/80 transition-all shadow-md">
+                                <div class="w-12 h-12 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl border border-amber-500/30 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-xs text-slate-400 font-bold mb-1.5">المباراة الموثوقة (الأكثر كبتنة)</div>
+                                    <div class="text-sm font-black text-slate-100 leading-snug whitespace-normal">
+                                        ${mostCaptainedMatch ? getTeamName(mostCaptainedMatch.home) + ' <span class="text-amber-500 mx-1">VS</span> ' + getTeamName(mostCaptainedMatch.away) : 'لا توجد بيانات'}
                                     </div>
                                 </div>
-                                <div class="text-left shrink-0">
-                                    <span class="text-xl md:text-2xl font-black text-amber-400 drop-shadow-md" dir="ltr">${maxCapPct >= 0 ? maxCapPct.toFixed(1) : 0}%</span>
+                                <div class="text-center shrink-0 border-r border-white/10 pr-4">
+                                    <span class="block text-2xl font-black text-amber-400 drop-shadow-md" dir="ltr">${maxCapPct >= 0 ? maxCapPct.toFixed(1) : 0}%</span>
                                 </div>
                             </div>
                         </div>
