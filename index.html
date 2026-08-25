@@ -601,11 +601,7 @@ function changeLanguage(langCode) {
         function isUclVisible() {
             return ENABLE_UCL_GLOBALLY || (currentUser && currentUser.username.toLowerCase() === 'red army');
         }
-        
-        function isUclVisible() {
-            return ENABLE_UCL_GLOBALLY || (currentUser && currentUser.username.toLowerCase() === 'red army');
-        }
-        
+                      
         async function fetchMarquee() {
     try {
         const res = await fetch(`${API_BASE_URL}/announcement`);
@@ -860,13 +856,14 @@ function changeLanguage(langCode) {
                 }; 
             });
 
-            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب
+            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب ديناميكياً
+            const uniqueGws = [...new Set(matches.map(m => Number(m.gw)))];
             const userActiveCaptains = {};
             allUsernames.forEach(username => {
                 userActiveCaptains[username] = {};
-                for(let g=1; g<=38; g++) {
+                uniqueGws.forEach(g => {
                     userActiveCaptains[username][g] = getActiveCaptainId(username, g);
-                }
+                });
             });
 
             // 🌟 فلترة المباريات حسب البطولة المطلوبة 🌟
@@ -1090,14 +1087,43 @@ function isMatchLocked(match) {
     } catch(e) { return false; }
 }
 
+        // 🌟 دالة مساعدة لجلب أرقام الجولات المتاحة ديناميكياً
+        function getAvailableGws(leagueFilter = null) {
+            let fMatches = matches;
+            if (leagueFilter) fMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
+            const unique = [...new Set(fMatches.map(m => Number(m.gw)))];
+            if (unique.length === 0) return [1];
+            return unique.sort((a, b) => a - b);
+        }
+
+        // 🌟 دالة مساعدة لجلب أرقام الجولات المتاحة ديناميكياً
+        function getAvailableGws(leagueFilter = null) {
+            let fMatches = matches;
+            if (leagueFilter) fMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
+            const unique = [...new Set(fMatches.map(m => Number(m.gw)))];
+            if (unique.length === 0) return [1];
+            return unique.sort((a, b) => a - b);
+        }
+
         function getCurrentActiveGw() {
-            // يبحث عن أول جولة تحتوي على مباريات غير ملعوبة (actualH و actualA تساوي null)
-            for (let gw = 1; gw <= 38; gw++) {
+            const uniqueGws = getAvailableGws();
+            
+            // ترتيب الجولات زمنياً بناءً على تاريخ أول مباراة في الجولة
+            uniqueGws.sort((gwA, gwB) => {
+                const matchesA = matches.filter(m => Number(m.gw) === gwA).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                const matchesB = matches.filter(m => Number(m.gw) === gwB).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                const timeA = matchesA.length > 0 ? parseMatchDate(matchesA[0].date, matchesA[0].time) : 0;
+                const timeB = matchesB.length > 0 ? parseMatchDate(matchesB[0].date, matchesB[0].time) : 0;
+                return timeA - timeB;
+            });
+
+            // البحث عن أول جولة في التقويم الزمني لم تكتمل مبارياتها بعد
+            for (const gw of uniqueGws) {
                 const gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) continue;
-                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null)) return gw;
+                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) return gw;
             }
-            return 1;
+            return uniqueGws.length > 0 ? uniqueGws[uniqueGws.length - 1] : 1;
         }
 
         // 🌟 دالة فتح الروابط الذكية (تكسر حظر جميع الهواتف)
@@ -1264,7 +1290,7 @@ function isMatchLocked(match) {
                             let badge = '';
                             if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
                                 // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
-                            let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');
+                            let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');                                
                                 
                                 if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                 else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -1395,24 +1421,34 @@ function changeGw(gw) {
                     </h2>
                 </div>
 
-                <div class="glass p-3 rounded-2xl flex justify-between items-center shadow-lg bg-slate-900/80">
-                    <button onclick="changeMatchesGw(${activeGw - 1})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${activeGw <= 1 ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${activeGw <= 1 ? 'disabled' : ''}>
-                        <i class="fa-solid fa-chevron-${isAr ? 'right' : 'left'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${prevText}
-                    </button>
+                ${(() => {
+                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws(activeMatchesLeague) : [1];
+                    if (availableGws.length === 0) availableGws.push(1);
+                    const currentIndex = availableGws.indexOf(activeGw) !== -1 ? availableGws.indexOf(activeGw) : 0;
+                    const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
+                    const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
+                    const formatGwLabel = (g) => g >= 101 ? (isAr ? 'أبطال ' + (g - 100) : 'UCL ' + (g - 100)) : (gwText + ' ' + g);
                     
-                    <div class="relative">
-                        <select onchange="changeMatchesGw(this.value)" class="bg-slate-950 border border-blue-500/30 rounded-xl pl-4 pr-8 py-2 text-sm text-blue-400 font-black outline-none focus:border-blue-500 appearance-none shadow-inner cursor-pointer text-center w-32">
-                            ${Array.from({ length: 38 }, (_, i) => i + 1).map(g => 
-                                `<option value="${g}" ${g === activeGw ? 'selected' : ''}>${gwText} ${g}</option>`
-                            ).join('')}
-                        </select>
-                        <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none"></i>
-                    </div>
-                    
-                    <button onclick="changeMatchesGw(${activeGw + 1})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${activeGw >= 38 ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${activeGw >= 38 ? 'disabled' : ''}>
-                        ${nextText} <i class="fa-solid fa-chevron-${isAr ? 'left' : 'right'} ${isAr ? 'mr-1' : 'ml-1'}"></i>
-                    </button>
-                </div>
+                    return `
+                    <div class="glass p-3 rounded-2xl flex justify-between items-center shadow-lg bg-slate-900/80">
+                        <button onclick="changeMatchesGw(${prevGw})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${prevGw === null ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${prevGw === null ? 'disabled' : ''}>
+                            <i class="fa-solid fa-chevron-${isAr ? 'right' : 'left'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${prevText}
+                        </button>
+                        
+                        <div class="relative">
+                            <select onchange="changeMatchesGw(this.value)" class="bg-slate-950 border border-blue-500/30 rounded-xl pl-4 pr-8 py-2 text-sm text-blue-400 font-black outline-none focus:border-blue-500 appearance-none shadow-inner cursor-pointer text-center w-32">
+                                ${availableGws.map(g => 
+                                    '<option value="' + g + '" ' + (g === activeGw ? 'selected' : '') + '>' + formatGwLabel(g) + '</option>'
+                                ).join('')}
+                            </select>
+                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none"></i>
+                        </div>
+                        
+                        <button onclick="changeMatchesGw(${nextGw})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${nextGw === null ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${nextGw === null ? 'disabled' : ''}>
+                            ${nextText} <i class="fa-solid fa-chevron-${isAr ? 'left' : 'right'} ${isAr ? 'mr-1' : 'ml-1'}"></i>
+                        </button>
+                    </div>`;
+                })()}
 
                 <div class="glass p-4 rounded-2xl space-y-3 animate-fade-up" id="matches-list-container">
                     <div class="border-b border-white/10 pb-2 flex justify-between items-center">
@@ -1643,9 +1679,14 @@ function changeGw(gw) {
                         ${isGw ? `
                         <div class="relative mt-1 animate-fade-up">
                             <select onchange="changeStandingsGw(this.value)" class="w-full bg-slate-950 border border-emerald-500/30 rounded-xl pl-4 pr-10 py-2.5 text-sm text-emerald-400 font-black outline-none focus:border-emerald-500 appearance-none shadow-inner cursor-pointer text-center">
-                                ${Array.from({ length: 38 }, (_, i) => i + 1).map(g => 
-                                    '<option value="' + g + '" ' + (g === selectedStandingsGw ? 'selected' : '') + '>' + (isAr ? 'الجولة ' : 'Gameweek ') + g + '</option>'
-                                ).join('')}
+                                ${(() => {
+                                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws(activeStandingsLeague) : [1];
+                                    if (availableGws.length === 0) availableGws.push(1);
+                                    return availableGws.map(g => {
+                                        const label = g >= 101 ? (isAr ? 'أبطال ' + (g - 100) : 'UCL ' + (g - 100)) : (isAr ? 'الجولة ' + g : 'Gameweek ' + g);
+                                        return '<option value="' + g + '" ' + (g === selectedStandingsGw ? 'selected' : '') + '>' + label + '</option>';
+                                    }).join('');
+                                })()}
                             </select>
                             <i class="fa-solid fa-sort text-emerald-500/50 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
                         </div>
@@ -2314,25 +2355,35 @@ function ruleRow(text, points, colorType) {
                 <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
                 
                 <!-- 🌟 شريط التنقل بين الجولات للإدارة 🌟 -->
-                <div class="glass p-2 rounded-xl flex justify-between items-center bg-slate-900/80 mb-4 border border-white/10">
-                    <button onclick="changeAdminGw(${activeAdminGw - 1})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${activeAdminGw <= 1 ? 'opacity-50 cursor-not-allowed' : ''}" ${activeAdminGw <= 1 ? 'disabled' : ''}>
-                        <i class="fa-solid fa-chevron-right ml-1"></i> السابق
-                    </button>
+                ${(() => {
+                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws() : [1];
+                    if (availableGws.length === 0) availableGws.push(1);
+                    const currentIndex = availableGws.indexOf(activeAdminGw) !== -1 ? availableGws.indexOf(activeAdminGw) : 0;
+                    const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
+                    const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
                     
-                    <div class="relative">
-                        <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
-                            ${Array.from({ length: 38 }, (_, i) => i + 1).map(g => 
-                                `<option value="${g}" ${g === activeAdminGw ? 'selected' : ''}>الجولة ${g}</option>`
-                            ).join('')}
-                        </select>
-                        <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 left-2 pointer-events-none text-xs"></i>
-                    </div>
-                    
-                    <button onclick="changeAdminGw(${activeAdminGw + 1})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${activeAdminGw >= 38 ? 'opacity-50 cursor-not-allowed' : ''}" ${activeAdminGw >= 38 ? 'disabled' : ''}>
-                        التالي <i class="fa-solid fa-chevron-left mr-1"></i>
-                    </button>
-                </div>
-
+                    return `
+                    <div class="glass p-2 rounded-xl flex justify-between items-center bg-slate-900/80 mb-4 border border-white/10">
+                        <button onclick="changeAdminGw(${prevGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${prevGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${prevGw === null ? 'disabled' : ''}>
+                            <i class="fa-solid fa-chevron-right ml-1"></i> السابق
+                        </button>
+                        
+                        <div class="relative">
+                            <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
+                                ${availableGws.map(g => {
+                                    const label = g >= 101 ? 'أبطال ' + (g - 100) : 'الجولة ' + g;
+                                    return '<option value="' + g + '" ' + (g === activeAdminGw ? 'selected' : '') + '>' + label + '</option>';
+                                }).join('')}
+                            </select>
+                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 left-2 pointer-events-none text-xs"></i>
+                        </div>
+                        
+                        <button onclick="changeAdminGw(${nextGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${nextGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${nextGw === null ? 'disabled' : ''}>
+                            التالي <i class="fa-solid fa-chevron-left mr-1"></i>
+                        </button>
+                    </div>`;
+                })()}
+                
                 <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1 animate-fade-up">
                     ${adminMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-6">لا توجد مباريات في الجولة ${activeAdminGw}</div>` : ''}
                     
