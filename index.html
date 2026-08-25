@@ -2300,197 +2300,302 @@ function ruleRow(text, points, colorType) {
         }
         
         function renderAdminTab() {
-    // تحديد الجولة الحالية في قسم الإدارة
-    if (!selectedAdminGw) {
-        selectedAdminGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-    }
-    const activeAdminGw = selectedAdminGw;
+            // تحديد الجولة الحالية في قسم الإدارة
+            if (!selectedAdminGw) {
+                selectedAdminGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+            }
+            const activeAdminGw = selectedAdminGw;
 
-    // فلترة المباريات لجلب جولة الإدارة المحددة فقط
-    const adminMatches = matches.filter(m => Number(m.gw) === activeAdminGw).sort((a, b) => {
-        const dateA = String(a.date || "");
-        const dateB = String(b.date || "");
-        if (dateA !== dateB) return dateA.localeCompare(dateB);
-        const timeA = String(a.time || "");
-        const timeB = String(b.time || "");
-        return timeA.localeCompare(timeB);
-    });
+            // فلترة المباريات لجلب جولة الإدارة المحددة فقط
+            const adminMatches = matches.filter(m => Number(m.gw) === activeAdminGw).sort((a, b) => {
+                const dateA = String(a.date || "");
+                const dateB = String(b.date || "");
+                if (dateA !== dateB) return dateA.localeCompare(dateB);
+                const timeA = String(a.time || "");
+                const timeB = String(b.time || "");
+                return timeA.localeCompare(timeB);
+            });
 
-    return `
-        <div class="space-y-6 max-w-2xl mx-auto pb-10" dir="rtl">
-            
-            <!-- ========================================== -->
-            <!-- 1. قسم الخطر (الحذف والإعدام)              -->
-            <!-- ========================================== -->
-            <div class="glass p-6 rounded-3xl space-y-6 border border-rose-500/50 relative overflow-hidden bg-rose-950/10">
-                <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                
-                <div class="flex items-center gap-3 border-b border-rose-500/30 pb-4 relative z-10">
-                    <i class="fa-solid fa-user-shield text-rose-500 text-2xl"></i>
-                    <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
-                </div>
-                
-                <!-- بطاقة الشريط المتحرك -->
-                <div class="bg-slate-900/80 border border-blue-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
-                    <h3 class="text-blue-400 font-bold text-sm mb-3"><i class="fa-solid fa-bullhorn ml-1"></i> نص الشريط الإخباري (متعدد اللغات)</h3>
-                    <input type="text" id="admin-marquee-ar" placeholder="النص بالعربية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-right">
-                    <input type="text" id="admin-marquee-en" placeholder="النص بالإنجليزية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-left">
-                    <input type="text" id="admin-marquee-tr" placeholder="النص بالتركية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500 text-left">
-                    <input type="password" id="admin-pass-3" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500">
-                    <button onclick="updateMarqueeByAdmin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-blue-600/20">تغيير النص ونشره فوراً</button>
-                </div>
-                
-                <!-- بطاقة حذف مستخدم -->
-                <div class="bg-slate-900/80 border border-rose-500/30 rounded-2xl p-4 relative z-10">
-                    <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
-                    <input type="text" id="admin-delete-username" placeholder="اسم المستخدم" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
-                    <input type="password" id="admin-pass-1" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
-                    <button onclick="deleteUserByAdmin()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-rose-600/20">حذف اللاعب نهائياً</button>
-                </div>
+            // 🌟 حساب الإحصائيات التحليلية للإدارة 🌟
+            let bestExactMatch = null, maxExactPct = -1;
+            let mostDefyingMatch = null, maxWrongPct = -1;
+            let mostCaptainedMatch = null, maxCapPct = -1;
 
-                <!-- بطاقة حذف دوري -->
-                <div class="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-4 relative z-10">
-                    <h3 class="text-amber-400 font-bold text-sm mb-3"><i class="fa-solid fa-trash-can ml-1"></i> تدمير دوري مصغر</h3>
-                    <input type="text" id="admin-delete-league" placeholder="كود الدوري" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
-                    <input type="password" id="admin-pass-2" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
-                    <button onclick="deleteLeagueByAdmin()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-amber-600/20">حذف الدوري نهائياً</button>
-                </div>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- 2. قسم إضافة المباريات                     -->
-            <!-- ========================================== -->
-            <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-shield-halved"></i></div>
-                <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة يدوية</h2>
+            matches.forEach(m => {
+                const isPlayed = m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '';
+                let totalPreds = 0, exacts = 0, wrongs = 0, captains = 0;
                 
-                <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-3">
-                            <label class="block text-xs font-bold text-slate-400 mb-1.5">البطولة</label>
-                            <select id="adm-league" required onchange="toggleAdminGwSelect()" class="w-full bg-slate-950 border border-blue-500/30 rounded-xl p-2.5 text-sm text-blue-400 font-bold outline-none">
-                                <option value="EPL">الدوري الإنجليزي (EPL)</option>
-                                <option value="UCL">دوري أبطال أوروبا (UCL)</option>
-                            </select>
-                        </div>
-                        <div class="md:col-span-1">
-                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
-                            <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                <option value="" disabled selected>-- اختر المضيف --</option>
-                                ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="md:col-span-1">
-                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
-                            <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                <option value="" disabled selected>-- اختر الضيف --</option>
-                                ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
-                            </select>
-                        </div>
-                        <div class="md:col-span-1">
-                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة / الدور</label>
-                            <!-- قائمة جولات الدوري الإنجليزي -->
-                            <select id="adm-gw-epl" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                ${Array.from({ length: 38 }, (_, i) => `<option value="${i+1}">الجولة ${i+1}</option>`).join('')}
-                            </select>
-                            <!-- قائمة جولات دوري الأبطال (تظهر عند اختيار البطولة) -->
-                            <select id="adm-gw-ucl" class="hidden w-full bg-slate-950 border border-purple-500/30 rounded-xl p-2.5 text-sm text-purple-300 font-bold">
-                                <optgroup label="دور المجموعات">
-                                    ${Array.from({ length: 8 }, (_, i) => `<option value="${i+101}">الجولة ${i+1}</option>`).join('')}
-                                </optgroup>
-                                <optgroup label="الأدوار الإقصائية">
-                                    <option value="109">الملحق المؤهل (Play-offs)</option>
-                                    <option value="110">دور الـ 16</option>
-                                    <option value="111">ربع النهائي</option>
-                                    <option value="112">نصف النهائي</option>
-                                    <option value="113">النهائي</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label><input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
-                        <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label><input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
-                    </div>
-                    <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-rose-600/30">إضافة للجدول</button>
-                </form>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- 3. قسم النتائج الحقيقية (ديناميكي بالجولة) -->
-            <!-- ========================================== -->
-            <div class="glass p-6 rounded-3xl space-y-4">
-                <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
-                
-                <!-- 🌟 شريط التنقل بين الجولات للإدارة 🌟 -->
-                ${(() => {
-                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws() : [1];
-                    if (availableGws.length === 0) availableGws.push(1);
-                    const currentIndex = availableGws.indexOf(activeAdminGw) !== -1 ? availableGws.indexOf(activeAdminGw) : 0;
-                    const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
-                    const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
-                    
-                    return `
-                    <div class="glass p-2 rounded-xl flex justify-between items-center bg-slate-900/80 mb-4 border border-white/10">
-                        <button onclick="changeAdminGw(${prevGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${prevGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${prevGw === null ? 'disabled' : ''}>
-                            <i class="fa-solid fa-chevron-right ml-1"></i> السابق
-                        </button>
+                Object.keys(predictions).forEach(username => {
+                    const p = (predictions[username] || {})[m.id];
+                    if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                        totalPreds++; // حساب إجمالي التوقعات الصالحة لهذه المباراة
                         
-                        <div class="relative">
-                            <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
-                                ${availableGws.map(g => {
-                                    const label = g >= 101 ? 'أبطال ' + (g - 100) : 'الجولة ' + g;
-                                    return '<option value="' + g + '" ' + (g === activeAdminGw ? 'selected' : '') + '>' + label + '</option>';
-                                }).join('')}
-                            </select>
-                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 left-2 pointer-events-none text-xs"></i>
+                        if (isPlayed) {
+                            const ph = Number(p.home), pa = Number(p.away);
+                            const ah = Number(m.actualH), aa = Number(m.actualA);
+                            const isExact = (ph === ah && pa === aa);
+                            const isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
+                            
+                            if (isExact) exacts++; // توقع رقمي دقيق
+                            if (!isOutcomeCorrect) wrongs++; // مخالفة التوقعات (توقع خاطئ تماماً)
+                        }
+                        
+                        // التحقق مما إذا كان قد استخدم الكابتن عليها
+                        if (getActiveCaptainId(username, m.gw) === m.id) {
+                            captains++;
+                        }
+                    }
+                });
+
+                if (totalPreds > 0) {
+                    if (isPlayed) {
+                        const exactPct = (exacts / totalPreds) * 100;
+                        const wrongPct = (wrongs / totalPreds) * 100;
+                        if (exactPct > maxExactPct) { maxExactPct = exactPct; bestExactMatch = m; }
+                        if (wrongPct > maxWrongPct) { maxWrongPct = wrongPct; mostDefyingMatch = m; }
+                    }
+                    const capPct = (captains / totalPreds) * 100;
+                    if (capPct > maxCapPct) { maxCapPct = capPct; mostCaptainedMatch = m; }
+                }
+            });
+
+            return `
+                <div class="space-y-6 max-w-2xl mx-auto pb-10" dir="rtl">
+                    
+                    <!-- ========================================== -->
+                    <!-- 0. قسم الإحصائيات التحليلية (جديد للإدارة) -->
+                    <!-- ========================================== -->
+                    <div class="glass p-6 rounded-3xl space-y-4 border border-blue-500/30 bg-gradient-to-br from-[#0a0f1c] to-blue-950/40 relative overflow-hidden shadow-lg shadow-blue-900/20">
+                        <div class="absolute -left-4 -top-4 text-6xl text-blue-500/10"><i class="fa-solid fa-chart-pie"></i></div>
+                        
+                        <div class="flex items-center gap-3 border-b border-blue-500/30 pb-3 relative z-10">
+                            <i class="fa-solid fa-chart-simple text-blue-400 text-xl"></i>
+                            <h2 class="text-lg font-black text-white">رادار القناصين (إحصائيات النظام)</h2>
                         </div>
                         
-                        <button onclick="changeAdminGw(${nextGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${nextGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${nextGw === null ? 'disabled' : ''}>
-                            التالي <i class="fa-solid fa-chevron-left mr-1"></i>
-                        </button>
-                    </div>`;
-                })()}
-                
-                <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1 animate-fade-up">
-                    ${adminMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-6">لا توجد مباريات في الجولة ${activeAdminGw}</div>` : ''}
-                    
-                    ${adminMatches.map(m => `
-                        <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap relative">
-                            <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
-                                <div class="text-[10px] font-bold text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-1">GW ${m.gw}</div>
-                                <button onclick="deleteMatch('${m.id}')" class="p-1.5 text-rose-400 hover:bg-rose-950/40 rounded-lg text-xs" title="حذف المباراة"><i class="fa-solid fa-trash"></i></button>
+                        <div class="space-y-3 relative z-10">
+                            <!-- التوقع الدقيق -->
+                            <div class="bg-slate-900/60 border border-white/5 p-3 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg border border-emerald-500/20 shadow-inner"><i class="fa-solid fa-crosshairs"></i></div>
+                                    <div>
+                                        <div class="text-[10px] text-slate-400 font-bold mb-0.5">المباراة الأسهل (أعلى دقة رقمية)</div>
+                                        <div class="text-sm font-black text-slate-200 truncate max-w-[150px] md:max-w-xs">
+                                            ${bestExactMatch ? getTeamName(bestExactMatch.home) + ' ضد ' + getTeamName(bestExactMatch.away) : 'لا توجد بيانات'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-left shrink-0">
+                                    <span class="text-lg font-black text-emerald-400 drop-shadow-md" dir="ltr">${maxExactPct >= 0 ? maxExactPct.toFixed(1) : 0}%</span>
+                                </div>
                             </div>
-                            <div class="flex-1 flex justify-between items-center gap-2">
-                                
-                                <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate flex justify-start items-center gap-2">
-                                    <img src="${getTeamLogo(m.home)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
-                                    ${getTeamName(m.home)}
-                                </div>
-                                
-                                <div class="flex items-center gap-1.5">
-                                    <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
-                                    <span class="text-slate-500">:</span>
-                                    <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
-                                </div>
-                                
-                                <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate flex justify-end items-center gap-2 flex-row-reverse">
-                                    <img src="${getTeamLogo(m.away)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
-                                    ${getTeamName(m.away)}
-                                </div>
 
+                            <!-- مخالفة التوقعات -->
+                            <div class="bg-slate-900/60 border border-white/5 p-3 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg border border-rose-500/20 shadow-inner"><i class="fa-solid fa-bolt"></i></div>
+                                    <div>
+                                        <div class="text-[10px] text-slate-400 font-bold mb-0.5">صدمة الجماهير (الأكثر مخالفة للتوقعات)</div>
+                                        <div class="text-sm font-black text-slate-200 truncate max-w-[150px] md:max-w-xs">
+                                            ${mostDefyingMatch ? getTeamName(mostDefyingMatch.home) + ' ضد ' + getTeamName(mostDefyingMatch.away) : 'لا توجد بيانات'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-left shrink-0">
+                                    <span class="text-lg font-black text-rose-400 drop-shadow-md" dir="ltr">${maxWrongPct >= 0 ? maxWrongPct.toFixed(1) : 0}%</span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-1.5 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-start">
-                                <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
-                                <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition-all"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
+
+                            <!-- الكابتن -->
+                            <div class="bg-slate-900/60 border border-white/5 p-3 rounded-2xl flex justify-between items-center hover:bg-slate-800/60 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/20 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
+                                    <div>
+                                        <div class="text-[10px] text-slate-400 font-bold mb-0.5">المباراة الموثوقة (الأكثر كبتنة)</div>
+                                        <div class="text-sm font-black text-slate-200 truncate max-w-[150px] md:max-w-xs">
+                                            ${mostCaptainedMatch ? getTeamName(mostCaptainedMatch.home) + ' ضد ' + getTeamName(mostCaptainedMatch.away) : 'لا توجد بيانات'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-left shrink-0">
+                                    <span class="text-lg font-black text-amber-400 drop-shadow-md" dir="ltr">${maxCapPct >= 0 ? maxCapPct.toFixed(1) : 0}%</span>
+                                </div>
                             </div>
                         </div>
-                    `).join('')}
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 1. قسم الخطر (الحذف والإعدام)              -->
+                    <!-- ========================================== -->
+                    <div class="glass p-6 rounded-3xl space-y-6 border border-rose-500/50 relative overflow-hidden bg-rose-950/10">
+                        <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        
+                        <div class="flex items-center gap-3 border-b border-rose-500/30 pb-4 relative z-10">
+                            <i class="fa-solid fa-user-shield text-rose-500 text-2xl"></i>
+                            <h2 class="text-xl font-black text-white">لوحة التحكم (الخطر) ⚠️</h2>
+                        </div>
+                        
+                        <!-- بطاقة الشريط المتحرك -->
+                        <div class="bg-slate-900/80 border border-blue-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+                            <h3 class="text-blue-400 font-bold text-sm mb-3"><i class="fa-solid fa-bullhorn ml-1"></i> نص الشريط الإخباري (متعدد اللغات)</h3>
+                            <input type="text" id="admin-marquee-ar" placeholder="النص بالعربية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-right">
+                            <input type="text" id="admin-marquee-en" placeholder="النص بالإنجليزية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-blue-500 text-left">
+                            <input type="text" id="admin-marquee-tr" placeholder="النص بالتركية" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500 text-left">
+                            <input type="password" id="admin-pass-3" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-blue-500">
+                            <button onclick="updateMarqueeByAdmin()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-blue-600/20">تغيير النص ونشره فوراً</button>
+                        </div>
+                        
+                        <!-- بطاقة حذف مستخدم -->
+                        <div class="bg-slate-900/80 border border-rose-500/30 rounded-2xl p-4 relative z-10">
+                            <h3 class="text-rose-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-xmark ml-1"></i> إعدام لاعب</h3>
+                            <input type="text" id="admin-delete-username" placeholder="اسم المستخدم" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                            <input type="password" id="admin-pass-1" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-rose-500">
+                            <button onclick="deleteUserByAdmin()" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-rose-600/20">حذف اللاعب نهائياً</button>
+                        </div>
+
+                        <!-- بطاقة حذف دوري -->
+                        <div class="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-4 relative z-10">
+                            <h3 class="text-amber-400 font-bold text-sm mb-3"><i class="fa-solid fa-trash-can ml-1"></i> تدمير دوري مصغر</h3>
+                            <input type="text" id="admin-delete-league" placeholder="كود الدوري" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                            <input type="password" id="admin-pass-2" placeholder="كلمة مرور الإدارة" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-amber-500">
+                            <button onclick="deleteLeagueByAdmin()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-amber-600/20">حذف الدوري نهائياً</button>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 2. قسم إضافة المباريات                     -->
+                    <!-- ========================================== -->
+                    <div class="glass p-6 rounded-3xl border border-rose-500/30 space-y-4 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-6xl text-rose-500/10"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h2 class="text-lg font-bold text-rose-400 flex items-center gap-2 relative z-10">إضافة مباراة يدوية</h2>
+                        
+                        <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="md:col-span-3">
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">البطولة</label>
+                                    <select id="adm-league" required onchange="toggleAdminGwSelect()" class="w-full bg-slate-950 border border-blue-500/30 rounded-xl p-2.5 text-sm text-blue-400 font-bold outline-none">
+                                        <option value="EPL">الدوري الإنجليزي (EPL)</option>
+                                        <option value="UCL">دوري أبطال أوروبا (UCL)</option>
+                                    </select>
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
+                                    <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        <option value="" disabled selected>-- اختر المضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
+                                    <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        <option value="" disabled selected>-- اختر الضيف --</option>
+                                        ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة / الدور</label>
+                                    <!-- قائمة جولات الدوري الإنجليزي -->
+                                    <select id="adm-gw-epl" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        ${Array.from({ length: 38 }, (_, i) => `<option value="${i+1}">الجولة ${i+1}</option>`).join('')}
+                                    </select>
+                                    <!-- قائمة جولات دوري الأبطال (تظهر عند اختيار البطولة) -->
+                                    <select id="adm-gw-ucl" class="hidden w-full bg-slate-950 border border-purple-500/30 rounded-xl p-2.5 text-sm text-purple-300 font-bold">
+                                        <optgroup label="دور المجموعات">
+                                            ${Array.from({ length: 8 }, (_, i) => `<option value="${i+101}">الجولة ${i+1}</option>`).join('')}
+                                        </optgroup>
+                                        <optgroup label="الأدوار الإقصائية">
+                                            <option value="109">الملحق المؤهل (Play-offs)</option>
+                                            <option value="110">دور الـ 16</option>
+                                            <option value="111">ربع النهائي</option>
+                                            <option value="112">نصف النهائي</option>
+                                            <option value="113">النهائي</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التاريخ</label><input type="date" id="adm-date" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
+                                <div><label class="block text-xs font-bold text-slate-400 mb-1.5">التوقيت</label><input type="time" id="adm-time" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2 text-sm text-white" /></div>
+                            </div>
+                            <button type="submit" class="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg shadow-rose-600/30">إضافة للجدول</button>
+                        </form>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 3. قسم النتائج الحقيقية (ديناميكي بالجولة) -->
+                    <!-- ========================================== -->
+                    <div class="glass p-6 rounded-3xl space-y-4">
+                        <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
+                        
+                        <!-- 🌟 شريط التنقل بين الجولات للإدارة 🌟 -->
+                        ${(() => {
+                            const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws() : [1];
+                            if (availableGws.length === 0) availableGws.push(1);
+                            const currentIndex = availableGws.indexOf(activeAdminGw) !== -1 ? availableGws.indexOf(activeAdminGw) : 0;
+                            const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
+                            const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
+                            
+                            return `
+                            <div class="glass p-2 rounded-xl flex justify-between items-center bg-slate-900/80 mb-4 border border-white/10">
+                                <button onclick="changeAdminGw(${prevGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${prevGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${prevGw === null ? 'disabled' : ''}>
+                                    <i class="fa-solid fa-chevron-right ml-1"></i> السابق
+                                </button>
+                                
+                                <div class="relative">
+                                    <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
+                                        ${availableGws.map(g => {
+                                            const label = g >= 101 ? 'أبطال ' + (g - 100) : 'الجولة ' + g;
+                                            return '<option value="' + g + '" ' + (g === activeAdminGw ? 'selected' : '') + '>' + label + '</option>';
+                                        }).join('')}
+                                    </select>
+                                    <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 left-2 pointer-events-none text-xs"></i>
+                                </div>
+                                
+                                <button onclick="changeAdminGw(${nextGw})" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${nextGw === null ? 'opacity-50 cursor-not-allowed' : ''}" ${nextGw === null ? 'disabled' : ''}>
+                                    التالي <i class="fa-solid fa-chevron-left mr-1"></i>
+                                </button>
+                            </div>`;
+                        })()}
+                        
+                        <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1 animate-fade-up">
+                            ${adminMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-6">لا توجد مباريات في الجولة ${activeAdminGw}</div>` : ''}
+                            
+                            ${adminMatches.map(m => `
+                                <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap relative">
+                                    <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
+                                        <div class="text-[10px] font-bold text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-1">GW ${m.gw}</div>
+                                        <button onclick="deleteMatch('${m.id}')" class="p-1.5 text-rose-400 hover:bg-rose-950/40 rounded-lg text-xs" title="حذف المباراة"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                    <div class="flex-1 flex justify-between items-center gap-2">
+                                        
+                                        <div class="flex-1 text-right font-bold text-xs text-slate-200 truncate flex justify-start items-center gap-2">
+                                            <img src="${getTeamLogo(m.home)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                            ${getTeamName(m.home)}
+                                        </div>
+                                        
+                                        <div class="flex items-center gap-1.5">
+                                            <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
+                                            <span class="text-slate-500">:</span>
+                                            <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
+                                        </div>
+                                        
+                                        <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate flex justify-end items-center gap-2 flex-row-reverse">
+                                            <img src="${getTeamLogo(m.away)}" class="w-5 h-5 object-contain drop-shadow-md" loading="lazy" alt="logo" />
+                                            ${getTeamName(m.away)}
+                                        </div>
+
+                                    </div>
+                                    <div class="flex items-center gap-1.5 w-full md:w-auto mt-2 md:mt-0 justify-center md:justify-start">
+                                        <button onclick="saveActual('${m.id}')" class="px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition-all"><i class="fa-solid fa-check mr-1"></i> تثبيت</button>
+                                        <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition-all"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `;
-}
+            `;
+        }
 
         // 🌟 متغيرات ودوال المقارنة (Head-to-Head) 🌟
         let comparisonUser = null;
