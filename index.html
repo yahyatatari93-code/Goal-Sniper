@@ -1378,7 +1378,7 @@ function isMatchLocked(match) {
 
         function changeMatchesGw(gw) {
             gw = Number(gw);
-            if (gw >= 1 && gw <= 38) {
+            if (gw >= 1) { // 🌟 تم كسر حاجز الـ 38 ليدعم 101 فما فوق
                 selectedMatchesGw = gw;
                 render(); 
             }
@@ -1386,7 +1386,7 @@ function isMatchLocked(match) {
 
         function changeAdminGw(gw) {
             gw = Number(gw);
-            if (gw >= 1 && gw <= 38) {
+            if (gw >= 1) { // 🌟 تم كسر حاجز الـ 38 هنا أيضاً
                 selectedAdminGw = gw;
                 render(); 
             }
