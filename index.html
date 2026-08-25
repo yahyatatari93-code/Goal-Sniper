@@ -1123,16 +1123,7 @@ function isMatchLocked(match) {
             if (unique.length === 0) return [1];
             return unique.sort((a, b) => a - b);
         }
-
-        // 🌟 دالة مساعدة لجلب أرقام الجولات المتاحة ديناميكياً
-        function getAvailableGws(leagueFilter = null) {
-            let fMatches = matches;
-            if (leagueFilter) fMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
-            const unique = [...new Set(fMatches.map(m => Number(m.gw)))];
-            if (unique.length === 0) return [1];
-            return unique.sort((a, b) => a - b);
-        }
-
+        
         function getCurrentActiveGw() {
             const uniqueGws = getAvailableGws();
             
@@ -1318,7 +1309,7 @@ function isMatchLocked(match) {
                             let badge = '';
                             if (ph !== null && pa !== null && !isNaN(ph) && !isNaN(pa)) {
                                 // 🌟 التعديل السحري: حساب النقاط يتم من نفس الدالة الرسمية 🌟
-                            let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');                                
+                                let pts = calcPoints(match.home, match.away, pred.home, pred.away, match.actualH, match.actualA, isEffectiveCaptain, pred.isTripleCaptain, match.league || 'EPL');                                
                                 
                                 if (pts >= 3) badge = `<span class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded text-[11px] font-bold border border-emerald-500/30"><i class="fa-solid fa-check-double ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقاط' : 'Pts'}</span>`;
                                 else if (pts > 0) badge = `<span class="bg-amber-500/20 text-amber-400 px-2 py-1 rounded text-[11px] font-bold border border-amber-500/30"><i class="fa-solid fa-check ${isAr ? 'ml-1' : 'mr-1'}"></i>${pts} ${isAr ? 'نقطة' : 'Pt'}</span>`;
@@ -1450,15 +1441,6 @@ function changeGw(gw) {
                 </div>
 
                 ${(() => {
-                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws(activeMatchesLeague) : [1];
-                    if (availableGws.length === 0) availableGws.push(1);
-                    const currentIndex = availableGws.indexOf(activeGw) !== -1 ? availableGws.indexOf(activeGw) : 0;
-                    const prevGw = currentIndex > 0 ? availableGws[currentIndex - 1] : null;
-                    const nextGw = currentIndex < availableGws.length - 1 ? availableGws[currentIndex + 1] : null;
-                    const formatGwLabel = (g) => g >= 101 ? (isAr ? 'أبطال ' + (g - 100) : 'UCL ' + (g - 100)) : (gwText + ' ' + g);
-                    
-                    return `
-                    ${(() => {
                     const isUCL = activeMatchesLeague === 'UCL';
                     const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
                     const currentIndex = gwList.indexOf(activeGw) !== -1 ? gwList.indexOf(activeGw) : 0;
@@ -1472,7 +1454,7 @@ function changeGw(gw) {
                         </button>
                         
                         <div class="relative flex-1 px-2 max-w-[200px]">
-                            <select onchange="changeMatchesGw(this.value)" class="w-full bg-slate-950 border ${isUCL ? 'border-purple-500/30 text-purple-400' : 'border-blue-500/30 text-blue-400'} rounded-xl pl-4 pr-8 py-2 text-[11px] md:text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
+                            <select onchange="changeMatchesGw(this.value)" class="w-full bg-slate-950 border ${isUCL ? 'border-purple-500/30 text-purple-400 focus:border-purple-500' : 'border-blue-500/30 text-blue-400 focus:border-blue-500'} rounded-xl pl-4 pr-8 py-2 text-[11px] md:text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
                                 ${gwList.map(g => `<option value="${g}" ${g === activeGw ? 'selected' : ''}>${getGwLabel(g)}</option>`).join('')}
                             </select>
                             <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none text-xs"></i>
