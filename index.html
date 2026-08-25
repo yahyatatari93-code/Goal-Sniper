@@ -582,8 +582,23 @@ function changeLanguage(langCode) {
         let activeMatchesLeague = 'EPL';
         let activeStandingsLeague = 'EPL';
 
+        // 🌟 المترجم الذكي لجولات الأبطال 🌟
+        function getGwLabel(gw) {
+            gw = Number(gw);
+            if (gw <= 38) return (currentLang === 'ar' ? 'الجولة ' : 'GW ') + gw;
+            if (gw >= 101 && gw <= 108) return (currentLang === 'ar' ? 'الجولة ' : 'MD ') + (gw - 100);
+            if (gw === 109) return currentLang === 'ar' ? 'الملحق المؤهل' : 'KO Play-offs';
+            if (gw === 110) return currentLang === 'ar' ? 'دور الـ 16' : 'Round of 16';
+            if (gw === 111) return currentLang === 'ar' ? 'ربع النهائي' : 'Quarter-finals';
+            if (gw === 112) return currentLang === 'ar' ? 'نصف النهائي' : 'Semi-finals';
+            if (gw === 113) return currentLang === 'ar' ? 'النهائي' : 'Final';
+            return 'UCL ' + gw;
+        }
+
         function setMatchesLeague(league) { 
             activeMatchesLeague = league; 
+            // فصل الجولات: الأبطال يبدأ من 101، والإنجليزي يعود لجولته الطبيعية
+            selectedMatchesGw = (league === 'UCL') ? 101 : (typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1);
             const mainContent = document.getElementById('main-content');
             if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
             setTimeout(() => { render(); }, 30); 
@@ -591,9 +606,22 @@ function changeLanguage(langCode) {
 
         function setStandingsLeague(league) { 
             activeStandingsLeague = league; 
+            selectedStandingsGw = (league === 'UCL') ? 101 : (typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1);
             const mainContent = document.getElementById('main-content');
             if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
             setTimeout(() => { render(); }, 30); 
+        }
+
+        // دالة تبديل القوائم في لوحة الإدارة
+        function toggleAdminGwSelect() {
+            const league = document.getElementById('adm-league').value;
+            if (league === 'UCL') {
+                document.getElementById('adm-gw-epl').classList.add('hidden');
+                document.getElementById('adm-gw-ucl').classList.remove('hidden');
+            } else {
+                document.getElementById('adm-gw-ucl').classList.add('hidden');
+                document.getElementById('adm-gw-epl').classList.remove('hidden');
+            }
         }
         
         // مفتاح الإطلاق الخفي لدوري الأبطال
@@ -1430,18 +1458,24 @@ function changeGw(gw) {
                     const formatGwLabel = (g) => g >= 101 ? (isAr ? 'أبطال ' + (g - 100) : 'UCL ' + (g - 100)) : (gwText + ' ' + g);
                     
                     return `
+                    ${(() => {
+                    const isUCL = activeMatchesLeague === 'UCL';
+                    const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
+                    const currentIndex = gwList.indexOf(activeGw) !== -1 ? gwList.indexOf(activeGw) : 0;
+                    const prevGw = currentIndex > 0 ? gwList[currentIndex - 1] : null;
+                    const nextGw = currentIndex < gwList.length - 1 ? gwList[currentIndex + 1] : null;
+                    
+                    return `
                     <div class="glass p-3 rounded-2xl flex justify-between items-center shadow-lg bg-slate-900/80">
                         <button onclick="changeMatchesGw(${prevGw})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${prevGw === null ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${prevGw === null ? 'disabled' : ''}>
                             <i class="fa-solid fa-chevron-${isAr ? 'right' : 'left'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${prevText}
                         </button>
                         
-                        <div class="relative">
-                            <select onchange="changeMatchesGw(this.value)" class="bg-slate-950 border border-blue-500/30 rounded-xl pl-4 pr-8 py-2 text-sm text-blue-400 font-black outline-none focus:border-blue-500 appearance-none shadow-inner cursor-pointer text-center w-32">
-                                ${availableGws.map(g => 
-                                    '<option value="' + g + '" ' + (g === activeGw ? 'selected' : '') + '>' + formatGwLabel(g) + '</option>'
-                                ).join('')}
+                        <div class="relative flex-1 px-2 max-w-[200px]">
+                            <select onchange="changeMatchesGw(this.value)" class="w-full bg-slate-950 border ${isUCL ? 'border-purple-500/30 text-purple-400' : 'border-blue-500/30 text-blue-400'} rounded-xl pl-4 pr-8 py-2 text-[11px] md:text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
+                                ${gwList.map(g => `<option value="${g}" ${g === activeGw ? 'selected' : ''}>${getGwLabel(g)}</option>`).join('')}
                             </select>
-                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none"></i>
+                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none text-xs"></i>
                         </div>
                         
                         <button onclick="changeMatchesGw(${nextGw})" class="px-3 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold hover:bg-blue-600 hover:text-white transition-all ${nextGw === null ? 'opacity-50 cursor-not-allowed' : 'shadow-md shadow-black/20'}" ${nextGw === null ? 'disabled' : ''}>
@@ -1678,17 +1712,17 @@ function changeGw(gw) {
                         <!-- قائمة اختيار الجولة (تظهر فقط في ترتيب الجولة) -->
                         ${isGw ? `
                         <div class="relative mt-1 animate-fade-up">
-                            <select onchange="changeStandingsGw(this.value)" class="w-full bg-slate-950 border border-emerald-500/30 rounded-xl pl-4 pr-10 py-2.5 text-sm text-emerald-400 font-black outline-none focus:border-emerald-500 appearance-none shadow-inner cursor-pointer text-center">
-                                ${(() => {
-                                    const availableGws = typeof getAvailableGws === 'function' ? getAvailableGws(activeStandingsLeague) : [1];
-                                    if (availableGws.length === 0) availableGws.push(1);
-                                    return availableGws.map(g => {
-                                        const label = g >= 101 ? (isAr ? 'أبطال ' + (g - 100) : 'UCL ' + (g - 100)) : (isAr ? 'الجولة ' + g : 'Gameweek ' + g);
-                                        return '<option value="' + g + '" ' + (g === selectedStandingsGw ? 'selected' : '') + '>' + label + '</option>';
-                                    }).join('');
-                                })()}
-                            </select>
-                            <i class="fa-solid fa-sort text-emerald-500/50 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
+                            ${(() => {
+                                const isUCL = activeStandingsLeague === 'UCL';
+                                const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
+                                
+                                return \`
+                                <select onchange="changeStandingsGw(this.value)" class="w-full bg-slate-950 border \${isUCL ? 'border-purple-500/30 text-purple-400 focus:border-purple-500' : 'border-emerald-500/30 text-emerald-400 focus:border-emerald-500'} rounded-xl pl-4 pr-10 py-2.5 text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
+                                    \${gwList.map(g => \`<option value="\${g}" \${g === selectedStandingsGw ? 'selected' : ''}>\${getGwLabel(g)}</option>\`).join('')}
+                                </select>
+                                <i class="fa-solid fa-sort \${isUCL ? 'text-purple-500/50' : 'text-emerald-500/50'} absolute top-1/2 -translate-y-1/2 \${isAr ? 'left-4' : 'right-4'} pointer-events-none"></i>
+                                \`;
+                            })()}
                         </div>
                         ` : ''}
                     </div>
@@ -2313,10 +2347,9 @@ function ruleRow(text, points, colorType) {
                 
                 <form onsubmit="addMatch(event)" class="bg-slate-900/80 p-4 rounded-2xl border border-white/5 space-y-4 relative z-10">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- الحقل الجديد: اختيار البطولة -->
                         <div class="md:col-span-3">
                             <label class="block text-xs font-bold text-slate-400 mb-1.5">البطولة</label>
-                            <select id="adm-league" required class="w-full bg-slate-950 border border-blue-500/30 rounded-xl p-2.5 text-sm text-blue-400 font-bold outline-none">
+                            <select id="adm-league" required onchange="toggleAdminGwSelect()" class="w-full bg-slate-950 border border-blue-500/30 rounded-xl p-2.5 text-sm text-blue-400 font-bold outline-none">
                                 <option value="EPL">الدوري الإنجليزي (EPL)</option>
                                 <option value="UCL">دوري أبطال أوروبا (UCL)</option>
                             </select>
@@ -2324,20 +2357,36 @@ function ruleRow(text, points, colorType) {
                         <div class="md:col-span-1">
                             <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق المضيف</label>
                             <select id="adm-home" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                <option value="" disabled selected>-- اختر الفريق المضيف --</option>
+                                <option value="" disabled selected>-- اختر المضيف --</option>
                                 ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
                             </select>
                         </div>
                         <div class="md:col-span-1">
                             <label class="block text-xs font-bold text-slate-400 mb-1.5">الفريق الضيف</label>
                             <select id="adm-away" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
-                                <option value="" disabled selected>-- اختر الفريق الضيف --</option>
+                                <option value="" disabled selected>-- اختر الضيف --</option>
                                 ${TEAMS.map(t => `<option value="${t.code}">${t.name}</option>`).join('')}
                             </select>
                         </div>
                         <div class="md:col-span-1">
-                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة</label>
-                            <input type="number" id="adm-gw" required class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white" />
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة / الدور</label>
+                            <!-- قائمة جولات الدوري الإنجليزي -->
+                            <select id="adm-gw-epl" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                ${Array.from({ length: 38 }, (_, i) => `<option value="${i+1}">الجولة ${i+1}</option>`).join('')}
+                            </select>
+                            <!-- قائمة جولات دوري الأبطال (تظهر عند اختيار البطولة) -->
+                            <select id="adm-gw-ucl" class="hidden w-full bg-slate-950 border border-purple-500/30 rounded-xl p-2.5 text-sm text-purple-300 font-bold">
+                                <optgroup label="دور المجموعات">
+                                    ${Array.from({ length: 8 }, (_, i) => `<option value="${i+101}">الجولة ${i+1}</option>`).join('')}
+                                </optgroup>
+                                <optgroup label="الأدوار الإقصائية">
+                                    <option value="109">الملحق المؤهل (Play-offs)</option>
+                                    <option value="110">دور الـ 16</option>
+                                    <option value="111">ربع النهائي</option>
+                                    <option value="112">نصف النهائي</option>
+                                    <option value="113">النهائي</option>
+                                </optgroup>
+                            </select>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
@@ -2888,10 +2937,15 @@ function ruleRow(text, points, colorType) {
 
         async function addMatch(e) {
             e.preventDefault();
-            const gw = document.getElementById('adm-gw').value, home = document.getElementById('adm-home').value;
-            const away = document.getElementById('adm-away').value, dateInput = document.getElementById('adm-date').value;
+            const league = document.getElementById('adm-league').value;
+            // اختيار رقم الجولة بناءً على القائمة الظاهرة
+            const gw = league === 'UCL' ? document.getElementById('adm-gw-ucl').value : document.getElementById('adm-gw-epl').value;
+            
+            const home = document.getElementById('adm-home').value;
+            const away = document.getElementById('adm-away').value;
+            const dateInput = document.getElementById('adm-date').value;
             const timeInput = document.getElementById('adm-time').value;
-            const league = document.getElementById('adm-league').value; // جلب البطولة
+            
             if(!gw || !home || !away || !dateInput || !timeInput) return;
 
             const formattedDate = dateInput.replace(/-/g, '/');
@@ -2902,7 +2956,6 @@ function ruleRow(text, points, colorType) {
             try {
                 await fetch(`${API_BASE_URL}/admin/match`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    // إرسال نوع البطولة إلى قاعدة البيانات
                     body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime, league: league})
                 });
                 showCustomDialog(`تمت إضافة المباراة بنجاح!`);
