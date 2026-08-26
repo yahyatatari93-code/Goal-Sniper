@@ -1905,312 +1905,310 @@ function renderMiniLeaguesTab() {
 }
         
         function renderRulesTab() {
-    // قاموس مصغر خاص بصفحة القوانين فقط (لحمايتك من الأخطاء)
-    const rulesTranslations = {
-    ar: {
-        title: "دليل القوانين الشامل",
-        subtitle: "افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش",
-        sysTitle: "1. نظام حساب النقاط التفصيلي",
-        
-        // نظام النقاط الجديد
-        cat1Title: "قمة الكبار (مواجهات التوب 6)",
-        cat1_1: "التوقع الرقمي الدقيق لفوز أحد الفريقين",
-        cat1_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيجة مختلفة)",
-        cat1_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
-        cat1_4: "توقع التعادل بنتيجة مختلفة",
-        cat2Title: "صائد العمالقة (الكبار ضد العاديين)",
-        cat2_1: "التوقع الرقمي الدقيق لفوز الفريق العادي (مفاجأة!)",
-        cat2_2: "التوقع الصحيح لفوز الفريق العادي (بنتيجة مختلفة)",
-        cat2_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
-        cat2_4: "توقع التعادل بنتيجة مختلفة",
-        cat2_5: "التوقع الرقمي الدقيق لفوز الفريق الكبير",
-        cat2_6: "التوقع الصحيح لفوز الفريق الكبير (بنتيجة مختلفة)",
-        cat3Title: "مباريات الدوري (الفرق العادية)",
-        cat3_1: "التوقع الرقمي الدقيق لفوز أحد الفريقين",
-        cat3_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيجة مختلفة)",
-        cat3_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
-        cat3_4: "توقع التعادل بنتيجة مختلفة",
-        cat3_5: "التوقع الدقيق لتعادل سلبي (0-0) أو لنتيجة مجموع أهدافها 5 فأكثر",
-
-        // الأقسام السابقة (كما هي)
-        powerTitle: "2. بطاقات القوة المضاعفة",
-        power_1: "<strong class='text-amber-400'>الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرة واحدة فقط</span> في كل جولة.",
-        power_2: "<strong class='text-fuchsia-400'>الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرتين فقط في الموسم</span>.",
-        lockTitle: "3. نظام الإغلاق الصارم",
-        lockDesc: "حفاظاً على نزاهة اللعبة، يقوم السيرفر <strong class='text-rose-400'>بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور القفل لا يمكنك تعديل توقعك نهائياً.",
-        badgesTitle: "4. الأوسمة والإنجازات الشخصية",
-        badge_1: "<strong class='text-amber-400'>عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.",
-        badge_2: "<strong class='text-emerald-400'>القناص:</strong> وسام مؤقت تحصل عليه إذا توقعت 3 نتائج مثالية في الجولة السابقة.",
-        badge_3: "<strong class='text-rose-400'>قاهر الكبار:</strong> وسام مؤقت يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) في الجولة السابقة وتحدث بالفعل!",
-        sniperTitle: "5. ميزة القناص (خاصة بالدوريات المصغرة)",
-        sn_1: "<strong class='text-amber-400'>من يحصل عليها؟</strong> المتصدر الذي يحقق أعلى نقاط ضمن دوريه المصغر، يحصل على رصاصة تتيح له خصم <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 نقاط</span> من منافسه.",
-        sn_2: "<strong class='text-blue-400'>حالة التعادل:</strong> إذا تعادل عدة أشخاص، يحصل الجميع على الميزة، لكن قوة الرصاصة تصبح <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(خصم نقطتين)</span>.",
-        sn_3: "<strong class='text-emerald-400'>الدرع (الحصانة):</strong> المشترك الذي يتعرض للقنص، يحصل على درع حماية يمنع قنصه في الجولة التالية.",
-        sn_4: "<strong class='text-fuchsia-400'>عزل النقاط:</strong> رصاصة القناص تؤثر <strong>فقط</strong> على نقاطك داخل الدوري المصغر المعني، ولا تؤثر أبداً على الترتيب العام.",
-        sn_5: "<strong class='text-slate-300'>الصلاحية:</strong> تستخدم الميزة لمرة واحدة فقط قبل بداية الجولة القادمة.",
-        uclRulesTitle: "قوانين الأبطال (UCL)",
-        uclRulesDesc: "نظام وتقسيم نقاط دوري أبطال أوروبا (صراع المستويات والمفاجآت):",
-        uclRule1: "التوقع الرقمي الدقيق لنتيجة متكافئة أو مفاجأة",
-        uclRule2: "التوقع الصحيح للنتيجة أو الفائز حسب فارق التصنيف والمستويات",
-        uclRule3: "نقاط مضاعفة ومستقلة تماماً عن مباريات الدوري الإنجليزي"
-    },
-    en: {
-        title: "Comprehensive Rules Guide",
-        subtitle: "Understand the scoring system to claim the throne",
-        sysTitle: "1. Detailed Scoring System",
-        
-        cat1Title: "👑 The Giants (Top 6 Clashes)",
-        cat1_1: "Exact score prediction for a win",
-        cat1_2: "Correct winner prediction (different score)",
-        cat1_3: "Exact score prediction for a draw",
-        cat1_4: "Correct draw prediction (different score)",
-        cat2Title: "🌟 Giant Slayer (Top 6 vs Regulars)",
-        cat2_1: "Exact score for regular team win (Upset!)",
-        cat2_2: "Correct regular team win (different score)",
-        cat2_3: "Exact score prediction for a draw",
-        cat2_4: "Correct draw prediction (different score)",
-        cat2_5: "Exact score for the Top 6 team winning",
-        cat2_6: "Correct Top 6 team win (different score)",
-        cat3Title: "⚽ Regular League Matches",
-        cat3_1: "Exact score prediction for a win",
-        cat3_2: "Correct winner prediction (different score)",
-        cat3_3: "Exact score prediction for a draw",
-        cat3_4: "Correct draw prediction (different score)",
-        cat3_5: "Exact prediction of a (0-0) draw or any score with 5+ total goals",
-
-        powerTitle: "2. Power Cards",
-        power_1: "<strong class='text-amber-400'>Captain:</strong> Doubles match points (x2). Usable <span class='font-bold text-white bg-black/50 px-1 rounded'>only once</span> per Gameweek.",
-        power_2: "<strong class='text-fuchsia-400'>Triple Captain:</strong> Triples points (x3). Usable <span class='font-bold text-white bg-black/50 px-1 rounded'>only twice</span> per season.",
-        lockTitle: "3. Strict Lock System",
-        lockDesc: "To ensure fairness, the server <strong class='text-rose-400'>automatically locks predictions exactly 60 minutes</strong> before any match kicks off. Once locked, predictions cannot be altered.",
-        badgesTitle: "4. Badges & Achievements",
-        badge_1: "<strong class='text-amber-400'>Oracle of the Week:</strong> Temporary badge for the highest scorer of the previous GW.",
-        badge_2: "<strong class='text-emerald-400'>The Sniper:</strong> Temporary badge for predicting 3 exact scores in the previous GW.",
-        badge_3: "<strong class='text-rose-400'>Giant Slayer:</strong> Temporary badge for correctly predicting an upset (Giant loses) in the previous GW!",
-        sniperTitle: "5. Sniper Feature (Mini-Leagues)",
-        sn_1: "<strong class='text-amber-400'>Who gets it?</strong> The top scorer of a mini-league gets a bullet to deduct <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 pts</span> from a rival.",
-        sn_2: "<strong class='text-blue-400'>Tie case:</strong> If tied, all top scorers get it, but the penalty is reduced to <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 pts)</span>.",
-        sn_3: "<strong class='text-emerald-400'>The Shield:</strong> The sniped player gains immunity in the following GW.",
-        sn_4: "<strong class='text-fuchsia-400'>Isolation:</strong> Sniper bullets ONLY affect points within that specific mini-league. Global rank is never affected.",
-        sn_5: "<strong class='text-slate-300'>Validity:</strong> The bullet must be used before the next GW starts.",
-        uclRulesTitle: "Champions League Rules (UCL)",
-        uclRulesDesc: "UEFA Champions League scoring and points system (Tier clashes & upsets):",
-        uclRule1: "Exact score prediction for a balanced match or upset",
-        uclRule2: "Correct outcome or winner prediction based on tier/ranking difference",
-        uclRule3: "Doubled points system completely independent from Premier League matches"
-    },
-    tr: {
-        title: "Kapsamlı Kurallar Rehberi",
-        subtitle: "Tahta çıkmak için puanlama sistemini anlayın",
-        sysTitle: "1. Detaylı Puanlama Sistemi",
-        
-        cat1Title: "👑 Devlerin Çarpışması (İlk 6)",
-        cat1_1: "Kazanan takım için tam skor tahmini",
-        cat1_2: "Doğru kazanan tahmini (farklı skor)",
-        cat1_3: "Beraberlik için tam skor tahmini",
-        cat1_4: "Doğru beraberlik tahmini (farklı skor)",
-        cat2Title: "🌟 Dev Avcısı (İlk 6 vs Normal)",
-        cat2_1: "Normal takımın galibiyeti için tam skor (Sürpriz!)",
-        cat2_2: "Normal takımın galibiyeti (farklı skor)",
-        cat2_3: "Beraberlik için tam skor tahmini",
-        cat2_4: "Doğru beraberlik tahmini (farklı skor)",
-        cat2_5: "Büyük takımın galibiyeti için tam skor",
-        cat2_6: "Büyük takımın galibiyeti (farklı skor)",
-        cat3Title: "⚽ Normal Lig Maçları",
-        cat3_1: "Kazanan takım için tam skor tahmini",
-        cat3_2: "Doğru kazanan tahmini (farklı skor)",
-        cat3_3: "Beraberlik için tam skor tahmini",
-        cat3_4: "Doğru beraberlik tahmini (farklı skor)",
-        cat3_5: "(0-0) Beraberlik veya toplam 5+ gollü maçın tam tahmini",
-
-        powerTitle: "2. Güç Kartları",
-        power_1: "<strong class='text-amber-400'>Kaptan:</strong> Maç puanını ikiye katlar (x2). Her haftada <span class='font-bold text-white bg-black/50 px-1 rounded'>sadece bir kez</span> kullanılabilir.",
-        power_2: "<strong class='text-fuchsia-400'>Joker (Triple Captain):</strong> Puanı üçe katlar (x3). Sezonda <span class='font-bold text-white bg-black/50 px-1 rounded'>sadece iki kez</span> kullanılabilir.",
-        lockTitle: "3. Sıkı Kilitleme Sistemi",
-        lockDesc: "Adaleti sağlamak için sistem tahminleri maçtan <strong class='text-rose-400'>tam 60 dakika önce kilitler</strong>. Kilitlendikten sonra değiştirilemez.",
-        badgesTitle: "4. Rozetler ve Başarılar",
-        badge_1: "<strong class='text-amber-400'>Haftanın Kahini:</strong> Önceki haftanın en yüksek puanlısına verilen geçici rozet.",
-        badge_2: "<strong class='text-emerald-400'>Keskin Nişancı:</strong> Önceki haftada 3 tam skor bilenlere verilen geçici rozet.",
-        badge_3: "<strong class='text-rose-400'>Dev Avcısı:</strong> Önceki haftada bir sürprizi (Büyük takım yenilgisi) doğru bilenlere verilen geçici rozet!",
-        sniperTitle: "5. Keskin Nişancı Özelliği (Mini Ligler)",
-        sn_1: "<strong class='text-amber-400'>Kim Alır?</strong> Mini ligde haftanın en yüksek puanını alan kişi, rakibinden <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 puan</span> düşürme hakkı kazanır.",
-        sn_2: "<strong class='text-blue-400'>Beraberlik Durumu:</strong> Birden fazla birinci varsa hepsi hakkı kazanır ancak ceza <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 puan)</span> olur.",
-        sn_3: "<strong class='text-emerald-400'>Kalkan:</strong> Vurulan oyuncu bir sonraki hafta için dokunulmazlık kalkanı kazanır.",
-        sn_4: "<strong class='text-fuchsia-400'>İzolasyon:</strong> Bu ceza SADECE o mini ligdeki puanı etkiler. Genel sıralamayı asla etkilemez.",
-        sn_5: "<strong class='text-slate-300'>Geçerlilik:</strong> Bu özellik bir sonraki hafta başlamadan önce kullanılmalıdır.",
-        uclRulesTitle: "Şampiyonlar Ligi Kuralları (UCL)",
-        uclRulesDesc: "UEFA Şampiyonlar Ligi puanlama ve puan sistemi (Seviye eşleşmeleri ve sürprizler):",
-        uclRule1: "Dengeli maç veya sürpriz için tam skor tahmini",
-        uclRule2: "Sıralama ve seviye farkına göre doğru sonuç veya kazanan tahmini",
-        uclRule3: "Premier Lig maçlarından tamamen bağımsız katlanmış puan sistemi"
-    }
-};
-            
-    // تحديد اللغة واتجاه النص
-    const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
-    const rt = rulesTranslations[lang] || rulesTranslations['ar'];
-    const direction = lang === 'ar' ? 'rtl' : 'ltr';
-    const pointIcon = direction === 'rtl' ? 'fa-angle-left' : 'fa-angle-right';
-
-    return `
-        <div class="glass p-4 md:p-6 rounded-3xl space-y-6" dir="${direction}">
-            
-            <!-- عنوان الصفحة الرئيسي -->
-            <div class="border-b border-white/10 pb-4 text-center">
-                <div class="flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-book-open text-blue-400 text-xl"></i>
-                    <h2 class="text-xl font-black text-white uppercase tracking-wider">${rt.title}</h2>
-                </div>
-                <p class="text-slate-400 text-xs mt-2 font-medium">${rt.subtitle}</p>
-            </div>
-
-            <!-- 🌟 أزرار التبديل بين قوانين الإنجليزي والأبطال 🌟 -->
-            <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
-                <button onclick="switchRulesTab('epl')" id="rules-tab-epl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
-                    <i class="fa-solid fa-trophy"></i> ${lang === 'ar' ? 'قوانين الدوري الإنجليزي' : 'Premier League Rules'}
-                </button>
-                <button onclick="switchRulesTab('ucl')" id="rules-tab-ucl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-star"></i> ${lang === 'ar' ? 'قوانين الأبطال' : 'Champions League Rules'}
-                </button>
-            </div>
-
-            <!-- ⚽ قسم قوانين الدوري الإنجليزي (الافتراضي) -->
-            <div id="rules-content-epl" class="space-y-6 animate-fade-up">
-                <!-- ======================= 1. نظام النقاط ======================= -->
-                <div class="space-y-3">
-                    <h3 class="font-bold text-white text-lg flex items-center gap-2">
-                        <span class="text-blue-400">1.</span> ${rt.sysTitle}
-                    </h3>
+            // قاموس القوانين الشامل (يحتوي على كافة اللغات ونصوص الأبطال الجديدة)
+            const rulesTranslations = {
+                ar: {
+                    title: "دليل القوانين الشامل",
+                    subtitle: "افهم كيف يتم حساب النقاط لتتمكن من التربع على العرش",
+                    sysTitle: "1. نظام حساب النقاط التفصيلي",
+                    cat1Title: "قمة الكبار (مواجهات التوب 6)",
+                    cat1_1: "التوقع الرقمي الدقيق لفوز أحد الفريقين",
+                    cat1_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيجة مختلفة)",
+                    cat1_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
+                    cat1_4: "توقع التعادل بنتيجة مختلفة",
+                    cat2Title: "صائد العمالقة (الكبار ضد العاديين)",
+                    cat2_1: "التوقع الرقمي الدقيق لفوز الفريق العادي (م مفاجأة!)",
+                    cat2_2: "التوقع الصحيح لفوز الفريق العادي (بنتيجة مختلفة)",
+                    cat2_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
+                    cat2_4: "توقع التعادل بنتيجة مختلفة",
+                    cat2_5: "التوقع الرقمي الدقيق لفوز الفريق الكبير",
+                    cat2_6: "التوقع الصحيح لفوز الفريق الكبير (بنتيجة مختلفة)",
+                    cat3Title: "مباريات الدوري (الفرق العادية)",
+                    cat3_1: "التوقع الرقمي الدقيق لفوز أحد الفريقين",
+                    cat3_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيجة مختلفة)",
+                    cat3_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
+                    cat3_4: "توقع التعادل بنتيجة مختلفة",
+                    cat3_5: "التوقع الدقيق لتعادل سلبي (0-0) أو لنتيجة مجموع أهدافها 5 فأكثر",
+                    powerTitle: "2. بطاقات القوة المضاعفة",
+                    power_1: "<strong class='text-amber-400'>الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرة واحدة فقط</span> في كل جولة.",
+                    power_2: "<strong class='text-fuchsia-400'>الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرتين فقط في الموسم</span>.",
+                    lockTitle: "3. نظام الإغلاق الصارم",
+                    lockDesc: "حفاظاً على نزاهة اللعبة، يقوم السيرفر <strong class='text-rose-400'>بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور القفل لا يمكنك تعديل توقعك نهائياً.",
+                    badgesTitle: "4. الأوسمة والإنجازات الشخصية",
+                    badge_1: "<strong class='text-amber-400'>عراف الأسبوع:</strong> وسام مؤقت يُمنح لصاحب أعلى نقاط في الجولة السابقة.",
+                    badge_2: "<strong class='text-emerald-400'>القناص:</strong> وسام مؤقت تحصل عليه إذا توقعت 3 نتائج مثالية في الجولة السابقة.",
+                    badge_3: "<strong class='text-rose-400'>قاهر الكبار:</strong> وسام مؤقت يظهر عندما تتوقع مفاجأة (خسارة فريق كبير) في الجولة السابقة وتحدث بالفعل!",
+                    sniperTitle: "5. ميزة القناص (خاصة بالدوريات المصغرة)",
+                    sn_1: "<strong class='text-amber-400'>من يحصل عليها؟</strong> المتصدر الذي يحقق أعلى نقاط ضمن دوريه المصغر، يحصل على رصاصة تتيح له خصم <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 نقاط</span> من منافسه.",
+                    sn_2: "<strong class='text-blue-400'>حالة التعادل:</strong> إذا تعادل عدة أشخاص، يحصل الجميع على الميزة، لكن قوة الرصاصة تصبح <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(خصم نقطتين)</span>.",
+                    sn_3: "<strong class='text-emerald-400'>الدرع (الحصانة):</strong> المشترك الذي يتعرض للقنص، يحصل على درع حماية يمنع قنصه في الجولة التالية.",
+                    sn_4: "<strong class='text-fuchsia-400'>عزل النقاط:</strong> رصاصة القناص تؤثر <strong>فقط</strong> على نقاطك داخل الدوري المصغر المعني، ولا تؤثر أبداً على الترتيب العام.",
+                    sn_5: "<strong class='text-slate-300'>الصلاحية:</strong> تستخدم الميزة لمرة واحدة فقط قبل بداية الجولة القادمة.",
                     
-                    <!-- قمة الكبار -->
-                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                        <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                            <i class="fa-solid fa-crown text-amber-400"></i>
-                            <h3 class="font-bold text-amber-400 text-sm">${rt.cat1Title}</h3>
-                        </div>
-                        <div class="p-3 divide-y divide-white/5">
-                            ${ruleRow(rt.cat1_1, '+5', 'emerald')}
-                            ${ruleRow(rt.cat1_2, '+3', 'amber')}
-                            ${ruleRow(rt.cat1_3, '+3', 'amber')}
-                            ${ruleRow(rt.cat1_4, '+2', 'slate')}
-                        </div>
+                    // 🌟 نصوص دوري الأبطال
+                    uclRulesTitle: "قوانين الأبطال (UCL)",
+                    uclRulesDesc: "يتم احتساب النقاط في منافسات دوري أبطال أوروبا بناءً على نظام صراع المستويات (UCL Levels) والمفاجآت الكبرى كالتالي:",
+                    uclRule1: "الفرق المتكافئة (نفس المستوى)",
+                    uclRule2: "فوز الفريق الأقوى (المنطق السائد)",
+                    uclRule3: "مفاجأة كبرى (فوز الفريق الأضعف بمستويين أو أكثر)"
+                },
+                en: {
+                    title: "Comprehensive Rules Guide",
+                    subtitle: "Understand the scoring system to claim the throne",
+                    sysTitle: "1. Detailed Scoring System",
+                    cat1Title: "👑 The Giants (Top 6 Clashes)",
+                    cat1_1: "Exact score prediction for a win",
+                    cat1_2: "Correct winner prediction (different score)",
+                    cat1_3: "Exact score prediction for a draw",
+                    cat1_4: "Correct draw prediction (different score)",
+                    cat2Title: "🌟 Giant Slayer (Top 6 vs Regulars)",
+                    cat2_1: "Exact score for regular team win (Upset!)",
+                    cat2_2: "Correct regular team win (different score)",
+                    cat2_3: "Exact score prediction for a draw",
+                    cat2_4: "Correct draw prediction (different score)",
+                    cat2_5: "Exact score for the Top 6 team winning",
+                    cat2_6: "Correct Top 6 team win (different score)",
+                    cat3Title: "⚽ Regular League Matches",
+                    cat3_1: "Exact score prediction for a win",
+                    cat3_2: "Correct winner prediction (different score)",
+                    cat3_3: "Exact score prediction for a draw",
+                    cat3_4: "Correct draw prediction (different score)",
+                    cat3_5: "Exact prediction of a (0-0) draw or any score with 5+ total goals",
+                    powerTitle: "2. Power Cards",
+                    power_1: "<strong class='text-amber-400'>Captain:</strong> Doubles match points (x2). Usable <span class='font-bold text-white bg-black/50 px-1 rounded'>only once</span> per Gameweek.",
+                    power_2: "<strong class='text-fuchsia-400'>Triple Captain:</strong> Triples points (x3). Usable <span class='font-bold text-white bg-black/50 px-1 rounded'>only twice</span> per season.",
+                    lockTitle: "3. Strict Lock System",
+                    lockDesc: "To ensure fairness, the server <strong class='text-rose-400'>automatically locks predictions exactly 60 minutes</strong> before any match kicks off. Once locked, predictions cannot be altered.",
+                    badgesTitle: "4. Badges & Achievements",
+                    badge_1: "<strong class='text-amber-400'>Oracle of the Week:</strong> Temporary badge for the highest scorer of the previous GW.",
+                    badge_2: "<strong class='text-emerald-400'>The Sniper:</strong> Temporary badge for predicting 3 exact scores in the previous GW.",
+                    badge_3: "<strong class='text-rose-400'>Giant Slayer:</strong> Temporary badge for correctly predicting an upset (Giant loses) in the previous GW!",
+                    sniperTitle: "5. Sniper Feature (Mini-Leagues)",
+                    sn_1: "<strong class='text-amber-400'>Who gets it?</strong> The top scorer of a mini-league gets a bullet to deduct <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 pts</span> from a rival.",
+                    sn_2: "<strong class='text-blue-400'>Tie case:</strong> If tied, all top scorers get it, but the penalty is reduced to <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 pts)</span>.",
+                    sn_3: "<strong class='text-emerald-400'>The Shield:</strong> The sniped player gains immunity in the following GW.",
+                    sn_4: "<strong class='text-fuchsia-400'>Isolation:</strong> Sniper bullets ONLY affect points within that specific mini-league. Global rank is never affected.",
+                    sn_5: "<strong class='text-slate-300'>Validity:</strong> The bullet must be used before the next GW starts.",
+                    
+                    // 🌟 UCL Texts
+                    uclRulesTitle: "Champions League Rules (UCL)",
+                    uclRulesDesc: "UEFA Champions League scoring and points system (Tier clashes & upsets):",
+                    uclRule1: "Balanced match or upset (Exact score)",
+                    uclRule2: "Expected winner based on tier difference",
+                    uclRule3: "Major upset (Lower tier team wins by 2+ levels)"
+                },
+                tr: {
+                    title: "Kapsamlı Kurallar Rehberi",
+                    subtitle: "Tahta çıkmak için puanlama sistemini anlayın",
+                    sysTitle: "1. Detaylı Puanlama Sistemi",
+                    cat1Title: "👑 Devlerin Çarpışması (İlk 6)",
+                    cat1_1: "Kazanan takım için tam skor tahmini",
+                    cat1_2: "Doğru kazanan tahmini (farklı skor)",
+                    cat1_3: "Beraberlik için tam skor tahmini",
+                    cat1_4: "Doğru beraberlik tahmini (farklı skor)",
+                    cat2Title: "🌟 Dev Avcısı (İlk 6 vs Normal)",
+                    cat2_1: "Normal takımın galibiyeti için tam skor (Sürpriz!)",
+                    cat2_2: "Normal takımın galibiyeti (farklı skor)",
+                    cat2_3: "Beraberlik için tam skor tahmini",
+                    cat2_4: "Doğru beraberlik tahmini (farklı skor)",
+                    cat2_5: "Büyük takımın galibiyeti için tam skor",
+                    cat2_6: "Büyük takımın galibiyeti (farklı skor)",
+                    cat3Title: "⚽ Normal Lig Maçları",
+                    cat3_1: "Kazanan takım için tam skor tahmini",
+                    cat3_2: "Doğru kazanan tahmini (farklı skor)",
+                    cat3_3: "Beraberlik için tam skor tahmini",
+                    cat3_4: "Doğru beraberlik tahmini (farklı skor)",
+                    cat3_5: "(0-0) Beraberlik veya toplam 5+ gollü maçın tam tahmini",
+                    powerTitle: "2. Güç Kartları",
+                    power_1: "<strong class='text-amber-400'>Kaptan:</strong> Maç puanını ikiye katlar (x2). Her haftada <span class='font-bold text-white bg-black/50 px-1 rounded'>sadece bir kez</span> kullanılabilir.",
+                    power_2: "<strong class='text-fuchsia-400'>Joker (Triple Captain):</strong> Puanı üçe katlar (x3). Sezonda <span class='font-bold text-white bg-black/50 px-1 rounded'>sadece iki kez</span> kullanılabilir.",
+                    lockTitle: "3. Sıkı Kilitleme Sistemi",
+                    lockDesc: "Adaleti sağlamak için sistem tahminleri maçtan <strong class='text-rose-400'>tam 60 dakika önce kilitler</strong>. Kilitlendikten sonra değiştirilemez.",
+                    badgesTitle: "4. Rozetler ve Başarılar",
+                    badge_1: "<strong class='text-amber-400'>Haftanın Kahini:</strong> Önceki haftanın en yüksek puanlısına verilen geçici rozet.",
+                    badge_2: "<strong class='text-emerald-400'>Keskin Nişancı:</strong> Önceki haftada 3 tam skor bilenlere verilen geçici rozet.",
+                    badge_3: "<strong class='text-rose-400'>Dev Avcısı:</strong> Önceki haftada bir sürprizi (Büyük takım yenilgisi) doğru bilenlere verilen geçici rozet!",
+                    sniperTitle: "5. Keskin Nişancı Özelliği (Mini Ligler)",
+                    sn_1: "<strong class='text-amber-400'>Kim Alır?</strong> Mini ligde haftanın en yüksek puanını alan kişi, rakibinden <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>4 puan</span> düşürme hakkı kazanır.",
+                    sn_2: "<strong class='text-blue-400'>Beraberlik Durumu:</strong> Birden fazla birinci varsa hepsi hakkı kazanır ancak ceza <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 puan)</span> olur.",
+                    sn_3: "<strong class='text-emerald-400'>Kalkan:</strong> Vurulan oyuncu bir sonraki hafta için dokunulmazlık kalkanı kazanır.",
+                    sn_4: "<strong class='text-fuchsia-400'>İzolasyon:</strong> Bu ceza SADECE o mini ligdeki puanı etkiler. Genel sıralamayı asla etkilemez.",
+                    sn_5: "<strong class='text-slate-300'>Geçerlilik:</strong> Bu özellik bir sonraki hafta başlamadan önce kullanılmalıdır.",
+                    
+                    // 🌟 UCL Texts
+                    uclRulesTitle: "Şampiyonlar Ligi Kuralları (UCL)",
+                    uclRulesDesc: "UEFA Şampiyonlar Ligi puanlama ve puan sistemi (Seviye eşleşmeleri ve sürprizler):",
+                    uclRule1: "Dengeli maç veya sürpriz için tam skor tahmini",
+                    uclRule2: "Sıralama ve seviye farkına göre doğru sonuç veya kazanan tahmini",
+                    uclRule3: "Premier Lig maçlarından tamamen bağımsız katlanmış puan sistemi"
+                }
+            };
+            
+            // تحديد اللغة واتجاه النص
+            const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
+            const rt = rulesTranslations[lang] || rulesTranslations['ar'];
+            const direction = lang === 'ar' ? 'rtl' : 'ltr';
+            const pointIcon = direction === 'rtl' ? 'fa-angle-left' : 'fa-angle-right';
+
+            return `
+            <div class="glass p-4 md:p-6 rounded-3xl space-y-6" dir="${direction}">
+                
+                <!-- عنوان الصفحة الرئيسي -->
+                <div class="border-b border-white/10 pb-4 text-center">
+                    <div class="flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-book-open text-blue-400 text-xl"></i>
+                        <h2 class="text-xl font-black text-white uppercase tracking-wider">${rt.title}</h2>
                     </div>
-
-                    <!-- صائد العمالقة -->
-                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                        <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                            <i class="fa-solid fa-bolt-lightning text-purple-400"></i>
-                            <h3 class="font-bold text-purple-400 text-sm">${rt.cat2Title}</h3>
-                        </div>
-                        <div class="p-3 divide-y divide-white/5">
-                            ${ruleRow(rt.cat2_1, '+6', 'purple')}
-                            ${ruleRow(rt.cat2_2, '+4', 'blue')}
-                            ${ruleRow(rt.cat2_3, '+4', 'blue')}
-                            ${ruleRow(rt.cat2_4, '+3', 'amber')}
-                            ${ruleRow(rt.cat2_5, '+3', 'amber')}
-                            ${ruleRow(rt.cat2_6, '+1', 'gray')}
-                        </div>
-                    </div>
-
-                    <!-- مباريات الدوري -->
-                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                        <div class="bg-gradient-to-r from-blue-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-blue-400"></i>
-                            <h3 class="font-bold text-blue-400 text-sm">${rt.cat3Title}</h3>
-                        </div>
-                        <div class="p-3 divide-y divide-white/5">
-                            ${ruleRow(rt.cat3_5, '+5', 'emerald')}
-                            ${ruleRow(rt.cat3_1, '+3', 'amber')}
-                            ${ruleRow(rt.cat3_3, '+3', 'amber')}
-                            ${ruleRow(rt.cat3_2, '+1', 'gray')}
-                            ${ruleRow(rt.cat3_4, '+1', 'gray')}
-                        </div>
-                    </div>
+                    <p class="text-slate-400 text-xs mt-2 font-medium">${rt.subtitle}</p>
                 </div>
 
-            <!-- ======================= 2. بطاقات القوة ======================= -->
-            <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                <div class="bg-gradient-to-r from-fuchsia-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i>
-                    <h3 class="font-bold text-fuchsia-400 text-sm">${rt.powerTitle}</h3>
+                <!-- 🌟 أزرار التبديل بين قوانين الإنجليزي والأبطال 🌟 -->
+                <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                    <button onclick="switchRulesTab('epl')" id="rules-tab-epl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+                        <i class="fa-solid fa-trophy"></i> ${lang === 'ar' ? 'الدوري الإنجليزي' : 'Premier League'}
+                    </button>
+                    <button onclick="switchRulesTab('ucl')" id="rules-tab-ucl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-star"></i> ${lang === 'ar' ? 'أبطال أوروبا' : 'Champions League'}
+                    </button>
                 </div>
-                <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
-                    <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_1}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_2}</div></div>
-                </div>
-            </div>
 
-            <!-- ======================= 3. نظام الإغلاق ======================= -->
-            <div class="bg-slate-900/40 border border-rose-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(244,63,94,0.1)]">
-                <div class="bg-gradient-to-r from-rose-600/30 to-transparent px-4 py-3 border-b border-rose-500/20 flex items-center gap-2">
-                    <i class="fa-solid fa-lock text-rose-400"></i>
-                    <h3 class="font-bold text-rose-400 text-sm">${rt.lockTitle}</h3>
-                </div>
-                <div class="p-4 text-sm text-slate-300 leading-relaxed flex gap-3 items-start">
-                    <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-1.5"></i>
-                    <div class="flex-1">${rt.lockDesc}</div>
-                </div>
-            </div>
-
-            <!-- ======================= 4. الأوسمة ======================= -->
-            <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                <div class="bg-gradient-to-r from-emerald-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                    <i class="fa-solid fa-medal text-emerald-400"></i>
-                    <h3 class="font-bold text-emerald-400 text-sm">${rt.badgesTitle}</h3>
-                </div>
-                <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
-                    <div class="flex gap-2 items-start"><i class="fa-solid fa-fire text-amber-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_1}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid fa-crosshairs text-emerald-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_2}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid fa-shield-halved text-rose-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_3}</div></div>
-                </div>
-            </div>
-
-            <!-- ======================= 5. ميزة القناص ======================= -->
-            <div class="bg-slate-900/40 border border-sky-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(14,165,233,0.1)]">
-                <div class="bg-gradient-to-r from-sky-600/30 to-transparent px-4 py-3 border-b border-sky-500/20 flex items-center gap-2">
-                    <i class="fa-solid fa-crosshairs text-sky-400"></i>
-                    <h3 class="font-bold text-sky-400 text-sm">${rt.sniperTitle}</h3>
-                </div>
-                <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
-                    <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_1}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_2}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_3}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_4}</div></div>
-                    <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_5}</div></div>
-                </div>
-            <!-- 🏆 قسم قوانين الأبطال (مخفي افتراضياً حتى يتم الضغط على التبويب) -->
-            <div id="rules-content-ucl" class="hidden space-y-6 animate-fade-up">
-                <div class="bg-slate-900/40 border border-purple-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                    <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-purple-500/30 flex items-center gap-2">
-                        <i class="fa-solid fa-star text-purple-400"></i>
-                        <h3 class="font-bold text-purple-400 text-sm">قوانين واحتساب نقاط دوري أبطال أوروبا (UCL)</h3>
-                    </div>
-                    <div class="p-4 space-y-4 text-sm text-slate-300 leading-relaxed">
-                        <p class="text-xs text-slate-300">
-                            يتم احتساب النقاط في منافسات دوري أبطال أوروبا بناءً على نظام <strong>صراع المستويات (UCL Levels)</strong> والمفاجآت الكبرى كالتالي:
-                        </p>
+                <!-- ⚽ قسم قوانين الدوري الإنجليزي (الافتراضي) -->
+                <div id="rules-content-epl" class="space-y-6 animate-fade-up">
+                    
+                    <!-- 1. نظام النقاط -->
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                            <span class="text-blue-400">1.</span> ${rt.sysTitle}
+                        </h3>
                         
-                        <div class="space-y-2 pt-2">
-                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                                <span class="font-bold text-slate-200">الفرق المتكافئة (نفس المستوى)</span>
-                                <span class="font-black text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded border border-emerald-500/20">+5 دقيق / +3 فائز</span>
+                        <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                            <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                                <i class="fa-solid fa-crown text-amber-400"></i>
+                                <h3 class="font-bold text-amber-400 text-sm">${rt.cat1Title}</h3>
                             </div>
-                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                                <span class="font-bold text-slate-200">فوز الفريق الأقوى (المنطق السائد)</span>
-                                <span class="font-black text-blue-400 bg-blue-950/40 px-2 py-1 rounded border border-blue-500/20">+3 دقيق / +1 فائز</span>
+                            <div class="p-3 divide-y divide-white/5">
+                                ${ruleRow(rt.cat1_1, '+5', 'emerald')}
+                                ${ruleRow(rt.cat1_2, '+3', 'amber')}
+                                ${ruleRow(rt.cat1_3, '+3', 'amber')}
+                                ${ruleRow(rt.cat1_4, '+2', 'slate')}
                             </div>
-                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
-                                <span class="font-bold text-slate-200">مفاجأة كبرى (فوز الفريق الأضعف بمستويين أو أكثر)</span>
-                                <span class="font-black text-amber-400 bg-amber-950/40 px-2 py-1 rounded border border-amber-500/20">+7 دقيق / +4 فائز</span>
+                        </div>
+
+                        <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                            <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                                <i class="fa-solid fa-bolt-lightning text-purple-400"></i>
+                                <h3 class="font-bold text-purple-400 text-sm">${rt.cat2Title}</h3>
+                            </div>
+                            <div class="p-3 divide-y divide-white/5">
+                                ${ruleRow(rt.cat2_1, '+6', 'purple')}
+                                ${ruleRow(rt.cat2_2, '+4', 'blue')}
+                                ${ruleRow(rt.cat2_3, '+4', 'blue')}
+                                ${ruleRow(rt.cat2_4, '+3', 'amber')}
+                                ${ruleRow(rt.cat2_5, '+3', 'amber')}
+                                ${ruleRow(rt.cat2_6, '+1', 'gray')}
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                            <div class="bg-gradient-to-r from-blue-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                                <h3 class="font-bold text-blue-400 text-sm">${rt.cat3Title}</h3>
+                            </div>
+                            <div class="p-3 divide-y divide-white/5">
+                                ${ruleRow(rt.cat3_5, '+5', 'emerald')}
+                                ${ruleRow(rt.cat3_1, '+3', 'amber')}
+                                ${ruleRow(rt.cat3_3, '+3', 'amber')}
+                                ${ruleRow(rt.cat3_2, '+1', 'gray')}
+                                ${ruleRow(rt.cat3_4, '+1', 'gray')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. بطاقات القوة -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                        <div class="bg-gradient-to-r from-fuchsia-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i>
+                            <h3 class="font-bold text-fuchsia-400 text-sm">${rt.powerTitle}</h3>
+                        </div>
+                        <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
+                            <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_1}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_2}</div></div>
+                        </div>
+                    </div>
+
+                    <!-- 3. الإغلاق -->
+                    <div class="bg-slate-900/40 border border-rose-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(244,63,94,0.1)]">
+                        <div class="bg-gradient-to-r from-rose-600/30 to-transparent px-4 py-3 border-b border-rose-500/20 flex items-center gap-2">
+                            <i class="fa-solid fa-lock text-rose-400"></i>
+                            <h3 class="font-bold text-rose-400 text-sm">${rt.lockTitle}</h3>
+                        </div>
+                        <div class="p-4 text-sm text-slate-300 leading-relaxed flex gap-3 items-start">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-1.5"></i>
+                            <div class="flex-1">${rt.lockDesc}</div>
+                        </div>
+                    </div>
+
+                    <!-- 4. الأوسمة -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                        <div class="bg-gradient-to-r from-emerald-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <i class="fa-solid fa-medal text-emerald-400"></i>
+                            <h3 class="font-bold text-emerald-400 text-sm">${rt.badgesTitle}</h3>
+                        </div>
+                        <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
+                            <div class="flex gap-2 items-start"><i class="fa-solid fa-fire text-amber-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_1}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid fa-crosshairs text-emerald-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_2}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid fa-shield-halved text-rose-400 mt-1 text-xs w-4"></i> <div class="flex-1">${rt.badge_3}</div></div>
+                        </div>
+                    </div>
+
+                    <!-- 5. ميزة القناص -->
+                    <div class="bg-slate-900/40 border border-sky-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(14,165,233,0.1)]">
+                        <div class="bg-gradient-to-r from-sky-600/30 to-transparent px-4 py-3 border-b border-sky-500/20 flex items-center gap-2">
+                            <i class="fa-solid fa-crosshairs text-sky-400"></i>
+                            <h3 class="font-bold text-sky-400 text-sm">${rt.sniperTitle}</h3>
+                        </div>
+                        <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
+                            <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_1}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_2}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_3}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_4}</div></div>
+                            <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_5}</div></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 🏆 قسم قوانين الأبطال (مخفي افتراضياً) -->
+                <div id="rules-content-ucl" class="hidden space-y-6 animate-fade-up">
+                    <div class="bg-slate-900/40 border border-purple-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                        <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-purple-500/30 flex items-center gap-2">
+                            <i class="fa-solid fa-star text-purple-400"></i>
+                            <h3 class="font-bold text-purple-400 text-sm">${rt.uclRulesTitle}</h3>
+                        </div>
+                        <div class="p-4 space-y-4 text-sm text-slate-300 leading-relaxed">
+                            <p class="text-xs text-slate-300">${rt.uclRulesDesc}</p>
+                            
+                            <div class="space-y-2 pt-2">
+                                <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                    <span class="font-bold text-slate-200">${rt.uclRule1}</span>
+                                    <span class="font-black text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded border border-emerald-500/20">+5 / +3</span>
+                                </div>
+                                <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                    <span class="font-bold text-slate-200">${rt.uclRule2}</span>
+                                    <span class="font-black text-blue-400 bg-blue-950/40 px-2 py-1 rounded border border-blue-500/20">+3 / +1</span>
+                                </div>
+                                <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                    <span class="font-bold text-slate-200">${rt.uclRule3}</span>
+                                    <span class="font-black text-amber-400 bg-amber-950/40 px-2 py-1 rounded border border-amber-500/20">+7 / +4</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-        </div>
-    `;
-}
+            </div>
+            `;
+        }
 
 // دالة رسم بطاقات النقاط (ضعها تحت renderRulesTab مباشرة)
 function ruleRow(text, points, colorType) {
