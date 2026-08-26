@@ -1917,7 +1917,7 @@ function renderMiniLeaguesTab() {
                     cat1_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
                     cat1_4: "توقع التعادل بنتيجة مختلفة",
                     cat2Title: "صائد العمالقة (الكبار ضد العاديين)",
-                    cat2_1: "التوقع الرقمي الدقيق لفوز الفريق العادي (م مفاجأة!)",
+                    cat2_1: "التوقع الرقمي الدقيق لفوز الفريق العادي (مفاجأة!)",
                     cat2_2: "التوقع الصحيح لفوز الفريق العادي (بنتيجة مختلفة)",
                     cat2_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
                     cat2_4: "توقع التعادل بنتيجة مختلفة",
@@ -1989,8 +1989,6 @@ function renderMiniLeaguesTab() {
                     sn_3: "<strong class='text-emerald-400'>The Shield:</strong> The sniped player gains immunity in the following GW.",
                     sn_4: "<strong class='text-fuchsia-400'>Isolation:</strong> Sniper bullets ONLY affect points within that specific mini-league. Global rank is never affected.",
                     sn_5: "<strong class='text-slate-300'>Validity:</strong> The bullet must be used before the next GW starts.",
-                    
-                    // 🌟 UCL Texts
                     uclRulesTitle: "Champions League Rules (UCL)",
                     uclRulesDesc: "UEFA Champions League scoring and points system (Tier clashes & upsets):",
                     uclRule1: "Balanced match or upset (Exact score)",
@@ -2034,8 +2032,6 @@ function renderMiniLeaguesTab() {
                     sn_3: "<strong class='text-emerald-400'>Kalkan:</strong> Vurulan oyuncu bir sonraki hafta için dokunulmazlık kalkanı kazanır.",
                     sn_4: "<strong class='text-fuchsia-400'>İzolasyon:</strong> Bu ceza SADECE o mini ligdeki puanı etkiler. Genel sıralamayı asla etkilemez.",
                     sn_5: "<strong class='text-slate-300'>Geçerlilik:</strong> Bu özellik bir sonraki hafta başlamadan önce kullanılmalıdır.",
-                    
-                    // 🌟 UCL Texts
                     uclRulesTitle: "Şampiyonlar Ligi Kuralları (UCL)",
                     uclRulesDesc: "UEFA Şampiyonlar Ligi puanlama ve puan sistemi (Seviye eşleşmeleri ve sürprizler):",
                     uclRule1: "Dengeli maç veya sürpriz için tam skor tahmini",
@@ -2044,7 +2040,6 @@ function renderMiniLeaguesTab() {
                 }
             };
             
-            // تحديد اللغة واتجاه النص
             const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
             const rt = rulesTranslations[lang] || rulesTranslations['ar'];
             const direction = lang === 'ar' ? 'rtl' : 'ltr';
@@ -2052,8 +2047,6 @@ function renderMiniLeaguesTab() {
 
             return `
             <div class="glass p-4 md:p-6 rounded-3xl space-y-6" dir="${direction}">
-                
-                <!-- عنوان الصفحة الرئيسي -->
                 <div class="border-b border-white/10 pb-4 text-center">
                     <div class="flex items-center justify-center gap-3">
                         <i class="fa-solid fa-book-open text-blue-400 text-xl"></i>
@@ -2062,7 +2055,6 @@ function renderMiniLeaguesTab() {
                     <p class="text-slate-400 text-xs mt-2 font-medium">${rt.subtitle}</p>
                 </div>
 
-                <!-- 🌟 أزرار التبديل بين قوانين الإنجليزي والأبطال 🌟 -->
                 <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
                     <button onclick="switchRulesTab('epl')" id="rules-tab-epl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
                         <i class="fa-solid fa-trophy"></i> ${lang === 'ar' ? 'الدوري الإنجليزي' : 'Premier League'}
@@ -2072,10 +2064,7 @@ function renderMiniLeaguesTab() {
                     </button>
                 </div>
 
-                <!-- ⚽ قسم قوانين الدوري الإنجليزي (الافتراضي) -->
                 <div id="rules-content-epl" class="space-y-6 animate-fade-up">
-                    
-                    <!-- 1. نظام النقاط -->
                     <div class="space-y-3">
                         <h3 class="font-bold text-white text-lg flex items-center gap-2">
                             <span class="text-blue-400">1.</span> ${rt.sysTitle}
@@ -2124,7 +2113,6 @@ function renderMiniLeaguesTab() {
                         </div>
                     </div>
 
-                    <!-- 2. بطاقات القوة -->
                     <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
                         <div class="bg-gradient-to-r from-fuchsia-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
                             <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i>
@@ -2136,7 +2124,6 @@ function renderMiniLeaguesTab() {
                         </div>
                     </div>
 
-                    <!-- 3. الإغلاق -->
                     <div class="bg-slate-900/40 border border-rose-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                         <div class="bg-gradient-to-r from-rose-600/30 to-transparent px-4 py-3 border-b border-rose-500/20 flex items-center gap-2">
                             <i class="fa-solid fa-lock text-rose-400"></i>
@@ -2148,7 +2135,6 @@ function renderMiniLeaguesTab() {
                         </div>
                     </div>
 
-                    <!-- 4. الأوسمة -->
                     <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
                         <div class="bg-gradient-to-r from-emerald-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
                             <i class="fa-solid fa-medal text-emerald-400"></i>
@@ -2161,7 +2147,6 @@ function renderMiniLeaguesTab() {
                         </div>
                     </div>
 
-                    <!-- 5. ميزة القناص -->
                     <div class="bg-slate-900/40 border border-sky-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(14,165,233,0.1)]">
                         <div class="bg-gradient-to-r from-sky-600/30 to-transparent px-4 py-3 border-b border-sky-500/20 flex items-center gap-2">
                             <i class="fa-solid fa-crosshairs text-sky-400"></i>
@@ -2175,10 +2160,8 @@ function renderMiniLeaguesTab() {
                             <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_5}</div></div>
                         </div>
                     </div>
-
                 </div>
 
-                <!-- 🏆 قسم قوانين الأبطال (مخفي افتراضياً) -->
                 <div id="rules-content-ucl" class="hidden space-y-6 animate-fade-up">
                     <div class="bg-slate-900/40 border border-purple-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)]">
                         <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-purple-500/30 flex items-center gap-2">
@@ -2187,7 +2170,6 @@ function renderMiniLeaguesTab() {
                         </div>
                         <div class="p-4 space-y-4 text-sm text-slate-300 leading-relaxed">
                             <p class="text-xs text-slate-300">${rt.uclRulesDesc}</p>
-                            
                             <div class="space-y-2 pt-2">
                                 <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
                                     <span class="font-bold text-slate-200">${rt.uclRule1}</span>
@@ -2210,70 +2192,46 @@ function renderMiniLeaguesTab() {
             `;
         }
 
-// دالة رسم بطاقات النقاط (ضعها تحت renderRulesTab مباشرة)
-function ruleRow(text, points, colorType) {
-    const colors = {
-        purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]',
-        emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]',
-        blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-        slate: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-        gray: 'bg-slate-700/30 text-slate-400 border-slate-600/30'
-    };
-    
-    return `
-        <div class="flex items-center justify-between py-2.5 gap-4">
-            <span class="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">${text}</span>
-            <span class="${colors[colorType]} border font-black px-3 py-1 rounded-lg text-sm min-w-[45px] text-center flex-shrink-0" dir="ltr">
-                ${points}
-            </span>
-        </div>
-    `;
-}
+        function ruleRow(text, points, colorType) {
+            const colors = {
+                purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]',
+                emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]',
+                blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+                amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+                slate: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+                gray: 'bg-slate-700/30 text-slate-400 border-slate-600/30'
+            };
+            
+            return `
+                <div class="flex items-center justify-between py-2.5 gap-4">
+                    <span class="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">${text}</span>
+                    <span class="${colors[colorType]} border font-black px-3 py-1 rounded-lg text-sm min-w-[45px] text-center flex-shrink-0" dir="ltr">
+                        ${points}
+                    </span>
+                </div>
+            `;
+        }
 
-        // دالة رسم بطاقات النقاط (ضعها تحت renderRulesTab مباشرة)
-function ruleRow(text, points, colorType) {
-    const colors = {
-        purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]',
-        emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]',
-        blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-        amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-        slate: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
-        gray: 'bg-slate-700/30 text-slate-400 border-slate-600/30'
-    };
-    
-    return `
-        <div class="flex items-center justify-between py-2.5 gap-4">
-            <span class="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">${text}</span>
-            <span class="${colors[colorType]} border font-black px-3 py-1 rounded-lg text-sm min-w-[45px] text-center flex-shrink-0" dir="ltr">
-                ${points}
-            </span>
-        </div>
-    `;
-}
+        function switchRulesTab(tab) {
+            const eplContent = document.getElementById('rules-content-epl');
+            const uclContent = document.getElementById('rules-content-ucl');
+            const eplBtn = document.getElementById('rules-tab-epl');
+            const uclBtn = document.getElementById('rules-tab-ucl');
 
-// 🌟 أضف دالة التبديل هنا 🌟
-function switchRulesTab(tab) {
-    const eplContent = document.getElementById('rules-content-epl');
-    const uclContent = document.getElementById('rules-content-ucl');
-    const eplBtn = document.getElementById('rules-tab-epl');
-    const uclBtn = document.getElementById('rules-tab-ucl');
+            if (!eplContent || !uclContent || !eplBtn || !uclBtn) return;
 
-    if (!eplContent || !uclContent || !eplBtn || !uclBtn) return;
-
-    if (tab === 'epl') {
-        eplContent.classList.remove('hidden');
-        uclContent.classList.add('hidden');
-        eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md";
-        uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
-    } else {
-        uclContent.classList.remove('hidden');
-        eplContent.classList.add('hidden');
-        uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md";
-        eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
-    }
-}
-// 🌟 نهاية إضافة دالة التبديل 🌟
+            if (tab === 'epl') {
+                eplContent.classList.remove('hidden');
+                uclContent.classList.add('hidden');
+                eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md";
+                uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+            } else {
+                uclContent.classList.remove('hidden');
+                eplContent.classList.add('hidden');
+                uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md";
+                eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+            }
+        }
 
 function renderPrizesTab() {
 // ... باقي كود الجوائز ...
