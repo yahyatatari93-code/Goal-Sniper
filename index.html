@@ -770,20 +770,33 @@ function changeLanguage(langCode) {
             return pts;
         };
 
-        // 🌟 دالة جديدة: تبحث عن الكابتن الصريح، وإن لم تجد تختار المباراة الأولى إجبارياً
-        function getActiveCaptainId(username, gw) {
+        // 🌟 دالة محدثة: تدعم كابتن واحد في الإنجليزي، وكابتن لكل يوم في الأبطال
+        function getActiveCaptains(username, gw) {
             const gwMatches = matches.filter(m => Number(m.gw) === Number(gw)).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-            if (gwMatches.length === 0) return null;
+            if (gwMatches.length === 0) return [];
             
             const userP = predictions[username] || {};
-            const explicitCap = gwMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
-            
-            if (explicitCap) return explicitCap.id;
-            return gwMatches[0].id; // الكابتن الإجباري (أول مباراة)
+            const isUCL = Number(gw) >= 101;
+
+            if (isUCL) {
+                const captains = [];
+                const dates = [...new Set(gwMatches.map(m => formatMatchDate(m.date)))];
+                dates.forEach(date => {
+                    const dateMatches = gwMatches.filter(m => formatMatchDate(m.date) === date);
+                    const explicitCap = dateMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
+                    if (explicitCap) captains.push(explicitCap.id);
+                    else if (dateMatches.length > 0) captains.push(dateMatches[0].id); // كابتن افتراضي لأول مباراة باليوم
+                });
+                return captains;
+            } else {
+                const explicitCap = gwMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
+                if (explicitCap) return [explicitCap.id];
+                return [gwMatches[0].id];
+            }
         }
 
         // 🌟 متغيرات التحكم في لوحة الترتيب 🌟
-        let standingsViewMode = 'global'; // 'global' أو 'monthly'
+        let standingsViewMode = 'global'; // 'global' أو 'monthly' أو 'gw'
         let selectedStandingsMonth = null;
         let selectedStandingsYear = null;
         let selectedStandingsGw = null;
@@ -793,12 +806,11 @@ function changeLanguage(langCode) {
             render();
         }
 
-        // 🌟 محرك حساب ترتيب الجولة (يعزل نقاط الجولة المحددة فقط) 🌟
         function getGwStandings(gw, leagueFilter = 'EPL') {
             const baseStats = getGlobalStandings(leagueFilter);
             return baseStats
                 .map(u => ({ ...u, gwSpecificPts: u.gwPoints[gw] || 0 }))
-                .filter(u => u.gwSpecificPts > 0) // تجاهل من لم يسجل أي نقطة في هذه الجولة
+                .filter(u => u.gwSpecificPts > 0)
                 .sort((a, b) => b.gwSpecificPts - a.gwSpecificPts);
         }
 
@@ -816,7 +828,6 @@ function changeLanguage(langCode) {
             render();
         }
 
-        // 🌟 محرك حساب الترتيب الشهري 🌟
         function getMonthlyStandings(month, year, leagueFilter = 'EPL') {
             const allUsernames = new Set();
             Object.keys(predictions).forEach(u => allUsernames.add(u));
@@ -827,30 +838,27 @@ function changeLanguage(langCode) {
                 statsMap[username] = { username: username, totalPts: 0, badges: {} }; 
             });
 
-            // 1. استخراج المباريات التي لُعبت في هذا الشهر والسنة فقط + (فلتر البطولة)
             const monthlyMatches = matches.filter(m => {
                 if ((m.league || 'EPL') !== leagueFilter) return false;
                 const dateStr = formatMatchDate(m.date);
                 if (!dateStr) return false;
-                const parts = dateStr.split('/'); // النتيجة: [DD, MM, YYYY]
+                const parts = dateStr.split('/');
                 if (parts.length >= 3) {
                     return parseInt(parts[1], 10) === month && parseInt(parts[2], 10) === year;
                 }
                 return false;
             });
 
-            // 2. جلب الكابتن الفعلي لكل لاعب في الجولات التي تقع ضمن هذا الشهر
             const userActiveCaptains = {};
             const uniqueGws = [...new Set(monthlyMatches.map(m => Number(m.gw)))];
             
             allUsernames.forEach(username => {
                 userActiveCaptains[username] = {};
                 uniqueGws.forEach(g => {
-                    userActiveCaptains[username][g] = getActiveCaptainId(username, g);
+                    userActiveCaptains[username][g] = getActiveCaptains(username, g);
                 });
             });
 
-            // 3. حساب النقاط
             monthlyMatches.forEach(m => {
                 const isPlayed = m.actualH !== null && m.actualA !== null;
                 if (!isPlayed) return;
@@ -858,16 +866,14 @@ function changeLanguage(langCode) {
                 allUsernames.forEach(username => {
                     const p = (predictions[username] || {})[m.id];
                     if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
-                        const isEffectiveCaptain = (m.id === userActiveCaptains[username][m.gw]);
+                        const isEffectiveCaptain = userActiveCaptains[username][m.gw] && userActiveCaptains[username][m.gw].includes(m.id);
                         const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain, leagueFilter);
                         statsMap[username].totalPts += pts;
                     }
                 });
             });
 
-            return Object.values(statsMap)
-                .filter(u => u.totalPts > 0) 
-                .sort((a, b) => b.totalPts - a.totalPts);
+            return Object.values(statsMap).filter(u => u.totalPts > 0).sort((a, b) => b.totalPts - a.totalPts);
         }
         
         function getGlobalStandings(leagueFilter = 'EPL') {
@@ -886,17 +892,15 @@ function changeLanguage(langCode) {
                 }; 
             });
 
-            // 🌟 تحديد الكابتن الفعلي (الصريح أو الإجباري) لكل لاعب ديناميكياً
             const uniqueGws = [...new Set(matches.map(m => Number(m.gw)))];
             const userActiveCaptains = {};
             allUsernames.forEach(username => {
                 userActiveCaptains[username] = {};
                 uniqueGws.forEach(g => {
-                    userActiveCaptains[username][g] = getActiveCaptainId(username, g);
+                    userActiveCaptains[username][g] = getActiveCaptains(username, g);
                 });
             });
 
-            // 🌟 فلترة المباريات حسب البطولة المطلوبة 🌟
             const filteredMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
 
             filteredMatches.forEach(m => {
@@ -908,8 +912,7 @@ function changeLanguage(langCode) {
                         userStats.predictedCount++;
                         if (isPlayed) {
                             userStats.playedMatches++;
-                            
-                            const isEffectiveCaptain = (m.id === userActiveCaptains[username][m.gw]);
+                            const isEffectiveCaptain = userActiveCaptains[username][m.gw] && userActiveCaptains[username][m.gw].includes(m.id);
                             const pts = calcPoints(m.home, m.away, p.home, p.away, m.actualH, m.actualA, isEffectiveCaptain, p.isTripleCaptain, leagueFilter);
                             
                             userStats.totalPts += pts;
@@ -926,7 +929,6 @@ function changeLanguage(langCode) {
                                 if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
                             }
 
-                            // منطق وسام "قاهر العمالقة" يعمل للبطولتين!
                             let bigLost = false;
                             if (leagueFilter === 'EPL') {
                                 const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
@@ -1285,8 +1287,8 @@ function isMatchLocked(match) {
                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                         const isLocked = isMatchLocked(match);
                         
-                        const activeCapId = getActiveCaptainId(currentUser.username, activeGw);
-                        const isEffectiveCaptain = (match.id === activeCapId);
+                        const activeCaps = getActiveCaptains(currentUser.username, activeGw);
+                        const isEffectiveCaptain = activeCaps.includes(match.id);
                         
                         const displayDate = formatMatchDate(match.date);
                         
@@ -1486,8 +1488,8 @@ function changeGw(gw) {
                             const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                             const isLocked = isMatchLocked(match);
                             
-                            const activeCapId = getActiveCaptainId(currentUser.username, activeGw);
-                            const isEffectiveCaptain = (match.id === activeCapId);
+                            const activeCaps = getActiveCaptains(currentUser.username, activeGw);
+                            const isEffectiveCaptain = activeCaps.includes(match.id);
                             
                             const displayDate = formatMatchDate(match.date);
                             const displayTime = typeof formatDisplayTime === 'function' ? formatDisplayTime(match.time) : match.time;
@@ -2501,7 +2503,7 @@ function renderPrizesTab() {
                         }
                         
                         // التحقق من الكابتن
-                        if (getActiveCaptainId(username, m.gw) === m.id) {
+                        if (getActiveCaptains(username, m.gw).includes(m.id)) {
                             captains++;
                         }
                     }
@@ -2827,8 +2829,8 @@ function renderPrizesTab() {
             let myTotalPts = 0;
             let theirTotalPts = 0;
 
-            const myCapId = getActiveCaptainId(currentUser.username, comparisonGw);
-            const theirCapId = getActiveCaptainId(comparisonUser, comparisonGw);
+            const myCaps = getActiveCaptains(currentUser.username, comparisonGw);
+            const theirCaps = getActiveCaptains(comparisonUser, comparisonGw);
 
             const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
             const isAr = direction === 'rtl';
@@ -2880,8 +2882,8 @@ function renderPrizesTab() {
                 const myHasPred = myP.home !== '' && myP.away !== '' && myP.home !== null && myP.away !== null;
                 const theirHasPred = theirP.home !== '' && theirP.away !== '' && theirP.home !== null && theirP.away !== null;
 
-                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, m.id === myCapId, myP.isTripleCaptain);
-                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, m.id === theirCapId, theirP.isTripleCaptain);
+                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, myCaps.includes(m.id), myP.isTripleCaptain, m.league || 'EPL');
+                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, theirCaps.includes(m.id), theirP.isTripleCaptain, m.league || 'EPL');
 
                 myTotalPts += myPts;
                 theirTotalPts += theirPts;
@@ -2892,8 +2894,8 @@ function renderPrizesTab() {
                 const myVisualPred = myHasPred ? (isAr ? `${myP.away} - ${myP.home}` : `${myP.home} - ${myP.away}`) : '-';
                 const theirVisualPred = theirHasPred ? (isAr ? `${theirP.away} - ${theirP.home}` : `${theirP.home} - ${theirP.away}`) : '-';
 
-                const myPower = myP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md ml-1 font-black shadow-lg">x3</span>' : (m.id === myCapId ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md ml-1 font-black shadow-lg">C</span>' : '');
-                const theirPower = theirP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md mr-1 font-black shadow-lg">x3</span>' : (m.id === theirCapId ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md mr-1 font-black shadow-lg">C</span>' : '');
+                const myPower = myP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md ml-1 font-black shadow-lg">x3</span>' : (myCaps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md ml-1 font-black shadow-lg">C</span>' : '');
+                const theirPower = theirP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md mr-1 font-black shadow-lg">x3</span>' : (theirCaps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md mr-1 font-black shadow-lg">C</span>' : '');
 
                 const myPtsColor = myPts >= 3 ? 'text-emerald-400' : (myPts > 0 ? 'text-yellow-400' : 'text-slate-500');
                 const theirPtsColor = theirPts >= 3 ? 'text-emerald-400' : (theirPts > 0 ? 'text-yellow-400' : 'text-slate-500');
@@ -2966,18 +2968,32 @@ function renderPrizesTab() {
             const aVal = pred.away !== undefined ? pred.away : '';
             
             const currentGw = Number(activeMatchModal.gw);
+            const isUCL = currentGw >= 101; 
+            const matchDate = formatMatchDate(activeMatchModal.date);
+
             const userPreds = predictions[currentUser.username] || {};
             let captainUsedInGw = false;
             let tcUsedInCurrentHalf = false;
             
-            const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
-            const isEffectiveCaptain = (activeMatchModal.id === activeCapId);
+            const activeCaps = getActiveCaptains(currentUser.username, currentGw);
+            const isEffectiveCaptain = activeCaps.includes(activeMatchModal.id);
             
-            // 🛡️ حماية الواجهة: فحص إقفال الكابتن والجوكر في مباريات أخرى
             let isCaptainLockedByAnotherMatch = false;
-            if (!isEffectiveCaptain && activeCapId) {
-                const capMatch = matches.find(m => m.id === activeCapId);
-                if (capMatch && isMatchLocked(capMatch)) isCaptainLockedByAnotherMatch = true;
+            if (!isEffectiveCaptain) {
+                if (isUCL) {
+                    const dateMatches = matches.filter(m => Number(m.gw) === currentGw && formatMatchDate(m.date) === matchDate);
+                    const dateCapId = dateMatches.find(m => activeCaps.includes(m.id))?.id;
+                    if (dateCapId) {
+                        const capMatch = matches.find(m => m.id === dateCapId);
+                        if (capMatch && isMatchLocked(capMatch)) isCaptainLockedByAnotherMatch = true;
+                    }
+                } else {
+                    const activeCapId = activeCaps[0];
+                    if (activeCapId) {
+                        const capMatch = matches.find(m => m.id === activeCapId);
+                        if (capMatch && isMatchLocked(capMatch)) isCaptainLockedByAnotherMatch = true;
+                    }
+                }
             }
 
             let isTcLockedByAnotherMatch = false;
@@ -2985,7 +3001,13 @@ function renderPrizesTab() {
                 if (mId === activeMatchModal.id) return; 
                 const m = matches.find(x => x.id === mId);
                 if (m) {
-                    if (Number(m.gw) === currentGw && p.isCaptain) captainUsedInGw = true;
+                    if (Number(m.gw) === currentGw && p.isCaptain) {
+                        if (isUCL) {
+                            if (formatMatchDate(m.date) === matchDate) captainUsedInGw = true;
+                        } else {
+                            captainUsedInGw = true;
+                        }
+                    }
                     if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) {
                         tcUsedInCurrentHalf = true;
                         if (isMatchLocked(m)) isTcLockedByAnotherMatch = true;
@@ -3030,18 +3052,17 @@ function renderPrizesTab() {
                         
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
                             
-                            <!-- 🌟 زر الكابتن محمي 🌟 -->
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${isCaptainLockedByAnotherMatch ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
                                 <div class="flex-1 flex justify-between items-center">
-                                    <span class="text-xs font-bold text-amber-400 block">${capText}</span> 
+                                    <span class="text-xs font-bold text-amber-400 block">${capText} ${isUCL ? '<span class="text-[9px] text-emerald-400 bg-emerald-500/10 px-1 rounded shadow-inner ml-1 border border-emerald-500/20">(متاح لكل يوم)</span>' : ''}</span> 
                                     ${isCaptainLockedByAnotherMatch ? 
                                         '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded shadow-inner border border-rose-500/30"><i class="fa-solid fa-lock"></i> مقفل</span>' :
                                         (captainUsedInGw && !isCapChecked) ? '<span class="text-[9px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded shadow-inner border border-amber-500/30"><i class="fa-solid fa-right-left"></i> نقل الشارة</span>' : ''}
                                 </div>
                             </label>
                             
-                            <!-- 🌟 زر الجوكر محمي 🌟 -->
+                            ${!isUCL ? `
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border-t border-white/5 ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'opacity-50 cursor-not-allowed bg-slate-800' : 'cursor-pointer hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="triple" onclick="playSound('captain')" onchange="updateModalCalc()" ${pred.isTripleCaptain ? 'checked' : ''} ${tcUsedInCurrentHalf && !pred.isTripleCaptain ? 'disabled' : ''} class="w-4 h-4 accent-fuchsia-500" />
                                 <div class="flex-1 flex justify-between items-center">
@@ -3050,6 +3071,7 @@ function renderPrizesTab() {
                                      (tcUsedInCurrentHalf && !pred.isTripleCaptain) ? '<span class="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 shadow-inner"><i class="fa-solid fa-lock"></i> ' + usedText + '</span>' : ''}
                                 </div>
                             </label>
+                            ` : ''}
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-all border-t border-white/5 hover:bg-slate-800/80">
                                 <input type="radio" name="powerup" value="none" onchange="updateModalCalc()" ${(!isCapChecked && !pred.isTripleCaptain) ? 'checked' : ''} class="w-4 h-4 accent-blue-500" />
@@ -3074,7 +3096,6 @@ function renderPrizesTab() {
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            // نحسب النقاط بافتراض أن النتيجة الفعلية جاءت مطابقة تماماً (h, a, h, a)
             let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL');
             if (h === '' || a === '') possiblePts = 0;
             document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
@@ -3085,32 +3106,38 @@ function renderPrizesTab() {
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             if (h === '' || a === '') return;
             
-            // 🚨 حماية الجدار الناري 1: منع الحفظ إذا ترك اللاعب النافذة مفتوحة وأُقفلت المباراة!
             if (isMatchLocked(activeMatchModal)) {
                 showCustomDialog("عذراً، انتهى الوقت وأُقفلت هذه المباراة!");
-                closeModal();
-                render();
-                return;
+                closeModal(); render(); return;
             }
 
-            const isCap = (powerup === 'captain');
-            const isTC = (powerup === 'triple');
             const currentGw = Number(activeMatchModal.gw);
+            const isUCL = currentGw >= 101;
+            const matchDate = formatMatchDate(activeMatchModal.date);
+            
+            const isCap = (powerup === 'captain');
+            const isTC = (powerup === 'triple') && !isUCL; 
             const userPreds = predictions[currentUser.username] || {};
+            const activeCaps = getActiveCaptains(currentUser.username, currentGw);
 
-            // 🚨 حماية الجدار الناري 2: منع سحب الكابتن من مباراة مقفلة (سواء صريح أو افتراضي)
-            const activeCapId = getActiveCaptainId(currentUser.username, currentGw);
-            if (isCap && activeCapId && activeCapId !== activeMatchModal.id) {
-                const capMatch = matches.find(m => m.id === activeCapId);
-                if (capMatch && isMatchLocked(capMatch)) {
-                    showCustomDialog("لا يمكنك سحب شارة الكابتن لأن مباراة الكابتن الحالي قد أُقفلت!");
-                    closeModal();
-                    render();
-                    return;
+            if (isCap) {
+                let dateCapId = null;
+                if (isUCL) {
+                    const dateMatches = matches.filter(m => Number(m.gw) === currentGw && formatMatchDate(m.date) === matchDate);
+                    dateCapId = dateMatches.find(m => activeCaps.includes(m.id))?.id;
+                } else {
+                    dateCapId = activeCaps[0];
+                }
+                
+                if (dateCapId && dateCapId !== activeMatchModal.id) {
+                    const capMatch = matches.find(m => m.id === dateCapId);
+                    if (capMatch && isMatchLocked(capMatch)) {
+                        showCustomDialog("لا يمكنك سحب شارة الكابتن لأن مباراة الكابتن الحالي قد أُقفلت!");
+                        closeModal(); render(); return;
+                    }
                 }
             }
 
-            // 🚨 حماية الجدار الناري 3: منع سحب الجوكر من مباراة مقفلة
             if (isTC) {
                 let isTcLocked = false;
                 Object.entries(userPreds).forEach(([mId, p]) => {
@@ -3121,33 +3148,25 @@ function renderPrizesTab() {
                         }
                     }
                 });
-                if (isTcLocked) {
-                    showCustomDialog("لا يمكنك سحب الجوكر لأنه مرتبط بمباراة مقفلة!");
-                    closeModal();
-                    render();
-                    return;
-                }
+                if (isTcLocked) { showCustomDialog("لا يمكنك سحب الجوكر لأنه مرتبط بمباراة مقفلة!"); closeModal(); render(); return; }
             }
 
-            if (isCap || isTC) {
-                playSound('captain'); 
-            } else {
-                playSound('success'); 
-            }
+            if (isCap || isTC) playSound('captain'); else playSound('success'); 
 
             setTimeout(async () => {
                 let oldExplicitCapId = null;
-                const currentGw = Number(activeMatchModal.gw);
                 const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
                 gwMatches.forEach(m => {
                     if (m.id !== activeMatchModal.id && predictions[currentUser.username]?.[m.id]?.isCaptain) {
-                        oldExplicitCapId = m.id;
+                        if (isUCL) {
+                            if (formatMatchDate(m.date) === matchDate) oldExplicitCapId = m.id;
+                        } else {
+                            oldExplicitCapId = m.id;
+                        }
                     }
                 });
 
                 const reqMatchId = activeMatchModal.id;
-                
-                // 🌟 التعديل الأول: نغلق النافذة ونظهر أيقونة تحميل بسيطة لتجربة مستخدم سريعة 🌟
                 closeModal();
                 showCustomDialog("جاري إرسال التوقع للقاعدة...", "alert");
 
@@ -3177,22 +3196,15 @@ function renderPrizesTab() {
                     
                     const data = await response.json();
                 
-                if(!data.success) {
-                    // 🌟 التعديل الثاني: نعرض الخطأ، ونقوم بمزامنة البيانات لمسح أي تحديث وهمي 🌟
-                    showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
-                    await syncData();
-                    render();
-                } else {
-                    // 🌟 التعديل الثالث: نغلق رسالة "جاري التحميل" ونرسم الواجهة فقط بعد النجاح الحقيقي 🌟
-                    document.getElementById('dialog-container').innerHTML = '';
-                    await syncData(); 
-                    render();
-                }
+                    if(!data.success) {
+                        showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
+                    } else {
+                        document.getElementById('dialog-container').innerHTML = '';
+                    }
+                    await syncData(); render();
                 } catch(e) {
-                    console.error("Predict error:", e);
                     showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر. يرجى التأكد من اتصال الإنترنت.");
-                    await syncData();
-                    render();
+                    await syncData(); render();
                 }
             }, 50); 
         }
