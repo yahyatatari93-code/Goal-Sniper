@@ -1947,7 +1947,12 @@ function renderMiniLeaguesTab() {
         sn_2: "<strong class='text-blue-400'>حالة التعادل:</strong> إذا تعادل عدة أشخاص، يحصل الجميع على الميزة، لكن قوة الرصاصة تصبح <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(خصم نقطتين)</span>.",
         sn_3: "<strong class='text-emerald-400'>الدرع (الحصانة):</strong> المشترك الذي يتعرض للقنص، يحصل على درع حماية يمنع قنصه في الجولة التالية.",
         sn_4: "<strong class='text-fuchsia-400'>عزل النقاط:</strong> رصاصة القناص تؤثر <strong>فقط</strong> على نقاطك داخل الدوري المصغر المعني، ولا تؤثر أبداً على الترتيب العام.",
-        sn_5: "<strong class='text-slate-300'>الصلاحية:</strong> تستخدم الميزة لمرة واحدة فقط قبل بداية الجولة القادمة."
+        sn_5: "<strong class='text-slate-300'>الصلاحية:</strong> تستخدم الميزة لمرة واحدة فقط قبل بداية الجولة القادمة.",
+        uclRulesTitle: "قوانين الأبطال (UCL)",
+        uclRulesDesc: "نظام وتقسيم نقاط دوري أبطال أوروبا (صراع المستويات والمفاجآت):",
+        uclRule1: "التوقع الرقمي الدقيق لنتيجة متكافئة أو مفاجأة",
+        uclRule2: "التوقع الصحيح للنتيجة أو الفائز حسب فارق التصنيف والمستويات",
+        uclRule3: "نقاط مضاعفة ومستقلة تماماً عن مباريات الدوري الإنجليزي"
     },
     en: {
         title: "Comprehensive Rules Guide",
@@ -1987,7 +1992,12 @@ function renderMiniLeaguesTab() {
         sn_2: "<strong class='text-blue-400'>Tie case:</strong> If tied, all top scorers get it, but the penalty is reduced to <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 pts)</span>.",
         sn_3: "<strong class='text-emerald-400'>The Shield:</strong> The sniped player gains immunity in the following GW.",
         sn_4: "<strong class='text-fuchsia-400'>Isolation:</strong> Sniper bullets ONLY affect points within that specific mini-league. Global rank is never affected.",
-        sn_5: "<strong class='text-slate-300'>Validity:</strong> The bullet must be used before the next GW starts."
+        sn_5: "<strong class='text-slate-300'>Validity:</strong> The bullet must be used before the next GW starts.",
+        uclRulesTitle: "Champions League Rules (UCL)",
+        uclRulesDesc: "UEFA Champions League scoring and points system (Tier clashes & upsets):",
+        uclRule1: "Exact score prediction for a balanced match or upset",
+        uclRule2: "Correct outcome or winner prediction based on tier/ranking difference",
+        uclRule3: "Doubled points system completely independent from Premier League matches"
     },
     tr: {
         title: "Kapsamlı Kurallar Rehberi",
@@ -2027,7 +2037,12 @@ function renderMiniLeaguesTab() {
         sn_2: "<strong class='text-blue-400'>Beraberlik Durumu:</strong> Birden fazla birinci varsa hepsi hakkı kazanır ancak ceza <span class='font-bold text-rose-300 bg-rose-500/20 px-1.5 py-0.5 rounded'>(-2 puan)</span> olur.",
         sn_3: "<strong class='text-emerald-400'>Kalkan:</strong> Vurulan oyuncu bir sonraki hafta için dokunulmazlık kalkanı kazanır.",
         sn_4: "<strong class='text-fuchsia-400'>İzolasyon:</strong> Bu ceza SADECE o mini ligdeki puanı etkiler. Genel sıralamayı asla etkilemez.",
-        sn_5: "<strong class='text-slate-300'>Geçerlilik:</strong> Bu özellik bir sonraki hafta başlamadan önce kullanılmalıdır."
+        sn_5: "<strong class='text-slate-300'>Geçerlilik:</strong> Bu özellik bir sonraki hafta başlamadan önce kullanılmalıdır.",
+        uclRulesTitle: "Şampiyonlar Ligi Kuralları (UCL)",
+        uclRulesDesc: "UEFA Şampiyonlar Ligi puanlama ve puan sistemi (Seviye eşleşmeleri ve sürprizler):",
+        uclRule1: "Dengeli maç veya sürpriz için tam skor tahmini",
+        uclRule2: "Sıralama ve seviye farkına göre doğru sonuç veya kazanan tahmini",
+        uclRule3: "Premier Lig maçlarından tamamen bağımsız katlanmış puan sistemi"
     }
 };
             
@@ -2049,57 +2064,69 @@ function renderMiniLeaguesTab() {
                 <p class="text-slate-400 text-xs mt-2 font-medium">${rt.subtitle}</p>
             </div>
 
-            <!-- ======================= 1. نظام النقاط ======================= -->
-            <div class="space-y-3">
-                <h3 class="font-bold text-white text-lg flex items-center gap-2">
-                    <span class="text-blue-400">1.</span> ${rt.sysTitle}
-                </h3>
-                
-                <!-- قمة الكبار -->
-                <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                    <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                        <i class="fa-solid fa-crown text-amber-400"></i>
-                        <h3 class="font-bold text-amber-400 text-sm">${rt.cat1Title}</h3>
-                    </div>
-                    <div class="p-3 divide-y divide-white/5">
-                        ${ruleRow(rt.cat1_1, '+5', 'emerald')}
-                        ${ruleRow(rt.cat1_2, '+3', 'amber')}
-                        ${ruleRow(rt.cat1_3, '+3', 'amber')}
-                        ${ruleRow(rt.cat1_4, '+2', 'slate')}
-                    </div>
-                </div>
-
-                <!-- صائد العمالقة -->
-                <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                        <i class="fa-solid fa-bolt-lightning text-purple-400"></i>
-                        <h3 class="font-bold text-purple-400 text-sm">${rt.cat2Title}</h3>
-                    </div>
-                    <div class="p-3 divide-y divide-white/5">
-                        ${ruleRow(rt.cat2_1, '+6', 'purple')}
-                        ${ruleRow(rt.cat2_2, '+4', 'blue')}
-                        ${ruleRow(rt.cat2_3, '+4', 'blue')}
-                        ${ruleRow(rt.cat2_4, '+3', 'amber')}
-                        ${ruleRow(rt.cat2_5, '+3', 'amber')}
-                        ${ruleRow(rt.cat2_6, '+1', 'gray')}
-                    </div>
-                </div>
-
-                <!-- مباريات الدوري -->
-                <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                    <div class="bg-gradient-to-r from-blue-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                        <i class="fa-solid fa-shield-halved text-blue-400"></i>
-                        <h3 class="font-bold text-blue-400 text-sm">${rt.cat3Title}</h3>
-                    </div>
-                    <div class="p-3 divide-y divide-white/5">
-                        ${ruleRow(rt.cat3_5, '+5', 'emerald')}
-                        ${ruleRow(rt.cat3_1, '+3', 'amber')}
-                        ${ruleRow(rt.cat3_3, '+3', 'amber')}
-                        ${ruleRow(rt.cat3_2, '+1', 'gray')}
-                        ${ruleRow(rt.cat3_4, '+1', 'gray')}
-                    </div>
-                </div>
+            <!-- 🌟 أزرار التبديل بين قوانين الإنجليزي والأبطال 🌟 -->
+            <div class="flex gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                <button onclick="switchRulesTab('epl')" id="rules-tab-epl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-trophy"></i> ${lang === 'ar' ? 'قوانين الدوري الإنجليزي' : 'Premier League Rules'}
+                </button>
+                <button onclick="switchRulesTab('ucl')" id="rules-tab-ucl" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-star"></i> ${lang === 'ar' ? 'قوانين الأبطال' : 'Champions League Rules'}
+                </button>
             </div>
+
+            <!-- ⚽ قسم قوانين الدوري الإنجليزي (الافتراضي) -->
+            <div id="rules-content-epl" class="space-y-6 animate-fade-up">
+                <!-- ======================= 1. نظام النقاط ======================= -->
+                <div class="space-y-3">
+                    <h3 class="font-bold text-white text-lg flex items-center gap-2">
+                        <span class="text-blue-400">1.</span> ${rt.sysTitle}
+                    </h3>
+                    
+                    <!-- قمة الكبار -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                        <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <i class="fa-solid fa-crown text-amber-400"></i>
+                            <h3 class="font-bold text-amber-400 text-sm">${rt.cat1Title}</h3>
+                        </div>
+                        <div class="p-3 divide-y divide-white/5">
+                            ${ruleRow(rt.cat1_1, '+5', 'emerald')}
+                            ${ruleRow(rt.cat1_2, '+3', 'amber')}
+                            ${ruleRow(rt.cat1_3, '+3', 'amber')}
+                            ${ruleRow(rt.cat1_4, '+2', 'slate')}
+                        </div>
+                    </div>
+
+                    <!-- صائد العمالقة -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                        <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt-lightning text-purple-400"></i>
+                            <h3 class="font-bold text-purple-400 text-sm">${rt.cat2Title}</h3>
+                        </div>
+                        <div class="p-3 divide-y divide-white/5">
+                            ${ruleRow(rt.cat2_1, '+6', 'purple')}
+                            ${ruleRow(rt.cat2_2, '+4', 'blue')}
+                            ${ruleRow(rt.cat2_3, '+4', 'blue')}
+                            ${ruleRow(rt.cat2_4, '+3', 'amber')}
+                            ${ruleRow(rt.cat2_5, '+3', 'amber')}
+                            ${ruleRow(rt.cat2_6, '+1', 'gray')}
+                        </div>
+                    </div>
+
+                    <!-- مباريات الدوري -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
+                        <div class="bg-gradient-to-r from-blue-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                            <h3 class="font-bold text-blue-400 text-sm">${rt.cat3Title}</h3>
+                        </div>
+                        <div class="p-3 divide-y divide-white/5">
+                            ${ruleRow(rt.cat3_5, '+5', 'emerald')}
+                            ${ruleRow(rt.cat3_1, '+3', 'amber')}
+                            ${ruleRow(rt.cat3_3, '+3', 'amber')}
+                            ${ruleRow(rt.cat3_2, '+1', 'gray')}
+                            ${ruleRow(rt.cat3_4, '+1', 'gray')}
+                        </div>
+                    </div>
+                </div>
 
             <!-- ======================= 2. بطاقات القوة ======================= -->
             <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
@@ -2151,6 +2178,34 @@ function renderMiniLeaguesTab() {
                     <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_4}</div></div>
                     <div class="flex gap-2 items-start"><i class="fa-solid ${pointIcon} mt-1 text-sky-500/50 text-[10px]"></i> <div class="flex-1">${rt.sn_5}</div></div>
                 </div>
+            <!-- 🏆 قسم قوانين الأبطال (مخفي افتراضياً حتى يتم الضغط على التبويب) -->
+            <div id="rules-content-ucl" class="hidden space-y-6 animate-fade-up">
+                <div class="bg-slate-900/40 border border-purple-500/30 rounded-2xl overflow-hidden shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                    <div class="bg-gradient-to-r from-purple-600/30 to-transparent px-4 py-3 border-b border-purple-500/30 flex items-center gap-2">
+                        <i class="fa-solid fa-star text-purple-400"></i>
+                        <h3 class="font-bold text-purple-400 text-sm">قوانين واحتساب نقاط دوري أبطال أوروبا (UCL)</h3>
+                    </div>
+                    <div class="p-4 space-y-4 text-sm text-slate-300 leading-relaxed">
+                        <p class="text-xs text-slate-300">
+                            يتم احتساب النقاط في منافسات دوري أبطال أوروبا بناءً على نظام <strong>صراع المستويات (UCL Levels)</strong> والمفاجآت الكبرى كالتالي:
+                        </p>
+                        
+                        <div class="space-y-2 pt-2">
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-200">الفرق المتكافئة (نفس المستوى)</span>
+                                <span class="font-black text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded border border-emerald-500/20">+5 دقيق / +3 فائز</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-200">فوز الفريق الأقوى (المنطق السائد)</span>
+                                <span class="font-black text-blue-400 bg-blue-950/40 px-2 py-1 rounded border border-blue-500/20">+3 دقيق / +1 فائز</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-white/5 flex justify-between items-center text-xs">
+                                <span class="font-bold text-slate-200">مفاجأة كبرى (فوز الفريق الأضعف بمستويين أو أكثر)</span>
+                                <span class="font-black text-amber-400 bg-amber-950/40 px-2 py-1 rounded border border-amber-500/20">+7 دقيق / +4 فائز</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -2178,6 +2233,52 @@ function ruleRow(text, points, colorType) {
     `;
 }
 
+        // دالة رسم بطاقات النقاط (ضعها تحت renderRulesTab مباشرة)
+function ruleRow(text, points, colorType) {
+    const colors = {
+        purple: 'bg-purple-500/20 text-purple-400 border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.2)]',
+        emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]',
+        blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+        slate: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+        gray: 'bg-slate-700/30 text-slate-400 border-slate-600/30'
+    };
+    
+    return `
+        <div class="flex items-center justify-between py-2.5 gap-4">
+            <span class="text-xs md:text-sm text-slate-300 font-medium leading-relaxed">${text}</span>
+            <span class="${colors[colorType]} border font-black px-3 py-1 rounded-lg text-sm min-w-[45px] text-center flex-shrink-0" dir="ltr">
+                ${points}
+            </span>
+        </div>
+    `;
+}
+
+// 🌟 أضف دالة التبديل هنا 🌟
+function switchRulesTab(tab) {
+    const eplContent = document.getElementById('rules-content-epl');
+    const uclContent = document.getElementById('rules-content-ucl');
+    const eplBtn = document.getElementById('rules-tab-epl');
+    const uclBtn = document.getElementById('rules-tab-ucl');
+
+    if (!eplContent || !uclContent || !eplBtn || !uclBtn) return;
+
+    if (tab === 'epl') {
+        eplContent.classList.remove('hidden');
+        uclContent.classList.add('hidden');
+        eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md";
+        uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+    } else {
+        uclContent.classList.remove('hidden');
+        eplContent.classList.add('hidden');
+        uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md";
+        eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+    }
+}
+// 🌟 نهاية إضافة دالة التبديل 🌟
+
+function renderPrizesTab() {
+// ... باقي كود الجوائز ...
         function renderPrizesTab() {
             const prizesTranslations = {
                 ar: {
