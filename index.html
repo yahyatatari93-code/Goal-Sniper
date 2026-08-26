@@ -2171,25 +2171,24 @@ function renderMiniLeaguesTab() {
                         </div>
                         
                         <div class="p-4 space-y-5">
-                            <!-- مقدمة مشوقة -->
                             <p class="text-xs text-slate-300 leading-relaxed bg-purple-950/20 p-3 rounded-xl border border-purple-500/10">
-                                في ليالي الأبطال، لا تقتصر النقاط على التوقع الصحيح فحسب، بل تعتمد على <strong>فارق التصنيف والمستويات</strong> بين الفريقين. كلما كان توقعك أجرأ ومخالفاً للمنطق، كانت مكافأتك أضخم!
+                                في دوري الأبطال، النقاط لا تُحسب بالحظ! بل تعتمد على <strong>فارق التصنيف (UCL Levels)</strong> بين الفريقين. كلما توقعت نتيجة تعاكس المنطق، زادت غنيمتك. إليك الدليل القاطع:
                             </p>
                             
-                            <!-- 1. صدام الأنداد -->
+                            <!-- 1. مواجهة المتكافئين -->
                             <div class="bg-slate-950/60 rounded-xl border border-white/5 overflow-hidden shadow-md">
                                 <div class="bg-emerald-900/20 px-3 py-2.5 border-b border-white/5 flex items-center gap-2">
                                     <i class="fa-solid fa-handshake-angle text-emerald-400"></i>
-                                    <span class="font-bold text-emerald-400 text-xs">صدام الأنداد <span class="text-slate-400 text-[10px] font-normal">(مواجهة فرق من نفس المستوى)</span></span>
+                                    <span class="font-bold text-emerald-400 text-xs">1. مواجهة المتكافئين <span class="text-slate-400 text-[10px] font-normal">(فرق من نفس المستوى)</span></span>
                                 </div>
-                                <div class="flex divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center">
-                                    <div class="flex-1 py-3 hover:bg-white/5 transition-colors">
-                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">تطابق النتيجة تماماً</span>
-                                        <span class="font-black text-xl text-emerald-400 drop-shadow-md" dir="ltr">+5 <span class="text-xs text-slate-500">Pts</span></span>
+                                <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center">
+                                    <div class="py-3 hover:bg-white/5 transition-colors">
+                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">تطابق النتيجة (فوز أو تعادل)</span>
+                                        <span class="font-black text-xl text-emerald-400 drop-shadow-md" dir="ltr">+5</span>
                                     </div>
-                                    <div class="flex-1 py-3 hover:bg-white/5 transition-colors">
-                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">توقع الفائز أو التعادل</span>
-                                        <span class="font-black text-xl text-emerald-500/70" dir="ltr">+3 <span class="text-xs text-slate-500">Pts</span></span>
+                                    <div class="py-3 hover:bg-white/5 transition-colors">
+                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">توقع الفائز أو التعادل فقط</span>
+                                        <span class="font-black text-xl text-emerald-500/70" dir="ltr">+3</span>
                                     </div>
                                 </div>
                             </div>
@@ -2198,39 +2197,42 @@ function renderMiniLeaguesTab() {
                             <div class="bg-slate-950/60 rounded-xl border border-white/5 overflow-hidden shadow-md">
                                 <div class="bg-blue-900/20 px-3 py-2.5 border-b border-white/5 flex items-center gap-2">
                                     <i class="fa-solid fa-scale-balanced text-blue-400"></i>
-                                    <span class="font-bold text-blue-400 text-xs">المنطق السائد <span class="text-slate-400 text-[10px] font-normal">(فريق بمستوى أعلى يهزم فريقاً أدنى)</span></span>
+                                    <span class="font-bold text-blue-400 text-xs">2. المنطق السائد <span class="text-slate-400 text-[10px] font-normal">(فوز الفريق الأقوى تصنيفاً)</span></span>
                                 </div>
-                                <div class="flex divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center">
-                                    <div class="flex-1 py-3 hover:bg-white/5 transition-colors">
+                                <div class="p-2.5 bg-slate-900/40 border-b border-white/5 text-[10px] text-slate-400 text-center font-bold">
+                                    يطبق هذا المعيار دائماً عندما يفوز الفريق الأعلى تصنيفاً (مهما كان فارق المستويات بينهما).
+                                </div>
+                                <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center">
+                                    <div class="py-3 hover:bg-white/5 transition-colors">
                                         <span class="block text-[10px] text-slate-400 mb-1 font-bold">تطابق النتيجة تماماً</span>
-                                        <span class="font-black text-xl text-blue-400 drop-shadow-md" dir="ltr">+3 <span class="text-xs text-slate-500">Pts</span></span>
+                                        <span class="font-black text-xl text-blue-400 drop-shadow-md" dir="ltr">+3</span>
                                     </div>
-                                    <div class="flex-1 py-3 hover:bg-white/5 transition-colors">
-                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">توقع الفائز فقط</span>
-                                        <span class="font-black text-xl text-blue-500/70" dir="ltr">+1 <span class="text-xs text-slate-500">Pt</span></span>
+                                    <div class="py-3 hover:bg-white/5 transition-colors">
+                                        <span class="block text-[10px] text-slate-400 mb-1 font-bold">توقع فوز الأقوى فقط</span>
+                                        <span class="font-black text-xl text-blue-500/70" dir="ltr">+1</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 3. كسر التوقعات (مفاجأة عادية) -->
-                            <div class="bg-slate-950/60 rounded-xl border border-white/5 overflow-hidden shadow-md">
-                                <div class="bg-fuchsia-900/20 px-3 py-2.5 border-b border-white/5 flex items-center gap-2">
+                            <!-- 3. المفاجأة العادية -->
+                            <div class="bg-slate-950/60 rounded-xl border border-fuchsia-500/20 overflow-hidden shadow-md">
+                                <div class="bg-fuchsia-900/20 px-3 py-2.5 border-b border-fuchsia-500/20 flex items-center gap-2">
                                     <i class="fa-solid fa-bolt text-fuchsia-400"></i>
-                                    <span class="font-bold text-fuchsia-400 text-xs">المفاجأة العادية <span class="text-slate-400 text-[10px] font-normal">(فريق أدنى يتفوق بفارق مستوى واحد)</span></span>
+                                    <span class="font-bold text-fuchsia-400 text-xs">3. المفاجأة العادية <span class="text-slate-300 text-[10px] font-normal">(تعثر الأقوى بفارق مستوى واحد فقط)</span></span>
                                 </div>
                                 <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center border-b border-white/5">
-                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-fuchsia-200">حالة فوز الفريق الأضعف</div>
+                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-fuchsia-300">حالة فوز الفريق الأضعف</div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors">
                                         <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">تطابق النتيجة</span>
                                         <span class="font-black text-lg text-fuchsia-400 drop-shadow-md" dir="ltr">+5</span>
                                     </div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors">
-                                        <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">توقع الفائز</span>
+                                        <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">توقع فوز الأضعف</span>
                                         <span class="font-black text-lg text-fuchsia-500/70" dir="ltr">+3</span>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center">
-                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-fuchsia-200/70">حالة التعادل (صمود الأضعف)</div>
+                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-fuchsia-300/70">حالة التعادل (يعتبر إنجازاً للأضعف)</div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors">
                                         <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">تطابق النتيجة</span>
                                         <span class="font-black text-lg text-fuchsia-400 drop-shadow-md" dir="ltr">+4</span>
@@ -2242,27 +2244,27 @@ function renderMiniLeaguesTab() {
                                 </div>
                             </div>
 
-                            <!-- 4. قاهر أوروبا (مفاجأة كبرى) -->
-                            <div class="bg-slate-950/60 rounded-xl border border-amber-500/30 overflow-hidden shadow-[0_0_15px_rgba(245,158,11,0.15)] relative">
-                                <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/10 blur-xl rounded-full"></div>
-                                <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-3 py-2.5 border-b border-amber-500/30 flex items-center gap-2 relative z-10">
+                            <!-- 4. قاهر أوروبا -->
+                            <div class="bg-slate-950/60 rounded-xl border border-amber-500/40 overflow-hidden shadow-[0_0_15px_rgba(245,158,11,0.15)] relative">
+                                <div class="absolute top-0 left-0 w-20 h-20 bg-amber-500/10 blur-2xl rounded-full"></div>
+                                <div class="bg-gradient-to-r from-amber-600/30 to-transparent px-3 py-2.5 border-b border-amber-500/40 flex items-center gap-2 relative z-10">
                                     <i class="fa-solid fa-meteor text-amber-400"></i>
-                                    <span class="font-bold text-amber-400 text-xs">قاهر أوروبا 👑 <span class="text-slate-300 text-[10px] font-normal">(مفاجأة مجنونة! الأضعف يتفوق بفارق مستويين أو أكثر)</span></span>
+                                    <span class="font-bold text-amber-400 text-xs">4. قاهر أوروبا 👑 <span class="text-amber-200 text-[10px] font-normal">(مفاجأة كبرى! تعثر الأقوى بفارق مستويين أو أكثر)</span></span>
                                 </div>
                                 <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center border-b border-white/5 relative z-10">
-                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-amber-200">حالة فوز الفريق الأضعف (توقع القناصين)</div>
+                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-amber-200">حالة فوز الفريق الأضعف (توقع القناصين المحترفين)</div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors relative">
                                         <span class="absolute -top-1 -${direction === 'rtl' ? 'right' : 'left'}-1 flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>
                                         <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">تطابق النتيجة</span>
                                         <span class="font-black text-2xl text-amber-400 drop-shadow-md" dir="ltr">+7</span>
                                     </div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors">
-                                        <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">توقع الفائز</span>
+                                        <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">توقع فوز الأضعف</span>
                                         <span class="font-black text-xl text-amber-500/80 mt-1 block" dir="ltr">+4</span>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 divide-x divide-white/5 ${direction === 'rtl' ? 'divide-x-reverse' : ''} text-center relative z-10">
-                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-amber-200/70">حالة التعادل التاريخي (صمود الأضعف)</div>
+                                    <div class="col-span-2 bg-slate-900/60 py-1.5 text-[10px] font-bold text-amber-200/70">حالة التعادل (صمود تاريخي للأضعف)</div>
                                     <div class="py-2.5 hover:bg-white/5 transition-colors">
                                         <span class="block text-[10px] text-slate-400 mb-0.5 font-bold">تطابق النتيجة</span>
                                         <span class="font-black text-lg text-amber-400 drop-shadow-md" dir="ltr">+5</span>
