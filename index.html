@@ -114,72 +114,71 @@
         const APP_LOGO_URL = 'goal-sniper.png'; 
         // ==========================================
 
-        // 1. مصفوفة الفرق (مدمجة: الدوري الإنجليزي + أبطال أوروبا)
-const TEAMS = [
-    // فرق الدوري الإنجليزي (المتأهلون للأبطال يحملون تصنيف)
-    { code: 'ARS', name: 'آرسنال', nameEn: 'Arsenal', nameTr: 'Arsenal', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9825.png', uclLevel: 1 },
-    { code: 'MCI', name: 'مانشستر سيتي', nameEn: 'Man City', nameTr: 'Man City', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8456.png', uclLevel: 1 },
-    { code: 'LIV', name: 'ليفربول', nameEn: 'Liverpool', nameTr: 'Liverpool', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8650.png', uclLevel: 1 },
-    { code: 'MUN', name: 'مانشستر يونايتد', nameEn: 'Man United', nameTr: 'Man United', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/360.png', uclLevel: 2 },
-    { code: 'AVL', name: 'أستون فيلا', nameEn: 'Aston Villa', nameTr: 'Aston Villa', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/362.png', uclLevel: 2 },
-    // فرق الدوري الإنجليزي (غير المشاركة في الأبطال)
-    { code: 'CHE', name: 'تشيلسي', nameEn: 'Chelsea', nameTr: 'Chelsea', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8455.png' },
-    { code: 'TOT', name: 'توتنهام', nameEn: 'Tottenham', nameTr: 'Tottenham', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8586.png' },
-    { code: 'NEW', name: 'نيوكاسل يونايتد', nameEn: 'Newcastle', nameTr: 'Newcastle', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/361.png' },
-    { code: 'BHA', name: 'برايتون', nameEn: 'Brighton', nameTr: 'Brighton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10204.png' },
-    { code: 'COV', name: 'كوفنتري سيتي', nameEn: 'Coventry', nameTr: 'Coventry', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8669.png' },
-    { code: 'HUL', name: 'هال سيتي', nameEn: 'Hull City', nameTr: 'Hull City', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8667.png' },
-    { code: 'NFO', name: 'نوتينغهام فورست', nameEn: 'Nottm Forest', nameTr: 'Nottm Forest', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/393.png' },
-    { code: 'LEE', name: 'ليدز يونايتد', nameEn: 'Leeds Utd', nameTr: 'Leeds Utd', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8463.png' },
-    { code: 'IPS', name: 'إيبسويتش تاون', nameEn: 'Ipswich', nameTr: 'Ipswich', logo: 'https://tmssl.akamaized.net/images/wappen/big/677.png' },
-    { code: 'SUN', name: 'سندرلاند', nameEn: 'Sunderland', nameTr: 'Sunderland', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8472.png' },
-    { code: 'CRY', name: 'كريستال بالاس', nameEn: 'Crystal Palace', nameTr: 'Crystal Palace', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9826.png' },
-    { code: 'BRE', name: 'برينتفورد', nameEn: 'Brentford', nameTr: 'Brentford', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/337.png' },
-    { code: 'FUL', name: 'فولهام', nameEn: 'Fulham', nameTr: 'Fulham', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/370.png' },
-    { code: 'BOU', name: 'بورنموث', nameEn: 'Bournemouth', nameTr: 'Bournemouth', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/349.png' },
-    { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' },
+        // 1. مصفوفة الفرق (النسخة النهائية الرسمية: الدوري الإنجليزي + أبطال أوروبا 36 فريقاً)
+        const TEAMS = [
+            // ⚽ فرق الدوري الإنجليزي (المتأهلون للأبطال يحملون تصنيف uclLevel)
+            { code: 'ARS', name: 'آرسنال', nameEn: 'Arsenal', nameTr: 'Arsenal', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9825.png', uclLevel: 1 },
+            { code: 'MCI', name: 'مانشستر سيتي', nameEn: 'Man City', nameTr: 'Man City', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8456.png', uclLevel: 1 },
+            { code: 'LIV', name: 'ليفربول', nameEn: 'Liverpool', nameTr: 'Liverpool', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8650.png', uclLevel: 1 },
+            { code: 'MUN', name: 'مانشستر يونايتد', nameEn: 'Man United', nameTr: 'Man United', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/360.png', uclLevel: 2 },
+            { code: 'AVL', name: 'أستون فيلا', nameEn: 'Aston Villa', nameTr: 'Aston Villa', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/362.png', uclLevel: 2 },
+            
+            // ⚽ فرق الدوري الإنجليزي (غير المشاركة في الأبطال - بدون تصنيف uclLevel)
+            { code: 'CHE', name: 'تشيلسي', nameEn: 'Chelsea', nameTr: 'Chelsea', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8455.png' },
+            { code: 'TOT', name: 'توتنهام', nameEn: 'Tottenham', nameTr: 'Tottenham', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8586.png' },
+            { code: 'NEW', name: 'نيوكاسل يونايتد', nameEn: 'Newcastle', nameTr: 'Newcastle', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/361.png' },
+            { code: 'BHA', name: 'برايتون', nameEn: 'Brighton', nameTr: 'Brighton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10204.png' },
+            { code: 'COV', name: 'كوفنتري سيتي', nameEn: 'Coventry', nameTr: 'Coventry', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8669.png' },
+            { code: 'HUL', name: 'هال سيتي', nameEn: 'Hull City', nameTr: 'Hull City', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8667.png' },
+            { code: 'NFO', name: 'نوتينغهام فورست', nameEn: 'Nottm Forest', nameTr: 'Nottm Forest', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/393.png' },
+            { code: 'LEE', name: 'ليدز يونايتد', nameEn: 'Leeds Utd', nameTr: 'Leeds Utd', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8463.png' },
+            { code: 'IPS', name: 'إيبسويتش تاون', nameEn: 'Ipswich', nameTr: 'Ipswich', logo: 'https://tmssl.akamaized.net/images/wappen/big/677.png' },
+            { code: 'SUN', name: 'سندرلاند', nameEn: 'Sunderland', nameTr: 'Sunderland', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8472.png' },
+            { code: 'CRY', name: 'كريستال بالاس', nameEn: 'Crystal Palace', nameTr: 'Crystal Palace', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9826.png' },
+            { code: 'BRE', name: 'برينتفورد', nameEn: 'Brentford', nameTr: 'Brentford', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/337.png' },
+            { code: 'FUL', name: 'فولهام', nameEn: 'Fulham', nameTr: 'Fulham', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/370.png' },
+            { code: 'BOU', name: 'بورنموث', nameEn: 'Bournemouth', nameTr: 'Bournemouth', logo: 'https://a.espncdn.com/i/teamlogos/soccer/500/349.png' },
+            { code: 'EVE', name: 'إيفرتون', nameEn: 'Everton', nameTr: 'Everton', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8668.png' },
 
-    // دوري أبطال أوروبا - التصنيف الأول
-    { code: 'BAY', name: 'بايرن ميونخ', nameEn: 'Bayern Munich', nameTr: 'Bayern Münih', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9823.png', uclLevel: 1 },
-    { code: 'RMA', name: 'ريال مدريد', nameEn: 'Real Madrid', nameTr: 'Real Madrid', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8633.png', uclLevel: 1 },
-    { code: 'PSG', name: 'باريس سان جيرمان', nameEn: 'PSG', nameTr: 'PSG', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9847.png', uclLevel: 1 },
-    { code: 'INT', name: 'إنتر ميلان', nameEn: 'Inter Milan', nameTr: 'Inter Milan', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8636.png', uclLevel: 1 },
-    { code: 'BAR', name: 'برشلونة', nameEn: 'Barcelona', nameTr: 'Barcelona', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8634.png', uclLevel: 1 },
-    { code: 'ATM', name: 'أتلتيكو مدريد', nameEn: 'Atletico Madrid', nameTr: 'Atletico Madrid', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9906.png', uclLevel: 1 },
+            // 🏆 دوري أبطال أوروبا - التصنيف الأول (POT 1)
+            { code: 'PSG', name: 'باريس سان جيرمان', nameEn: 'PSG', nameTr: 'PSG', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9847.png', uclLevel: 1 },
+            { code: 'BAY', name: 'بايرن ميونخ', nameEn: 'Bayern Munich', nameTr: 'Bayern Münih', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9823.png', uclLevel: 1 },
+            { code: 'RMA', name: 'ريال مدريد', nameEn: 'Real Madrid', nameTr: 'Real Madrid', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8633.png', uclLevel: 1 },
+            { code: 'INT', name: 'إنتر ميلان', nameEn: 'Inter Milan', nameTr: 'Inter Milan', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8636.png', uclLevel: 1 },
+            { code: 'BAR', name: 'برشلونة', nameEn: 'Barcelona', nameTr: 'Barcelona', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8634.png', uclLevel: 1 },
+            { code: 'ATM', name: 'أتلتيكو مدريد', nameEn: 'Atletico Madrid', nameTr: 'Atletico Madrid', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9906.png', uclLevel: 1 },
 
-    // دوري أبطال أوروبا - التصنيف الثاني
-    { code: 'BVB', name: 'بروسيا دورتموند', nameEn: 'Dortmund', nameTr: 'Dortmund', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9789.png', uclLevel: 2 },
-    { code: 'ROM', name: 'روما', nameEn: 'Roma', nameTr: 'Roma', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8686.png', uclLevel: 2 },
-    { code: 'SCP', name: 'سبورتينج لشبونة', nameEn: 'Sporting CP', nameTr: 'Sporting CP', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9768.png', uclLevel: 2 },
-    { code: 'POR', name: 'بورتو', nameEn: 'Porto', nameTr: 'Porto', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9773.png', uclLevel: 2 },
-    { code: 'BRU', name: 'كلوب بروج', nameEn: 'Club Brugge', nameTr: 'Club Brugge', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8398.png', uclLevel: 2 },
-    { code: 'BET', name: 'ريال بيتيس', nameEn: 'Real Betis', nameTr: 'Real Betis', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8603.png', uclLevel: 2 },
-    { code: 'PSV', name: 'آيندهوفن', nameEn: 'PSV', nameTr: 'PSV', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8640.png', uclLevel: 2 },
+            // 🏆 دوري أبطال أوروبا - التصنيف الثاني (POT 2)
+            { code: 'BVB', name: 'بروسيا دورتموند', nameEn: 'Dortmund', nameTr: 'Dortmund', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9789.png', uclLevel: 2 },
+            { code: 'ROM', name: 'روما', nameEn: 'Roma', nameTr: 'Roma', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8686.png', uclLevel: 2 },
+            { code: 'SCP', name: 'سبورتينج لشبونة', nameEn: 'Sporting CP', nameTr: 'Sporting CP', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9768.png', uclLevel: 2 },
+            { code: 'POR', name: 'بورتو', nameEn: 'Porto', nameTr: 'Porto', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9773.png', uclLevel: 2 },
+            { code: 'BRU', name: 'كلوب بروج', nameEn: 'Club Brugge', nameTr: 'Club Brugge', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8398.png', uclLevel: 2 },
+            { code: 'BET', name: 'ريال بيتيس', nameEn: 'Real Betis', nameTr: 'Real Betis', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8603.png', uclLevel: 2 },
+            { code: 'PSV', name: 'آيندهوفن', nameEn: 'PSV', nameTr: 'PSV', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8640.png', uclLevel: 2 },
 
-    // دوري أبطال أوروبا - التصنيف الثالث
-    { code: 'FEY', name: 'فينورد', nameEn: 'Feyenoord', nameTr: 'Feyenoord', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10235.png', uclLevel: 3 },
-    { code: 'LIL', name: 'ليل', nameEn: 'Lille', nameTr: 'Lille', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8639.png', uclLevel: 3 },
-    { code: 'NAP', name: 'نابولي', nameEn: 'Napoli', nameTr: 'Napoli', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9875.png', uclLevel: 3 },
-    { code: 'RBL', name: 'لايبزيج', nameEn: 'RB Leipzig', nameTr: 'RB Leipzig', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/112172.png', uclLevel: 3 },
-    { code: 'VIL', name: 'فياريال', nameEn: 'Villarreal', nameTr: 'Villarreal', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10205.png', uclLevel: 3 },
-    { code: 'SHA', name: 'شاختار دونيتسك', nameEn: 'Shakhtar', nameTr: 'Shakhtar', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10103.png', uclLevel: 3 },
-    { code: 'GAL', name: 'جالاتا سراي', nameEn: 'Galatasaray', nameTr: 'Galatasaray', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8638.png', uclLevel: 3 },
-    
-    // دوري أبطال أوروبا - التصنيف الرابع
-    { code: 'SLA', name: 'سلافيا براج', nameEn: 'Slavia Prague', nameTr: 'Slavia Prag', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/6530.png', uclLevel: 4 },
-    { code: 'STU', name: 'شتوتجارت', nameEn: 'Stuttgart', nameTr: 'Stuttgart', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10269.png', uclLevel: 4 },
-    { code: 'COM', name: 'كومو', nameEn: 'Como', nameTr: 'Como', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8534.png', uclLevel: 4 },
-    { code: 'RCL', name: 'لانس', nameEn: 'Lens', nameTr: 'Lens', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8588.png', uclLevel: 4 },
+            // 🏆 دوري أبطال أوروبا - التصنيف الثالث (POT 3)
+            { code: 'FEY', name: 'فينورد', nameEn: 'Feyenoord', nameTr: 'Feyenoord', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10235.png', uclLevel: 3 },
+            { code: 'LIL', name: 'ليل', nameEn: 'Lille', nameTr: 'Lille', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8639.png', uclLevel: 3 },
+            { code: 'NAP', name: 'نابولي', nameEn: 'Napoli', nameTr: 'Napoli', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/9875.png', uclLevel: 3 },
+            { code: 'RBL', name: 'لايبزيج', nameEn: 'RB Leipzig', nameTr: 'RB Leipzig', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/112172.png', uclLevel: 3 },
+            { code: 'VIL', name: 'فياريال', nameEn: 'Villarreal', nameTr: 'Villarreal', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10205.png', uclLevel: 3 },
+            { code: 'SHA', name: 'شاختار', nameEn: 'Shakhtar', nameTr: 'Shakhtar', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10103.png', uclLevel: 3 },
+            { code: 'GAL', name: 'جالاتا سراي', nameEn: 'Galatasaray', nameTr: 'Galatasaray', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8638.png', uclLevel: 3 },
+            { code: 'FEN', name: 'فنربخشة', nameEn: 'Fenerbahce', nameTr: 'Fenerbahçe', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8695.png', uclLevel: 3 },
+            { code: 'BOD', name: 'بودو/غليمت', nameEn: 'Bodo/Glimt', nameTr: 'Bodø/Glimt', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8071.png', uclLevel: 3 },
 
-    // المتأهلون من الملحق (رموز مؤقتة سنعدلها لاحقاً)
-    { code: 'Q1', name: 'متأهل 1 من الملحق', nameEn: 'Qualifier 1', nameTr: 'Elemeler 1', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 3 },
-    { code: 'Q2', name: 'متأهل 2 من الملحق', nameEn: 'Qualifier 2', nameTr: 'Elemeler 2', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 3 },
-    { code: 'Q3', name: 'متأهل 3 من الملحق', nameEn: 'Qualifier 3', nameTr: 'Elemeler 3', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 4 },
-    { code: 'Q4', name: 'متأهل 4 من الملحق', nameEn: 'Qualifier 4', nameTr: 'Elemeler 4', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 4 },
-    { code: 'Q5', name: 'متأهل 5 من الملحق', nameEn: 'Qualifier 5', nameTr: 'Elemeler 5', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 4 },
-    { code: 'Q6', name: 'متأهل 6 من الملحق', nameEn: 'Qualifier 6', nameTr: 'Elemeler 6', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 4 },
-    { code: 'Q7', name: 'متأهل 7 من الملحق', nameEn: 'Qualifier 7', nameTr: 'Elemeler 7', logo: 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png', uclLevel: 4 }
-];
+            // 🏆 دوري أبطال أوروبا - التصنيف الرابع (POT 4)
+            { code: 'STU', name: 'شتوتجارت', nameEn: 'Stuttgart', nameTr: 'Stuttgart', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10269.png', uclLevel: 4 },
+            { code: 'COM', name: 'كومو', nameEn: 'Como', nameTr: 'Como', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8534.png', uclLevel: 4 },
+            { code: 'RCL', name: 'لانس', nameEn: 'Lens', nameTr: 'Lens', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8588.png', uclLevel: 4 },
+            { code: 'SLB', name: 'سلوفان براتيسلافا', nameEn: 'Slovan Bratislava', nameTr: 'Slovan Bratislava', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/5934.png', uclLevel: 4 },
+            { code: 'AEK', name: 'أيك أثينا', nameEn: 'AEK Athens', nameTr: 'AEK Atina', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/10179.png', uclLevel: 4 },
+            { code: 'SAB', name: 'صباح', nameEn: 'Sabah', nameTr: 'Sabah', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/980183.png', uclLevel: 4 },
+            { code: 'SLA', name: 'سلافيا براج', nameEn: 'Slavia Prague', nameTr: 'Slavia Prag', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/6530.png', uclLevel: 4 },
+            { code: 'VIK', name: 'فيكينغ', nameEn: 'Viking', nameTr: 'Viking', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/8083.png', uclLevel: 4 },
+            { code: 'LAS', name: 'لاسك', nameEn: 'LASK', nameTr: 'LASK', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/6368.png', uclLevel: 4 }
+        ];
         
         // 🌟 محرك الصوت الفوري (بدون ملفات انترنت، وبدون تأخير نهائياً) 🌟
         const AudioContext = window.AudioContext || window.webkitAudioContext;
