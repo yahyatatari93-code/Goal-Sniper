@@ -565,6 +565,10 @@ function t(key) {
 };
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
+// 🌟 متغيرات الذاكرة المخبئية لتسريع التطبيق 🌟
+let globalStandingsCache = {};
+let activeGwCache = null;
+        
         let marqueeTexts = { 
             ar: "مرحباً بكم في Goal Sniper! 🎯", 
             en: "Welcome to Goal Sniper! 🎯", 
@@ -640,6 +644,10 @@ function t(key) {
 }
         
         async function syncData() {
+            // 🌟 تفريغ الذاكرة عند جلب بيانات جديدة لضمان دقة الحسابات 🌟
+            globalStandingsCache = {};
+            activeGwCache = null;
+            
             try {
                 // 🌟 التعديل السحري: إضافة طابع زمني (Timestamp) لمنع الكاش نهائياً 🌟
                 const url = `${API_BASE_URL}/sync?t=${new Date().getTime()}`;
@@ -870,6 +878,8 @@ function changeLanguage(langCode) {
         }
         
         function getGlobalStandings(leagueFilter = 'EPL') {
+            if (globalStandingsCache[leagueFilter]) return globalStandingsCache[leagueFilter]; // 🌟 السحر هنا: جلب البيانات المحسوبة مسبقاً بثانية!
+
             const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
             const prevGw = activeGw > 1 ? activeGw - 1 : 1;
 
@@ -953,7 +963,8 @@ function changeLanguage(langCode) {
                 userStats.favTeam = maxTeamPts > 0 ? bestTeam : '-';
             });
 
-            return Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
+            globalStandingsCache[leagueFilter] = Object.values(statsMap).sort((a, b) => b.totalPts - a.totalPts);
+            return globalStandingsCache[leagueFilter];
         }
 
         function getLeagueStandings(leagueCode, baseStats) {
@@ -1127,6 +1138,8 @@ function isMatchLocked(match) {
         }
         
         function getCurrentActiveGw() {
+            if (activeGwCache !== null) return activeGwCache; // 🌟 جلب من الذاكرة إذا كانت متوفرة
+            
             const uniqueGws = getAvailableGws();
             
             // ترتيب الجولات زمنياً بناءً على تاريخ أول مباراة في الجولة
@@ -1142,9 +1155,13 @@ function isMatchLocked(match) {
             for (const gw of uniqueGws) {
                 const gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) continue;
-                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) return gw;
+                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                    activeGwCache = gw;
+                    return gw;
+                }
             }
-            return uniqueGws.length > 0 ? uniqueGws[uniqueGws.length - 1] : 1;
+            activeGwCache = uniqueGws.length > 0 ? uniqueGws[uniqueGws.length - 1] : 1;
+            return activeGwCache;
         }
 
         // 🌟 دالة فتح الروابط الذكية (تكسر حظر جميع الهواتف)
