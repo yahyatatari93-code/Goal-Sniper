@@ -1886,16 +1886,34 @@ function renderMiniLeaguesTab() {
                                     ${leagueData.members.map((mem, idx) => {
                                         const isMe = mem.username === currentUser.username;
                                         
-                                        // تجهيز زر القناص أو الحصانة
+                                        // تجهيز زر القناص أو الحصانة (منطق الدرع الموحد الذكي)
                                         let actionBtn = '';
-                                        if (!isMe) {
+                                        let showShield = false;
+                                        
+                                        if (canCurrentUseSniper) {
                                             if (leagueData.victimsLastGw && leagueData.victimsLastGw.has(mem.username)) {
-                                                actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1"><i class="fa-solid fa-shield-virus"></i></span>`;
-                                            } else if (canCurrentUseSniper) {
-                                                actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
-                                                    <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
-                                                </button>`;
+                                                showShield = true;
                                             }
+                                        } else {
+                                            if (leagueData.snipersThisGw && leagueData.snipersThisGw.has(currentUser.username)) {
+                                                // أنا قمت بالقنص للتو، لذا الدرع ينتقل للضحية الجديدة فوراً
+                                                showShield = leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username);
+                                            } else {
+                                                // لم أقم بالقنص، نعرض الدرع على الضحية الأحدث في الدوري
+                                                if (leagueData.victimsThisGw && leagueData.victimsThisGw.size > 0) {
+                                                    showShield = leagueData.victimsThisGw.has(mem.username);
+                                                } else {
+                                                    showShield = leagueData.victimsLastGw && leagueData.victimsLastGw.has(mem.username);
+                                                }
+                                            }
+                                        }
+
+                                        if (showShield) {
+                                            actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1" title="يمتلك الحصانة"><i class="fa-solid fa-shield-virus"></i></span>`;
+                                        } else if (!isMe && canCurrentUseSniper) {
+                                            actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
+                                                <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
+                                            </button>`;
                                         }
 
                                         return `
@@ -1922,11 +1940,10 @@ function renderMiniLeaguesTab() {
                                                 <span class="bg-emerald-900/20 text-emerald-400 font-bold w-10 py-1 rounded text-xs inline-block text-center">${mem.mlGwPts}</span>
                                             </td>
                                             
-                                            <!-- 4. النقاط الكلية (مربع ذهبي مقاس 10 + درع الحماية) -->
+                                            <!-- 4. النقاط الكلية (مربع ذهبي مقاس 10) -->
                                             <td class="py-2.5 text-center px-4">
                                                 <div class="relative inline-flex items-center justify-center">
                                                     <span class="bg-amber-900/20 text-amber-400 font-black w-10 py-1 rounded text-xs border border-amber-500/20 shadow-inner inline-block text-center">${mem.mlTotalPts}</span>
-                                                    ${leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username) ? `<i class="fa-solid fa-shield-halved text-emerald-400 text-[11px] absolute top-1/2 -translate-y-1/2 -left-4" title="محمي من القنص الجولة القادمة"></i>` : ''}
                                                 </div>
                                             </td>
                                             
