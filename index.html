@@ -771,7 +771,7 @@ function changeLanguage(langCode) {
             return pts;
         };
 
-        // 🌟 دالة محدثة: تدعم كابتن واحد في الإنجليزي، وكابتن لكل يوم في الأبطال
+        // 🌟 دالة الكابتن المحدثة (الاعتماد على المباراة الأخيرة افتراضياً)
         function getActiveCaptains(username, gw) {
             const gwMatches = matches.filter(m => Number(m.gw) === Number(gw)).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
             if (gwMatches.length === 0) return [];
@@ -786,13 +786,16 @@ function changeLanguage(langCode) {
                     const dateMatches = gwMatches.filter(m => formatMatchDate(m.date) === date);
                     const explicitCap = dateMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
                     if (explicitCap) captains.push(explicitCap.id);
-                    else if (dateMatches.length > 0) captains.push(dateMatches[0].id); // كابتن افتراضي لأول مباراة باليوم
+                    // وضع الكابتن الافتراضي على المباراة الأخيرة في ذلك اليوم
+                    else if (dateMatches.length > 0) captains.push(dateMatches[dateMatches.length - 1].id); 
                 });
                 return captains;
             } else {
                 const explicitCap = gwMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
                 if (explicitCap) return [explicitCap.id];
-                return [gwMatches[0].id];
+
+                // وضع الكابتن الافتراضي على المباراة الأخيرة في الجولة
+                return [gwMatches[gwMatches.length - 1].id];
             }
         }
 
