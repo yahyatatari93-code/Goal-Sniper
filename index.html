@@ -89,6 +89,30 @@
     0% { right: 100%; transform: translateX(0); }
     100% { right: 0; transform: translateX(100%); }
 }
+        /* 🌟 ثيم دوري أبطال أوروبا بصورة احترافية (UCL Theme) 🌟 */
+        body.ucl-theme {
+            background-color: #0b0c2a; /* لون احتياطي في حال تأخر تحميل الصورة */
+            background-image: 
+                /* طبقة تعتيم ذكية (Overlay) لضمان بقاء النصوص واضحة جداً فوق الصورة */
+                linear-gradient(to bottom, rgba(6, 11, 25, 0.85), rgba(15, 23, 42, 0.9)),
+                /* 🌟 ضع رابط الصورة المباشر هنا 🌟 */
+                url('https://i.ibb.co/vxNq9HjV/Whats-App-Image-2026-09-05-at-2-31-40-PM.jpg'); 
+            background-size: cover;
+            background-position: center top;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        
+        body.ucl-theme .glass {
+            border-color: rgba(168, 85, 247, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            background: rgba(11, 12, 42, 0.65); /* تغميق البطاقات قليلاً لتندمج مع الصورة */
+        }
+        
+        body.ucl-theme .marquee-container {
+            background: linear-gradient(90deg, rgba(11,12,42,0.95), rgba(88,28,135,0.7), rgba(11,12,42,0.95));
+            border-bottom-color: rgba(168, 85, 247, 0.4);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col bottom-nav-pb">
@@ -578,6 +602,29 @@ let activeGwCache = null;
         let sniperShots = [];
         let activeMatchesLeague = 'EPL';
         let activeStandingsLeague = 'EPL';
+        let activeRulesLeague = 'EPL'; // 🌟 متغير جديد للقوانين
+
+// 🌟 دالة الذكاء البصري (تغيير الخلفية حسب القسم) 🌟
+function updateTheme() {
+    let isUcl = false;
+    if (currentTab === 'matches' && activeMatchesLeague === 'UCL') isUcl = true;
+    else if (currentTab === 'standings' && activeStandingsLeague === 'UCL') isUcl = true;
+    else if (currentTab === 'rules' && activeRulesLeague === 'UCL') isUcl = true;
+    else if (currentTab === 'home') {
+        const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+        if (activeGw >= 101) isUcl = true; // إذا كانت الجولة الحالية للأبطال، تصبح الرئيسية بثيم الأبطال
+    }
+    else if (currentTab === 'admin') {
+        const admLeague = document.getElementById('adm-league');
+        if (admLeague && admLeague.value === 'UCL') isUcl = true;
+    }
+
+    if (isUcl) {
+        document.body.classList.add('ucl-theme');
+    } else {
+        document.body.classList.remove('ucl-theme');
+    }
+}
 
         // 🌟 المترجم الذكي لجولات الأبطال 🌟
         function getGwLabel(gw) {
@@ -619,6 +666,7 @@ let activeGwCache = null;
                 document.getElementById('adm-gw-ucl').classList.add('hidden');
                 document.getElementById('adm-gw-epl').classList.remove('hidden');
             }
+            updateTheme();
         }
         
         // مفتاح الإطلاق الخفي لدوري الأبطال
@@ -2375,6 +2423,7 @@ function renderMiniLeaguesTab() {
         }
 
         function switchRulesTab(tab) {
+            activeRulesLeague = tab.toUpperCase(); // تحديث المتغير
             const eplContent = document.getElementById('rules-content-epl');
             const uclContent = document.getElementById('rules-content-ucl');
             const eplBtn = document.getElementById('rules-tab-epl');
@@ -2393,6 +2442,7 @@ function renderMiniLeaguesTab() {
                 uclBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-md";
                 eplBtn.className = "flex-1 py-2.5 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
             }
+            updateTheme(); // 🌟 تغيير الخلفية فوراً
         }
 
 function renderPrizesTab() {
@@ -3906,6 +3956,7 @@ async function deleteLeagueByAdmin() {
             `;
 
             renderModal();
+            updateTheme();
         }
 
         window.onload = async function() {
