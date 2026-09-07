@@ -580,11 +580,34 @@ function t(key) {
     return team && team.logo ? team.logo : 'https://cdn-icons-png.flaticon.com/512/3247/3247492.png';
 }
         
-        const getMatchType = (h, a) => {
-    const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
-    if (hB && aB) return { label: t('bigClash'), color: 'text-yellow-400' };
-    if (!hB && !aB) return { label: t('balanced'), color: 'text-gray-400' };
-    return { label: t('bigVsAmbitious'), color: 'text-blue-400' };
+        const getMatchType = (h, a, matchLeague = 'EPL') => {
+    if (matchLeague === 'UCL') {
+        const tH = TEAMS.find(t => t.code === h);
+        const tA = TEAMS.find(t => t.code === a);
+        const lH = tH && tH.uclLevel ? tH.uclLevel : null;
+        const lA = tA && tA.uclLevel ? tA.uclLevel : null;
+
+        if (lH && lA) {
+            if (lH === lA) {
+                return { label: typeof t === 'function' ? t('balanced') : 'مباراة متكافئة', color: 'text-emerald-400' };
+            } else {
+                const levelNamesAr = {1: 'الأول', 2: 'الثاني', 3: 'الثالث', 4: 'الرابع'};
+                const levelNamesEn = {1: 'Pot 1', 2: 'Pot 2', 3: 'Pot 3', 4: 'Pot 4'};
+                const levelNamesTr = {1: '1. Torba', 2: '2. Torba', 3: '3. Torba', 4: '4. Torba'};
+                
+                if (currentLang === 'en') return { label: `${levelNamesEn[lH]} vs ${levelNamesEn[lA]}`, color: 'text-purple-400' };
+                if (currentLang === 'tr') return { label: `${levelNamesTr[lH]} vs ${levelNamesTr[lA]}`, color: 'text-purple-400' };
+                
+                return { label: `التصنيف ${levelNamesAr[lH]} ضد ${levelNamesAr[lA]}`, color: 'text-purple-400' };
+            }
+        }
+        return { label: typeof t === 'function' ? t('balanced') : 'مباراة متكافئة', color: 'text-gray-400' };
+    } else {
+        const hB = BIG_TEAMS.includes(h), aB = BIG_TEAMS.includes(a);
+        if (hB && aB) return { label: typeof t === 'function' ? t('bigClash') : 'قمة الكبار', color: 'text-yellow-400' };
+        if (!hB && !aB) return { label: typeof t === 'function' ? t('balanced') : 'مباراة متكافئة', color: 'text-gray-400' };
+        return { label: typeof t === 'function' ? t('bigVsAmbitious') : 'الكبار ضد الطموحين', color: 'text-blue-400' };
+    }
 };
 
         let users = [], currentUser = null, matches = [], predictions = {}, miniLeagues = [];
@@ -1372,7 +1395,7 @@ function isMatchLocked(match) {
                 <div class="space-y-3 mt-4">
                     ${gwMatches.map(match => {
                         const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
-                        const matchType = getMatchType(match.home, match.away);
+                        const matchType = getMatchType(match.home, match.away, match.league || 'EPL');
                         const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                         const isLocked = isMatchLocked(match);
                         
