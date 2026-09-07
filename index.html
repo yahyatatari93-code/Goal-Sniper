@@ -1697,24 +1697,27 @@ function changeGw(gw) {
                                 <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}</span>
                                     </div>
                                     <div class="flex items-center justify-between mt-1">
-                                        
-                                        <div class="flex-1 flex justify-start items-center gap-2">
-                                            <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                            <div class="${isAr ? 'text-left' : 'text-right'} font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight">${getTeamName(match.home)}</div>
-                                        </div>
-                                        
-                                        <div class="px-2 shrink-0">
-                                            <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                ${btnContent}
-                                            </button>
-                                        </div>
-                                        
-                                        <div class="flex-1 flex justify-end items-center gap-2 flex-row-reverse">
-                                            <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
-                                            <div class="${isAr ? 'text-right' : 'text-left'} font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight">${getTeamName(match.away)}</div>
-                                        </div>
+    
+    <!-- الطرف الأول (اليمين) -->
+    <div class="flex-1 flex justify-start items-center gap-2">
+        <img src="${getTeamLogo(match.home)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+        <div class="font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight text-start">${getTeamName(match.home)}</div>
+    </div>
+    
+    <!-- زر التوقع (المنتصف) -->
+    <div class="px-2 shrink-0">
+        <button ${isLocked ? 'disabled' : `onclick="openModal('${match.id}')"`} class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${isPredicted ? 'bg-blue-600/20 text-blue-300 border border-blue-500/30' : 'bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+            ${btnContent}
+        </button>
+    </div>
+    
+    <!-- الطرف الثاني (اليسار) -->
+    <div class="flex-1 flex justify-end items-center gap-2">
+        <div class="font-bold text-[11px] md:text-xs text-white whitespace-normal leading-tight text-end">${getTeamName(match.away)}</div>
+        <img src="${getTeamLogo(match.away)}" class="w-6 h-6 md:w-7 md:h-7 object-contain drop-shadow-md shrink-0" loading="lazy" alt="logo" />
+    </div>
 
-                                    </div>
+</div>
                                     ${resultBar} 
                                 </div>
                             `;
