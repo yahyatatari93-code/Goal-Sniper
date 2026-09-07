@@ -1615,6 +1615,7 @@ function changeGw(gw) {
                             const pred = userPreds[match.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false };
                             const isPredicted = pred.home !== '' && pred.away !== '' && pred.home !== null && pred.away !== null;
                             const isLocked = isMatchLocked(match);
+                            const matchType = getMatchType(match.home, match.away, match.league || 'EPL');
                             
                             const activeCaps = getActiveCaptains(currentUser.username, activeGw);
                             const isEffectiveCaptain = activeCaps.includes(match.id);
@@ -1691,8 +1692,9 @@ function changeGw(gw) {
                             return `
                                 <div class="p-3 rounded-xl flex flex-col gap-2 relative transition-all ${borderClass} ${isLocked ? 'opacity-70 grayscale-[30%]' : ''}">
                                     ${badgeHtml}
-                                    <div class="text-[10px] text-center text-slate-400 border-b border-white/5 pb-1">
-                                        <i class="far fa-${isLocked ? 'lock' : 'calendar-alt'} text-blue-400"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}
+                                    <div class="flex justify-between items-center text-[10px] md:text-xs text-slate-400 border-b border-white/5 pb-2">
+                                <span class="font-bold ${matchType.color}">${matchType.label}</span>
+                                <span class="${isLocked ? 'text-rose-400 font-bold' : ''}"><i class="far fa-${isLocked ? 'lock' : 'clock'} ${isAr ? 'ml-1' : 'mr-1'}"></i> ${isLocked ? lockedText : `${displayDate} - ${displayTime}`}</span>
                                     </div>
                                     <div class="flex items-center justify-between mt-1">
                                         
