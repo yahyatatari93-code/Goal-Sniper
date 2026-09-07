@@ -1543,10 +1543,22 @@ function changeGw(gw) {
         const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
         const isAr = direction === 'rtl';
 
-        if (!selectedMatchesGw) {
-            selectedMatchesGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+        const isUCL = activeMatchesLeague === 'UCL';
+        const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
+
+        // 🌟 ضبط الجولة تلقائياً لتناسب البطولة الحالية ومنع الصفحة الفارغة 🌟
+        if (!selectedMatchesGw || !gwList.includes(Number(selectedMatchesGw))) {
+            if (isUCL) {
+                selectedMatchesGw = 101; 
+            } else {
+                selectedMatchesGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+                if (!gwList.includes(Number(selectedMatchesGw))) selectedMatchesGw = 1;
+            }
         }
-        const activeGw = selectedMatchesGw;
+        const activeGw = Number(selectedMatchesGw);
+        
+        // حساب الرقم المرئي (101 يصبح 1 شكلياً للمستخدم)
+        const displayGwNum = activeGw > 100 ? activeGw - 100 : activeGw;
 
         // فلترة المباريات حسب الجولة والبطولة المحددة
         let gwMatches = matches.filter(m => Number(m.gw) === activeGw && (m.league || 'EPL') === activeMatchesLeague);
@@ -1581,8 +1593,6 @@ function changeGw(gw) {
                 </div>
 
                 ${(() => {
-                    const isUCL = activeMatchesLeague === 'UCL';
-                    const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
                     const currentIndex = gwList.indexOf(activeGw) !== -1 ? gwList.indexOf(activeGw) : 0;
                     const prevGw = currentIndex > 0 ? gwList[currentIndex - 1] : null;
                     const nextGw = currentIndex < gwList.length - 1 ? gwList[currentIndex + 1] : null;
@@ -1595,7 +1605,7 @@ function changeGw(gw) {
                         
                         <div class="relative flex-1 px-2 max-w-[200px]">
                             <select onchange="changeMatchesGw(this.value)" class="w-full bg-slate-950 border ${isUCL ? 'border-purple-500/30 text-purple-400 focus:border-purple-500' : 'border-blue-500/30 text-blue-400 focus:border-blue-500'} rounded-xl pl-4 pr-8 py-2 text-[11px] md:text-sm font-black outline-none appearance-none shadow-inner cursor-pointer text-center">
-                                ${gwList.map(g => `<option value="${g}" ${g === activeGw ? 'selected' : ''}>${getGwLabel(g)}</option>`).join('')}
+                                ${gwList.map(g => `<option value="${g}" ${g === activeGw ? 'selected' : ''}>${gwText} ${g > 100 ? g - 100 : g}</option>`).join('')}
                             </select>
                             <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-4' : 'right-4'} pointer-events-none text-xs"></i>
                         </div>
@@ -1608,7 +1618,7 @@ function changeGw(gw) {
 
                 <div class="glass p-4 rounded-2xl space-y-3 animate-fade-up" id="matches-list-container">
                     <div class="border-b border-white/10 pb-2 flex justify-between items-center">
-                        <h3 class="font-black text-sm text-blue-400">${gwText} ${activeGw}</h3>
+                        <h3 class="font-black text-sm text-blue-400">${gwText} ${displayGwNum}</h3>
                         <span class="text-xs text-slate-400 bg-slate-800 px-2 py-0.5 rounded-lg">${gwMatches.length} ${matchupsText}</span>
                     </div>
                     <div class="space-y-3 pt-2">
