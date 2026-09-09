@@ -3007,13 +3007,14 @@ function renderPrizesTab() {
         // 🌟 متغيرات ودوال المقارنة (Head-to-Head) 🌟
         let comparisonUser = null;
         let comparisonGw = null;
+        let comparisonLeague = 'EPL';
 
-        function getCompletedGws() {
+        function getCompletedGws(leagueFilter = 'EPL') {
             const completed = [];
-            const uniqueGws = getAvailableGws(); // يجلب كل الجولات المتاحة (EPL و UCL)
+            const uniqueGws = getAvailableGws(leagueFilter);
             
             uniqueGws.forEach(g => {
-                const gwMatches = matches.filter(m => Number(m.gw) === g);
+                const gwMatches = matches.filter(m => Number(m.gw) === g && (m.league || 'EPL') === leagueFilter);
                 if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
                     completed.push(g);
                 }
@@ -3022,14 +3023,40 @@ function renderPrizesTab() {
         }
 
         function openComparison(otherUser) {
-            if (!currentUser || otherUser === currentUser.username) return; // منع مقارنة اللاعب بنفسه
-            const compGws = getCompletedGws();
+            if (!currentUser || otherUser === currentUser.username) return; 
+            
+            // تحديد البطولة الافتراضية بذكاء حسب المكان الذي يتواجد فيه المستخدم
+            comparisonLeague = (currentTab === 'standings') ? activeStandingsLeague : ((currentTab === 'minileagues') ? activeMiniLeaguesLeague : 'EPL');
+            
+            const compGws = getCompletedGws(comparisonLeague);
+            
+            // إذا لم تكن هناك جولات مكتملة في هذه البطولة، نتحقق من الأخرى قبل إظهار رسالة الخطأ
             if (compGws.length === 0) {
-                showCustomDialog("لا توجد جولات مكتملة حتى الآن. المراقبة والمقارنة تُفتح فقط بعد إطلاق صافرة النهاية لآخر مباراة في الجولة لضمان النزاهة!", "alert");
-                return;
+                const otherLeague = comparisonLeague === 'EPL' ? 'UCL' : 'EPL';
+                const otherCompGws = getCompletedGws(otherLeague);
+                if (otherCompGws.length > 0) {
+                    comparisonLeague = otherLeague;
+                    comparisonGw = otherCompGws[otherCompGws.length - 1];
+                } else {
+                    showCustomDialog("لا توجد جولات مكتملة حتى الآن. المراقبة والمقارنة تُفتح فقط بعد إطلاق صافرة النهاية لآخر مباراة في الجولة لضمان النزاهة!", "alert");
+                    return;
+                }
+            } else {
+                comparisonGw = compGws[compGws.length - 1]; 
             }
+
             comparisonUser = otherUser;
-            comparisonGw = compGws[compGws.length - 1]; // فتح المقارنة على آخر جولة مكتملة افتراضياً
+            renderComparisonModal();
+        }
+
+        function switchComparisonLeague(league) {
+            comparisonLeague = league;
+            const compGws = getCompletedGws(comparisonLeague);
+            if (compGws.length > 0) {
+                comparisonGw = compGws[compGws.length - 1];
+            } else {
+                comparisonGw = null; // لا يوجد جولات مكتملة في هذه البطولة
+            }
             renderComparisonModal();
         }
 
@@ -3047,8 +3074,63 @@ function renderPrizesTab() {
             if (!comparisonUser) return;
             const container = document.getElementById('dialog-container');
             
-            const compGws = getCompletedGws();
-            const gwMatches = matches.filter(m => Number(m.gw) === comparisonGw).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+            const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
+            const isAr = direction === 'rtl';
+
+            const compGws = getCompletedGws(comparisonLeague);
+            
+            // أزرار التبديل الأنيقة
+            let leagueSwitcher = '';
+            if (typeof isUclVisible === 'function' && isUclVisible()) {
+                leagueSwitcher = `
+                <div class="flex gap-2 mb-4 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner shrink-0 mt-3 md:mt-4">
+                    <button onclick="switchComparisonLeague('EPL')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${comparisonLeague === 'EPL' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
+                        <i class="fa-solid fa-trophy"></i> ${isAr ? 'الدوري الإنجليزي' : 'Premier League'}
+                    </button>
+                    <button onclick="switchComparisonLeague('UCL')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${comparisonLeague === 'UCL' ? 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'text-slate-400 hover:text-white'}">
+                        <i class="fa-solid fa-star"></i> ${isAr ? 'أبطال أوروبا' : 'Champions League'}
+                    </button>
+                </div>`;
+            }
+
+            let html = `
+                <div class="fixed inset-0 z-[80] bg-[#060b19]/95 backdrop-blur-xl flex flex-col p-2 md:p-4 animate-fade-up" dir="${direction}">
+                    <!-- الهيدر -->
+                    <div class="glass p-4 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 shadow-lg border-blue-500/30 mt-2 md:mt-0">
+                        <div class="flex items-center gap-4 w-full md:w-auto justify-between">
+                            <button onclick="closeComparison()" class="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/30 shrink-0">
+                                <i class="fa-solid fa-arrow-${isAr ? 'right' : 'left'}"></i>
+                            </button>
+                            <h2 class="text-base md:text-lg font-black text-white flex items-center gap-2">
+                                <i class="fa-solid fa-code-compare ${comparisonLeague === 'UCL' ? 'text-purple-400' : 'text-blue-400'}"></i> ${isAr ? 'كشف الأوراق والمقارنة' : 'Head-to-Head'}
+                            </h2>
+                        </div>
+
+                        ${compGws.length > 0 ? `
+                        <div class="flex bg-slate-900/80 rounded-xl p-1 w-full md:w-auto border border-white/10 relative">
+                            <select onchange="changeComparisonGw(this.value)" class="w-full bg-transparent pl-4 pr-10 py-2 text-sm ${comparisonLeague === 'UCL' ? 'text-purple-400' : 'text-blue-400'} font-black outline-none appearance-none cursor-pointer text-center">
+                                ${compGws.map(g => `<option value="${g}" ${g === comparisonGw ? 'selected' : ''}>${getGwLabel(g)}</option>`).join('')}
+                            </select>
+                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none text-xs"></i>
+                        </div>` : ''}
+                    </div>
+                    
+                    ${leagueSwitcher}
+            `;
+
+            // في حال عدم وجود جولات مكتملة في هذه البطولة المعينة
+            if (compGws.length === 0 || !comparisonGw) {
+                html += `
+                    <div class="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm font-bold opacity-80">
+                        <i class="fa-solid fa-futbol mb-3 text-4xl opacity-50"></i>
+                        ${isAr ? 'لا توجد جولات مكتملة في هذه البطولة حتى الآن.' : 'No completed gameweeks in this league yet.'}
+                    </div>
+                </div>`;
+                container.innerHTML = html;
+                return;
+            }
+
+            const gwMatches = matches.filter(m => Number(m.gw) === comparisonGw && (m.league || 'EPL') === comparisonLeague).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
 
             const myPreds = predictions[currentUser.username] || {};
             const theirPreds = predictions[comparisonUser] || {};
@@ -3059,32 +3141,9 @@ function renderPrizesTab() {
             const myCaps = getActiveCaptains(currentUser.username, comparisonGw);
             const theirCaps = getActiveCaptains(comparisonUser, comparisonGw);
 
-            const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
-            const isAr = direction === 'rtl';
-
-            let html = `
-                <div class="fixed inset-0 z-[80] bg-[#060b19]/95 backdrop-blur-xl flex flex-col p-2 md:p-4 animate-fade-up" dir="${direction}">
-                    <!-- Header -->
-                    <div class="glass p-4 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 shadow-lg border-blue-500/30 mt-2 md:mt-0">
-                        <div class="flex items-center gap-4 w-full md:w-auto justify-between">
-                            <button onclick="closeComparison()" class="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/30 shrink-0">
-                                <i class="fa-solid fa-arrow-${isAr ? 'right' : 'left'}"></i>
-                            </button>
-                            <h2 class="text-base md:text-lg font-black text-white flex items-center gap-2">
-                                <i class="fa-solid fa-code-compare text-blue-400"></i> ${isAr ? 'كشف الأوراق والمقارنة' : 'Head-to-Head'}
-                            </h2>
-                        </div>
-
-                        <div class="flex bg-slate-900/80 rounded-xl p-1 w-full md:w-auto border border-white/10 relative">
-                            <select onchange="changeComparisonGw(this.value)" class="w-full bg-transparent pl-4 pr-10 py-2 text-sm text-blue-400 font-black outline-none appearance-none cursor-pointer text-center">
-                                ${compGws.map(g => `<option value="${g}" ${g === comparisonGw ? 'selected' : ''}>${getGwLabel(g)}</option>`).join('')}
-                            </select>
-                            <i class="fa-solid fa-sort text-slate-500 absolute top-1/2 -translate-y-1/2 ${isAr ? 'left-3' : 'right-3'} pointer-events-none text-xs"></i>
-                        </div>
-                    </div>
-
-                    <!-- Scoreboard Header -->
-                    <div class="flex justify-between items-center mt-4 glass p-4 rounded-3xl shrink-0 border-white/5 shadow-inner bg-slate-900/40">
+            html += `
+                    <!-- لوحة الترتيب العلوية -->
+                    <div class="flex justify-between items-center mt-2 glass p-4 rounded-3xl shrink-0 border-white/5 shadow-inner bg-slate-900/40">
                         <div class="flex-1 text-center border-r border-white/10 ${isAr ? 'border-r-0 border-l' : ''}">
                             <span class="text-[10px] text-emerald-400 font-bold block mb-1">${isAr ? 'أنت' : 'You'}</span>
                             <span class="text-sm md:text-base font-black text-white truncate block px-2">${currentUser.username}</span>
@@ -3098,7 +3157,7 @@ function renderPrizesTab() {
                         </div>
                     </div>
 
-                    <!-- Matches List -->
+                    <!-- قائمة المباريات للمقارنة -->
                     <div class="flex-1 overflow-y-auto hide-scrollbar mt-4 space-y-3 pb-6">
             `;
 
@@ -3109,8 +3168,8 @@ function renderPrizesTab() {
                 const myHasPred = myP.home !== '' && myP.away !== '' && myP.home !== null && myP.away !== null;
                 const theirHasPred = theirP.home !== '' && theirP.away !== '' && theirP.home !== null && theirP.away !== null;
 
-                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, myCaps.includes(m.id), myP.isTripleCaptain, m.league || 'EPL');
-                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, theirCaps.includes(m.id), theirP.isTripleCaptain, m.league || 'EPL');
+                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, myCaps.includes(m.id), myP.isTripleCaptain, comparisonLeague);
+                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, theirCaps.includes(m.id), theirP.isTripleCaptain, comparisonLeague);
 
                 myTotalPts += myPts;
                 theirTotalPts += theirPts;
