@@ -623,6 +623,7 @@ let activeGwCache = null;
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
         let sniperShots = [];
         let activeMatchesLeague = 'EPL';
+        let activeMiniLeaguesLeague = 'EPL';
         function setMiniLeaguesLeague(league) { 
     activeMiniLeaguesLeague = league; 
     const mainContent = document.getElementById('main-content');
@@ -2083,40 +2084,40 @@ function renderMiniLeaguesTab() {
                                         }
 
                                         if (showShield) {
-                                            actionBtn = \`<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1" title="يمتلك الحصانة"><i class="fa-solid fa-shield-virus"></i></span>\`;
+                                            actionBtn = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg px-2 py-1 flex items-center justify-center gap-1" title="يمتلك الحصانة"><i class="fa-solid fa-shield-virus"></i></span>`;
                                         } else if (!isMe && canCurrentUseSniper) {
-                                            actionBtn = \`<button onclick="fireSniper('\${ml.code}', '\${mem.username}', \${leagueData.sniperPenalty}, \${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
-                                                <i class="fa-solid fa-crosshairs"></i> (-\${leagueData.sniperPenalty})
-                                            </button>\`;
+                                            actionBtn = `<button onclick="fireSniper('${ml.code}', '${mem.username}', ${leagueData.sniperPenalty}, ${leagueData.sniperEligibilityGw})" class="bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 transition-all rounded-lg px-2 py-1 flex items-center justify-center gap-1 shadow-lg shadow-red-500/20 text-[10px]">
+                                                <i class="fa-solid fa-crosshairs"></i> (-${leagueData.sniperPenalty})
+                                            </button>`;
                                         }
 
-                                        return \`
-                                        <tr class="border-b border-white/5 transition-colors hover:bg-white/5 \${isMe ? 'bg-blue-900/20' : ''}">
+                                        return `
+                                        <tr class="border-b border-white/5 transition-colors hover:bg-white/5 ${isMe ? 'bg-blue-900/20' : ''}">
                                             <td class="py-2.5 text-center">
-                                                <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs \${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">\${idx + 1}</span>
+                                                <span class="font-bold w-6 h-6 rounded-full flex items-center justify-center mx-auto text-xs ${idx === 0 ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-400'}">${idx + 1}</span>
                                             </td>
-                                            <td class="py-2.5 text-\${isAr ? 'right' : 'left'} px-2 whitespace-nowrap">
-                                                \${isMe ? 
-                                                    \`<span class="font-bold text-[12px] text-blue-300">\${mem.username}</span>\` : 
-                                                    \`<button onclick="openComparison('\${mem.username}')" class="font-bold text-[12px] text-slate-200 hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none">\${mem.username}</button>\`
+                                            <td class="py-2.5 text-${isAr ? 'right' : 'left'} px-2 whitespace-nowrap">
+                                                ${isMe ? 
+                                                    `<span class="font-bold text-[12px] text-blue-300">${mem.username}</span>` : 
+                                                    `<button onclick="openComparison('${mem.username}')" class="font-bold text-[12px] text-slate-200 hover:text-blue-400 hover:underline transition-all underline-offset-4 decoration-blue-500/40 cursor-pointer outline-none" title="${isAr ? 'كشف الأوراق' : 'Compare'}">${mem.username}</button>`
                                                 }
-                                                \${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] mx-0.5" title="متصدر"></i>' : ''}
-                                                \${leagueData.snipersThisGw && leagueData.snipersThisGw.has(mem.username) ? '<i class="fa-solid fa-crosshairs text-rose-500 text-[10px] mx-0.5 animate-pulse" title="استخدم القناص"></i>' : ''}
-                                                \${leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username) ? '<i class="fa-solid fa-heart-crack text-red-500 text-[10px] mx-0.5" title="تعرض للقنص"></i>' : ''}
+                                                ${leagueData.topScorers.includes(mem.username) ? '<i class="fa-solid fa-star text-yellow-400 text-[9px] mx-0.5" title="متصدر"></i>' : ''}
+                                                ${leagueData.snipersThisGw && leagueData.snipersThisGw.has(mem.username) ? '<i class="fa-solid fa-crosshairs text-rose-500 text-[10px] mx-0.5 animate-pulse" title="استخدم القناص"></i>' : ''}
+                                                ${leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username) ? '<i class="fa-solid fa-heart-crack text-red-500 text-[10px] mx-0.5" title="تعرض للقنص"></i>' : ''}
                                             </td>
                                             <td class="py-2.5 text-center">
-                                                <span class="bg-emerald-900/20 text-emerald-400 font-bold w-10 py-1 rounded text-xs inline-block text-center">\${mem.mlGwPts}</span>
+                                                <span class="bg-emerald-900/20 text-emerald-400 font-bold w-10 py-1 rounded text-xs inline-block text-center">${mem.mlGwPts}</span>
                                             </td>
                                             <td class="py-2.5 text-center px-4">
                                                 <div class="relative inline-flex items-center justify-center">
-                                                    <span class="bg-amber-900/20 text-amber-400 font-black w-10 py-1 rounded text-xs border border-amber-500/20 shadow-inner inline-block text-center">\${mem.mlTotalPts}</span>
+                                                    <span class="bg-amber-900/20 text-amber-400 font-black w-10 py-1 rounded text-xs border border-amber-500/20 shadow-inner inline-block text-center">${mem.mlTotalPts}</span>
                                                 </div>
                                             </td>
                                             <td class="py-2.5 text-center">
-                                                \${actionBtn}
+                                                ${actionBtn}
                                             </td>
                                         </tr>
-                                        \`;
+                                        `;
                                     }).join('')}
                                 </tbody>
                             </table>
