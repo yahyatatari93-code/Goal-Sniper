@@ -1338,10 +1338,33 @@ function isMatchLocked(match) {
     
     const userPreds = predictions[currentUser.username] || {};
     
-    const standings = getGlobalStandings();
-    const myStats = standings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {} };
-    const myRank = standings.findIndex(u => u.username === currentUser.username) + 1 || '-';
-    const motw = prevGw ? standings.find(u => u.badges.motw) : null;
+    // 🌟 جلب وحساب إحصائيات كلا البطولتين
+    const eplStandings = getGlobalStandings('EPL');
+    const uclStandings = getGlobalStandings('UCL');
+    
+    const myEplStats = eplStandings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {}, playedMatches: 0, correctOutcomes: 0 };
+    const myUclStats = uclStandings.find(u => u.username === currentUser.username) || { totalPts: 0, hitRate: 0, favTeam: '-', badges: {}, playedMatches: 0, correctOutcomes: 0 };
+    
+    let myEplRank = eplStandings.findIndex(u => u.username === currentUser.username);
+    myEplRank = myEplRank !== -1 ? myEplRank + 1 : '-';
+    
+    let myUclRank = uclStandings.findIndex(u => u.username === currentUser.username);
+    myUclRank = myUclRank !== -1 ? myUclRank + 1 : '-';
+
+    // 🌟 دمج الإحصائيات (النقاط الكلية ونسبة النجاح الشاملة)
+    const combinedTotalPts = myEplStats.totalPts + myUclStats.totalPts;
+    const combinedPlayed = (myEplStats.playedMatches || 0) + (myUclStats.playedMatches || 0);
+    const combinedCorrect = (myEplStats.correctOutcomes || 0) + (myUclStats.correctOutcomes || 0);
+    const combinedHitRate = combinedPlayed > 0 ? Math.round((combinedCorrect / combinedPlayed) * 100) : 0;
+
+    // دمج الأوسمة ليظهر الوسام في حال الحصول عليه في أي بطولة
+    const myBadges = {
+        motw: myEplStats.badges.motw || myUclStats.badges.motw,
+        sniper: myEplStats.badges.sniper || myUclStats.badges.sniper,
+        giantSlayer: myEplStats.badges.giantSlayer || myUclStats.badges.giantSlayer
+    };
+
+    const motw = prevGw ? eplStandings.find(u => u.badges.motw) : null;
 
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
     const isAr = currentLang === 'ar';
@@ -1365,7 +1388,6 @@ function isMatchLocked(match) {
                 <button onclick="openSocial('yt')" class="text-[#FF0000] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] transition-all outline-none"><i class="fa-brands fa-youtube"></i></button>
             </div>
             
-            <!-- زر المشاركة الأنيق والمصغر -->
             <div class="flex justify-center mt-3 relative z-20">
                 <button onclick="shareApp()" class="px-5 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 font-bold text-xs rounded-full transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/10 outline-none">
                     <i class="fa-solid fa-share-nodes text-sm"></i>
@@ -1397,14 +1419,21 @@ function isMatchLocked(match) {
                         <span class="text-[9px] font-black text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full border border-blue-500/20 uppercase tracking-wider">${typeof t === 'function' ? t('sniperCard') : 'بطاقة القناص'}</span>
                         <h2 class="text-xl md:text-2xl font-black mt-2.5 text-white flex items-center gap-2">
                             ${currentUser.username}
-                            ${myStats.badges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
-                            ${myStats.badges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
-                            ${myStats.badges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
+                            ${myBadges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
+                            ${myBadges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+                            ${myBadges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
                         </h2>
                     </div>
-                    <div class="${isAr ? 'text-left' : 'text-right'}">
-                        <span class="text-[10px] text-slate-400 block font-bold">${typeof t === 'function' ? t('overallRank') : 'الترتيب العام'}</span>
-                        <span class="text-2xl md:text-3xl font-black text-amber-400 drop-shadow-md">#${myRank}</span>
+                    <!-- 🌟 الترتيب المزدوج 🌟 -->
+                    <div class="flex gap-2 ${isAr ? 'justify-end' : 'justify-start'}">
+                        <div class="text-center bg-blue-900/30 border border-blue-500/30 px-3 py-1.5 rounded-xl shadow-inner flex flex-col justify-center">
+                            <span class="text-[9px] text-blue-300 block font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-trophy"></i> ${isAr ? 'الإنجليزي' : 'EPL'}</span>
+                            <span class="text-xl md:text-2xl font-black text-amber-400 drop-shadow-md">#${myEplRank}</span>
+                        </div>
+                        <div class="text-center bg-purple-900/30 border border-purple-500/30 px-3 py-1.5 rounded-xl shadow-inner flex flex-col justify-center">
+                            <span class="text-[9px] text-purple-300 block font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-star"></i> ${isAr ? 'الأبطال' : 'UCL'}</span>
+                            <span class="text-xl md:text-2xl font-black text-fuchsia-400 drop-shadow-md">#${myUclRank}</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -1413,18 +1442,18 @@ function isMatchLocked(match) {
                         <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('favTeam') : 'المفضل'}</span>
                         <span class="text-[10px] md:text-xs font-black text-blue-300 block truncate leading-tight">
                             ${(() => {
-                                const savedTeam = TEAMS.find(t => t.code === myStats.favTeam || t.name === myStats.favTeam || t.nameEn === myStats.favTeam || t.nameTr === myStats.favTeam);
-                                return savedTeam ? getTeamName(savedTeam.code) : myStats.favTeam;
+                                const savedTeam = TEAMS.find(t => t.code === myEplStats.favTeam || t.name === myEplStats.favTeam || t.nameEn === myEplStats.favTeam || t.nameTr === myEplStats.favTeam);
+                                return savedTeam ? getTeamName(savedTeam.code) : myEplStats.favTeam;
                             })()}
                         </span>
                     </div>
                     <div class="flex-1 text-center px-1">
-                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('accuracy') : 'الدقة'}</span>
-                        <span class="text-xs md:text-sm font-black text-emerald-400 block">${myStats.hitRate}%</span>
+                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('accuracy') : 'الدقة العامة'}</span>
+                        <span class="text-xs md:text-sm font-black text-emerald-400 block">${combinedHitRate}%</span>
                     </div>
                     <div class="flex-1 text-center px-1">
-                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('points') : 'النقاط'}</span>
-                        <span class="text-xs md:text-sm font-black text-amber-400 block">${myStats.totalPts}</span>
+                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">النقاط الكلية</span>
+                        <span class="text-xs md:text-sm font-black text-amber-400 block">${combinedTotalPts}</span>
                     </div>
                 </div>
             </div>
