@@ -101,6 +101,18 @@
             background-attachment: fixed !important;
             background-repeat: no-repeat !important;
         }
+
+        /* 🌟 ثيم الدوري الإنجليزي (EPL Theme) 🌟 */
+body.epl-theme {
+    background-color: #0f172a !important;
+    background-image: 
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.7), rgba(6, 11, 25, 0.95)),
+        url('https://i.ibb.co/RkH0G3xZ/plback.jpg') !important; 
+    background-size: cover !important;
+    background-position: center top !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+}
         
         body.ucl-theme .glass {
             border-color: rgba(168, 85, 247, 0.3) !important;
@@ -661,17 +673,17 @@ function updateTheme() {
 
     if (isUcl) {
         document.body.classList.add('ucl-theme');
+        document.body.classList.remove('epl-theme'); // إزالة خلفية الإنجليزي
         if (currentActiveTheme !== 'UCL') {
-            // تشغيل الصوت فقط إذا كان اللاعب قادماً من الإنجليزي (يمنع التشغيل التلقائي عند الفتح)
             if (currentActiveTheme === 'EPL') { 
                 try { uclSound.currentTime = 0; uclSound.play().catch(e=>{}); } catch(e) {}
             }
             currentActiveTheme = 'UCL';
         }
     } else {
-        document.body.classList.remove('ucl-theme');
+        document.body.classList.add('epl-theme'); // تفعيل خلفية الإنجليزي
+        document.body.classList.remove('ucl-theme'); // إزالة خلفية الأبطال
         if (currentActiveTheme !== 'EPL') {
-            // تشغيل صوت الإنجليزي فقط إذا كان اللاعب عائداً من الأبطال
             if (currentActiveTheme === 'UCL') {
                 try { eplSound.currentTime = 0; eplSound.play().catch(e=>{}); } catch(e) {}
             }
