@@ -999,12 +999,49 @@ function changeLanguage(langCode) {
 
             return Object.values(statsMap).filter(u => u.totalPts > 0).sort((a, b) => b.totalPts - a.totalPts);
         }
+
+        function getLatestCompletedGw() {
+            let latest = null;
+            let latestTime = -1;
+            const allGws = [...new Set(matches.map(m => Number(m.gw)))];
+            allGws.forEach(g => {
+                const gwMatches = matches.filter(m => Number(m.gw) === g);
+                if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                    let maxTime = 0;
+                    gwMatches.forEach(m => {
+                        const t = parseMatchDate(m.date, m.time);
+                        if (t > maxTime) maxTime = t;
+                    });
+                    if (maxTime > latestTime) { latestTime = maxTime; latest = g; }
+                }
+            });
+            return latest;
+        }
+
+        function getLatestCompletedGwForLeague(leagueFilter) {
+            let latest = null;
+            let latestTime = -1;
+            const leagueMatches = matches.filter(m => (m.league || 'EPL') === leagueFilter);
+            const allGws = [...new Set(leagueMatches.map(m => Number(m.gw)))];
+            allGws.forEach(g => {
+                const gwMatches = leagueMatches.filter(m => Number(m.gw) === g);
+                if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                    let maxTime = 0;
+                    gwMatches.forEach(m => {
+                        const t = parseMatchDate(m.date, m.time);
+                        if (t > maxTime) maxTime = t;
+                    });
+                    if (maxTime > latestTime) { latestTime = maxTime; latest = g; }
+                }
+            });
+            return latest;
+        }
         
         function getGlobalStandings(leagueFilter = 'EPL') {
             if (globalStandingsCache[leagueFilter]) return globalStandingsCache[leagueFilter]; // 🌟 السحر هنا: جلب البيانات المحسوبة مسبقاً بثانية!
 
-            const activeGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-            const prevGw = activeGw > 1 ? activeGw - 1 : 1;
+            const lastLeagueGw = getLatestCompletedGwForLeague(leagueFilter);
+            const globalLatestGw = getLatestCompletedGw();
 
             const allUsernames = new Set();
             Object.keys(predictions).forEach(u => allUsernames.add(u));
@@ -1052,30 +1089,38 @@ function changeLanguage(langCode) {
                             
                             if (Number(p.home) === m.actualH && Number(p.away) === m.actualA) {
                                 userStats.exactsPerGw[m.gw] = (userStats.exactsPerGw[m.gw] || 0) + 1;
-                                if (Number(m.gw) === prevGw && userStats.exactsPerGw[m.gw] >= 3) userStats.badges.sniper = true;
+                                if (lastLeagueGw && Number(m.gw) === lastLeagueGw && userStats.exactsPerGw[m.gw] >= 3) {
+                                    userStats.badges.sniper = true;
+                                }
                             }
 
                             let bigLost = false;
                             if (leagueFilter === 'EPL') {
                                 const homeIsBig = BIG_TEAMS.includes(m.home), awayIsBig = BIG_TEAMS.includes(m.away);
-                                bigLost = (homeIsBig && m.actualH < m.actualA) || (awayIsBig && m.actualA < m.actualH);
+                                // قاهر الكبار فقط عند فوز فريق عادي على كبير (الكبير ضد الكبير لا تُحسب)
+                                if (homeIsBig && !awayIsBig && m.actualH < m.actualA) bigLost = true;
+                                if (!homeIsBig && awayIsBig && m.actualA < m.actualH) bigLost = true;
                             } else {
                                 const tH = TEAMS.find(t => t.code === m.home), tA = TEAMS.find(t => t.code === m.away);
                                 const lH = tH && tH.uclLevel ? tH.uclLevel : 2, lA = tA && tA.uclLevel ? tA.uclLevel : 2;
                                 bigLost = (lH < lA && m.actualH < m.actualA) || (lA < lH && m.actualA < m.actualH);
                             }
-                            if (Number(m.gw) === prevGw && bigLost && isOutcomeCorrect) userStats.badges.giantSlayer = true;
+                            if (lastLeagueGw && Number(m.gw) === lastLeagueGw && bigLost && isOutcomeCorrect) {
+                                userStats.badges.giantSlayer = true;
+                            }
                         }
                     }
                 });
             });
 
-            let highestGwPts = -1, motwUser = null;
-            Object.values(statsMap).forEach(userStats => {
-                const pts = userStats.gwPoints[prevGw] || 0;
-                if (pts > highestGwPts && pts > 0) { highestGwPts = pts; motwUser = userStats.username; }
-            });
-            if (motwUser) statsMap[motwUser].badges.motw = true;
+            if (globalLatestGw && lastLeagueGw === globalLatestGw) {
+                let highestGwPts = -1, motwUser = null;
+                Object.values(statsMap).forEach(userStats => {
+                    const pts = userStats.gwPoints[globalLatestGw] || 0;
+                    if (pts > highestGwPts && pts > 0) { highestGwPts = pts; motwUser = userStats.username; }
+                });
+                if (motwUser) statsMap[motwUser].badges.motw = true;
+            }
 
             Object.values(statsMap).forEach(userStats => {
                 userStats.hitRate = userStats.playedMatches > 0 ? Math.round((userStats.correctOutcomes / userStats.playedMatches) * 100) : 0;
@@ -1376,7 +1421,26 @@ function isMatchLocked(match) {
         giantSlayer: myEplStats.badges.giantSlayer || myUclStats.badges.giantSlayer
     };
 
-    const motw = prevGw ? eplStandings.find(u => u.badges.motw) : null;
+    const globalLatestGw = getLatestCompletedGw();
+    let motw = null;
+    let motwGwStr = '';
+
+    if (globalLatestGw) {
+        const motwLeague = (globalLatestGw >= 101) ? 'UCL' : 'EPL';
+        const standings = (motwLeague === 'UCL') ? uclStandings : eplStandings;
+        motw = standings.find(u => u.badges.motw);
+        
+        if (!motw) {
+            let highestPts = -1;
+            standings.forEach(u => {
+                const pts = u.gwPoints[globalLatestGw] || 0;
+                if (pts > highestPts && pts > 0) { highestPts = pts; motw = u; }
+            });
+        }
+        if (motw) {
+            motwGwStr = (motwLeague === 'UCL') ? 'UCL MD ' + (globalLatestGw - 100) : 'GW ' + globalLatestGw;
+        }
+    }
 
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
     const isAr = currentLang === 'ar';
@@ -1413,12 +1477,12 @@ function isMatchLocked(match) {
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-full flex items-center justify-center text-lg shadow-inner">👑</div>
                         <div>
-                            <h3 class="text-[10px] font-bold text-amber-500/80">${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'} (GW ${prevGw})</h3>
-                            <span class="text-sm font-black text-amber-400">${motw.username}</span>
+                            <h3 class="text-[10px] font-bold text-amber-500/80">${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'} (${motwGwStr})</h3>
+                            <button onclick="openComparison('${motw.username}')" class="text-sm font-black text-amber-400 hover:text-amber-300 transition-all cursor-pointer underline-offset-4 decoration-amber-500/40 hover:underline outline-none text-left md:text-right" title="كشف الأوراق والمقارنة">${motw.username}</button>
                         </div>
                     </div>
                     <div class="text-center bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
-                        <span class="block text-xl font-black text-amber-400">${motw.gwPoints[prevGw]}</span>
+                        <span class="block text-xl font-black text-amber-400">${motw.gwPoints[globalLatestGw]}</span>
                     </div>
                 </div>
             ` : ''}
