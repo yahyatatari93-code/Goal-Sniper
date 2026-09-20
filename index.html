@@ -1161,7 +1161,21 @@ function changeLanguage(langCode) {
             const league = miniLeagues.find(l => l.code === leagueCode);
             if (!league) return null;
 
-            let displayGw = activeGw;
+            // 🌟 المحرك الزمني الذكي: تحديد "جولة العرض" وتجميدها حتى بداية الجولة القادمة فعلياً
+            let displayGw = null;
+            for (let i = uniqueGws.length - 1; i >= 0; i--) {
+                const gw = uniqueGws[i];
+                const gwMatches = matches.filter(m => Number(m.gw) === gw && (m.league || 'EPL') === targetLeague);
+                // الجولة تُعتبر "حالية للرؤية" بمجرد أن تُقفل أول مباراة فيها
+                if (gwMatches.some(m => typeof isMatchLocked === 'function' && isMatchLocked(m))) {
+                    displayGw = gw;
+                    break;
+                }
+            }
+            // إذا لم تبدأ أي مباراة في الموسم بعد، نعرض الجولة الأولى الافتراضية
+            if (!displayGw) {
+                displayGw = uniqueGws.length > 0 ? uniqueGws[0] : (targetLeague === 'UCL' ? 101 : 1);
+            }
 
             let leagueMembers = baseStats
                 .filter(s => league.members.includes(s.username))
