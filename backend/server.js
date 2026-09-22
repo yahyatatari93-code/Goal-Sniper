@@ -86,7 +86,7 @@ app.get('/api/sync', async (req, res) => {
     try {
         const [users] = await pool.query('SELECT username FROM users');
         const [matches] = await pool.query('SELECT id, gw, home, away, date, time, actual_h as actualH, actual_a as actualA FROM matches');
-        const [preds] = await pool.query('SELECT username, match_id, pred_h, pred_a, is_captain, is_triple_captain FROM predictions');
+        const [preds] = await pool.query('SELECT username, match_id, pred_h, pred_a, is_captain, is_triple_captain, is_magnet FROM predictions');
         const [leagues] = await pool.query('SELECT name, league_code as code, creator FROM mini_leagues');
         const [members] = await pool.query('SELECT league_code, username FROM mini_league_members');
         const [shots] = await pool.query('SELECT league_code as leagueCode, gw, sniper, victim, points_deducted as pointsDeducted FROM sniper_shots');
@@ -97,7 +97,8 @@ app.get('/api/sync', async (req, res) => {
             formattedPreds[p.username][p.match_id] = {
                 home: p.pred_h, away: p.pred_a,
                 isCaptain: p.is_captain === 1 || p.is_captain === 'true',
-                isTripleCaptain: p.is_triple_captain === 1 || p.is_triple_captain === 'true'
+                isTripleCaptain: p.is_triple_captain === 1 || p.is_triple_captain === 'true',
+                isMagnet: p.is_magnet === 1 || p.is_magnet === 'true' // 🧲 تمت إضافة المغناطيس
             };
         });
 
@@ -119,17 +120,19 @@ app.get('/api/sync', async (req, res) => {
 // 3. مسار حفظ التوقعات (محمي بالجدار الأمني)
 // ==========================================
 app.post('/api/predict', authenticateToken, async (req, res) => {
-    const { username, matchId, predH, predA, isCaptain, isTripleCaptain } = req.body;
+    // 🧲 تمت إضافة isMagnet للاستلام
+    const { username, matchId, predH, predA, isCaptain, isTripleCaptain, isMagnet } = req.body;
     
     // تأكيد إضافي أن المفتاح يخص نفس اللاعب
     if (req.user.username !== username) return res.status(403).json({success: false, message: 'المفتاح لا يتطابق مع الحساب'});
 
     try {
+        // 🧲 تمت إضافة is_magnet لأوامر الحفظ والتحديث
         await pool.query(`
-            INSERT INTO predictions (username, match_id, pred_h, pred_a, is_captain, is_triple_captain)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE pred_h = ?, pred_a = ?, is_captain = ?, is_triple_captain = ?
-        `, [username, matchId, predH, predA, isCaptain, isTripleCaptain, predH, predA, isCaptain, isTripleCaptain]);
+            INSERT INTO predictions (username, match_id, pred_h, pred_a, is_captain, is_triple_captain, is_magnet)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE pred_h = ?, pred_a = ?, is_captain = ?, is_triple_captain = ?, is_magnet = ?
+        `, [username, matchId, predH, predA, isCaptain, isTripleCaptain, isMagnet, predH, predA, isCaptain, isTripleCaptain, isMagnet]);
         
         res.json({ success: true, message: 'تم حفظ التوقع بنجاح' });
     } catch (error) {
