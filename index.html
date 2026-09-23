@@ -3638,13 +3638,40 @@ function renderPrizesTab() {
                     
                     const data = await response.json();
                 
-                    if(!data.success) showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
-                    else document.getElementById('dialog-container').innerHTML = '';
+                    if(!data.success) {
+                        showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
+                        await syncData(); // جلب البيانات فقط في حال حدوث خطأ بالسيرفر
+                    } else {
+                        document.getElementById('dialog-container').innerHTML = '';
+                        
+                        // 🌟 التحديث السحري اللحظي: نحدث الذاكرة محلياً بدلاً من تحميل القاعدة كلها 🌟
+                        if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+                        
+                        // إزالة الكابتن أو المغناطيس القديم فوراً إن تم نقلهم
+                        if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) {
+                            predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
+                        }
+                        if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) {
+                            predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
+                        }
+                        
+                        // حفظ التوقع الجديد بالذاكرة
+                        predictions[currentUser.username][reqMatchId] = {
+                            home: h,
+                            away: a,
+                            isCaptain: isCap,
+                            isTripleCaptain: isTC,
+                            isMagnet: isMag
+                        };
+                        
+                        globalStandingsCache = {}; // تفريغ كاش الترتيب ليتحدث فوراً دون ريفريش
+                    }
                     
-                    await syncData(); render();
+                    render(); // رسم الشاشة بلمح البصر
                 } catch(e) {
                     showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر.");
-                    await syncData(); render();
+                    await syncData(); 
+                    render();
                 }
             }, 50); 
         }
