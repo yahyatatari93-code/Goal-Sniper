@@ -781,30 +781,74 @@ function updateTheme() {
                 if (json.success) {
                     users = json.data.users || [];
             
-            matches = (json.data.matches || []).map(m => ({
-                id: m.id,
-                gw: m.gw,
-                home: m.home,
-                away: m.away,
-                date: m.match_date || m.date,
-                time: m.match_time || m.time,
-                actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
-                actualA: m.actual_a !== undefined ? m.actual_a : m.actualA,
-                // 🌟 السحر هنا: التطبيق سيستنتج البطولة تلقائياً من رقم الجولة
-                league: Number(m.gw) >= 101 ? 'UCL' : 'EPL' 
-            }));
+                    matches = (json.data.matches || []).map(m => ({
+                        id: m.id, gw: m.gw, home: m.home, away: m.away,
+                        date: m.match_date || m.date, time: m.match_time || m.time,
+                        actualH: m.actual_h !== undefined ? m.actual_h : m.actualH,
+                        actualA: m.actual_a !== undefined ? m.actual_a : m.actualA,
+                        league: Number(m.gw) >= 101 ? 'UCL' : 'EPL' 
+                    }));
             
-            predictions = json.data.predictions || {};
-            miniLeagues = json.data.miniLeagues || [];
-            
-            // 👇 هذا هو السطر المنقذ الذي نسينا إضافته 👇
-            sniperShots = json.data.sniperShots || []; 
+                    predictions = json.data.predictions || {};
+                    miniLeagues = json.data.miniLeagues || [];
+                    sniperShots = json.data.sniperShots || []; 
+
+                    // 🌟 السحر الجديد: التوزيع التلقائي للكابتن والمغناطيس في الذاكرة 🌟
+                    const currentActiveGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
+                    const allUsernames = Object.keys(predictions);
+                    users.forEach(u => { if (!allUsernames.includes(u.username)) allUsernames.push(u.username); });
+
+                    const uniqueGws = [...new Set(matches.map(m => Number(m.gw)))];
+                    uniqueGws.forEach(gw => {
+                        const gwMatches = matches.filter(m => Number(m.gw) === gw).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+                        if (gwMatches.length === 0) return;
+                        
+                        const isUCL = gw >= 101;
+                        const isPastGw = gw < currentActiveGw;
+
+                        allUsernames.forEach(username => {
+                            if (!predictions[username]) predictions[username] = {};
+                            const userP = predictions[username];
+
+                            if (isUCL) {
+                                const dates = [...new Set(gwMatches.map(m => formatMatchDate(m.date)))];
+                                dates.forEach(date => {
+                                    const dateMatches = gwMatches.filter(m => formatMatchDate(m.date) === date);
+                                    // 1. الكابتن التلقائي
+                                    if (!dateMatches.some(m => userP[m.id] && userP[m.id].isCaptain)) {
+                                        const capId = isPastGw ? dateMatches[0].id : dateMatches[dateMatches.length - 1].id;
+                                        if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                        userP[capId].isCaptain = true;
+                                    }
+                                    // 2. المغناطيس التلقائي (المباراة ما قبل الأخيرة)
+                                    if (!dateMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
+                                        const magId = dateMatches.length > 1 ? (isPastGw ? dateMatches[1].id : dateMatches[dateMatches.length - 2].id) : dateMatches[0].id;
+                                        if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                        userP[magId].isMagnet = true;
+                                    }
+                                });
+                            } else {
+                                // 1. الكابتن التلقائي
+                                if (!gwMatches.some(m => userP[m.id] && userP[m.id].isCaptain)) {
+                                    const capId = isPastGw ? gwMatches[0].id : gwMatches[gwMatches.length - 1].id;
+                                    if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                    userP[capId].isCaptain = true;
+                                }
+                                // 2. المغناطيس التلقائي (المباراة ما قبل الأخيرة)
+                                if (!gwMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
+                                    const magId = gwMatches.length > 1 ? (isPastGw ? gwMatches[1].id : gwMatches[gwMatches.length - 2].id) : gwMatches[0].id;
+                                    if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                    userP[magId].isMagnet = true;
+                                }
+                            }
+                        });
+                    });
+                }
+            } catch (e) { 
+                console.warn("Sync failed:", e); 
+                showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
+            }
         }
-    } catch (e) { 
-        console.warn("Sync failed:", e); 
-        showCustomDialog("لا يمكن الاتصال بالسيرفر حالياً. حاول مجدداً.");
-    }
-}
         
 
 function changeLanguage(langCode) {
@@ -2291,6 +2335,7 @@ function renderMiniLeaguesTab() {
                     powerTitle: "2. بطاقات القوة المضاعفة",
                     power_1: "<strong class='text-amber-400'>الكابتن:</strong> يضاعف نقاط المباراة (x2). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرة واحدة فقط</span> في كل جولة.",
                     power_2: "<strong class='text-fuchsia-400'>الجوكر (Triple Captain):</strong> يضاعف النقاط (x3). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرتين فقط في الموسم</span>.",
+                    power_3: "<strong class='text-teal-400'>المغناطيس 🧲:</strong> أداة تصحح توقعك لتنال النقاط الكاملة إذا أخطأت بفارق <span class='font-bold text-white bg-black/50 px-1 rounded'>هدف واحد فقط</span> (مثل توقعك 2-0 وانتهاء المباراة 2-1). يحق لك استخدامه <span class='font-bold text-white bg-black/50 px-1 rounded'>مرة واحدة فقط</span> في كل جولة.",
                     lockTitle: "3. نظام الإغلاق الصارم",
                     lockDesc: "حفاظاً على نزاهة اللعبة، يقوم السيرفر <strong class='text-rose-400'>بقفل التوقع تلقائياً قبل 60 دقيقة بالتمام</strong> من صافرة البداية لأي مباراة. بمجرد ظهور القفل لا يمكنك تعديل توقعك نهائياً.",
                     badgesTitle: "4. الأوسمة والإنجازات الشخصية",
@@ -2473,15 +2518,16 @@ function renderMiniLeaguesTab() {
                     </div>
 
                     <div class="bg-slate-900/40 border border-white/5 rounded-2xl overflow-hidden">
-                        <div class="bg-gradient-to-r from-fuchsia-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i>
-                            <h3 class="font-bold text-fuchsia-400 text-sm">${rt.powerTitle}</h3>
-                        </div>
-                        <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
-                            <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_1}</div></div>
-                            <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_2}</div></div>
-                        </div>
-                    </div>
+    <div class="bg-gradient-to-r from-fuchsia-600/30 to-transparent px-4 py-3 border-b border-white/5 flex items-center gap-2">
+        <i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400"></i>
+        <h3 class="font-bold text-fuchsia-400 text-sm">${rt.powerTitle}</h3>
+    </div>
+    <div class="p-4 space-y-3 text-sm text-slate-300 leading-relaxed">
+        <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-amber-500/50"></i> <div class="flex-1">${rt.power_1}</div></div>
+        <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-fuchsia-500/50"></i> <div class="flex-1">${rt.power_2}</div></div>
+        <div class="flex gap-2 items-start"><i class="fa-solid fa-circle text-[6px] mt-2 text-teal-500/50"></i> <div class="flex-1">${rt.power_3}</div></div>
+    </div>
+</div>
 
                     <div class="bg-slate-900/40 border border-rose-500/20 rounded-2xl overflow-hidden shadow-[0_0_15px_rgba(244,63,94,0.1)]">
                         <div class="bg-gradient-to-r from-rose-600/30 to-transparent px-4 py-3 border-b border-rose-500/20 flex items-center gap-2">
