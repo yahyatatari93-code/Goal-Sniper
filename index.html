@@ -820,12 +820,14 @@ function updateTheme() {
                                         if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                         userP[capId].isCaptain = true;
                                     }
-                                    // 2. المغناطيس التلقائي (المباراة ما قبل الأخيرة)
+                                    // 2. المغناطيس التلقائي (لكل يوم بشكل منفصل، بدءاً من الجولة الثانية)
+                                if (gw >= 102) {
                                     if (!dateMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
                                         const magId = dateMatches.length > 1 ? (isPastGw ? dateMatches[1].id : dateMatches[dateMatches.length - 2].id) : dateMatches[0].id;
                                         if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                         userP[magId].isMagnet = true;
                                     }
+                                }
                                 });
                             } else {
                                 // 1. الكابتن التلقائي
@@ -834,11 +836,13 @@ function updateTheme() {
                                     if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                     userP[capId].isCaptain = true;
                                 }
-                                // 2. المغناطيس التلقائي (المباراة ما قبل الأخيرة)
-                                if (!gwMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
-                                    const magId = gwMatches.length > 1 ? (isPastGw ? gwMatches[1].id : gwMatches[gwMatches.length - 2].id) : gwMatches[0].id;
-                                    if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
-                                    userP[magId].isMagnet = true;
+                                // 2. المغناطيس التلقائي (يبدأ حصراً من الجولة السادسة فصاعداً)
+                                if (gw >= 6) {
+                                    if (!gwMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
+                                        const magId = gwMatches.length > 1 ? (isPastGw ? gwMatches[1].id : gwMatches[gwMatches.length - 2].id) : gwMatches[0].id;
+                                        if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                        userP[magId].isMagnet = true;
+                                    }
                                 }
                             }
                         });
@@ -3468,8 +3472,15 @@ function renderPrizesTab() {
                         else { captainUsedInGw = true; }
                     }
                     if (Number(m.gw) === currentGw && p.isMagnet) {
-                        magnetUsedInGw = true;
-                        if (isMatchLocked(m)) isMagnetLockedByAnotherMatch = true;
+                        if (isUCL) {
+                            if (formatMatchDate(m.date) === matchDate) {
+                                magnetUsedInGw = true;
+                                if (isMatchLocked(m)) isMagnetLockedByAnotherMatch = true;
+                            }
+                        } else {
+                            magnetUsedInGw = true;
+                            if (isMatchLocked(m)) isMagnetLockedByAnotherMatch = true;
+                        }
                     }
                     if ((currentGw <= 18 && Number(m.gw) <= 18 && p.isTripleCaptain) || (currentGw >= 19 && Number(m.gw) >= 19 && p.isTripleCaptain)) {
                         tcUsedInCurrentHalf = true;
@@ -3602,7 +3613,13 @@ function renderPrizesTab() {
                             if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitCapId = m.id; } 
                             else { oldExplicitCapId = m.id; }
                         }
-                        if (predictions[currentUser.username]?.[m.id]?.isMagnet) oldExplicitMagId = m.id;
+                        if (predictions[currentUser.username]?.[m.id]?.isMagnet) {
+                            if (isUCL) { 
+                                if (formatMatchDate(m.date) === matchDate) oldExplicitMagId = m.id; 
+                            } else { 
+                                oldExplicitMagId = m.id; 
+                            }
+                        }
                     }
                 });
 
