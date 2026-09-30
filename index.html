@@ -4119,7 +4119,7 @@ async function deleteLeagueByAdmin() {
 
             try {
                 // سنقوم ببرمجة هذا المسار في السيرفر في الخطوة القادمة
-                const res = await fetch(`${API_BASE_URL}/auth/google`, {
+                const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: googleToken })
