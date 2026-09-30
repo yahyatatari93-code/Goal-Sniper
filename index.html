@@ -4126,11 +4126,11 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
-        // 3. دالة الانتقال الآمن لغوغل
+        // 3. دالة الانتقال الآمن لغوغل (مع إجبار اختيار الحساب)
         function startGoogleRedirect() {
             const clientId = "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com";
             const redirectUri = "https://goal-sniper.vercel.app"; 
-            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=id_token&scope=openid email profile&nonce=sniper123`;
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=id_token&scope=openid email profile&nonce=sniper123&prompt=select_account`;
             
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
@@ -4405,8 +4405,8 @@ async function deleteLeagueByAdmin() {
     const arrowIcon = lang === 'ar' ? 'fa-arrow-left mr-2' : 'fa-arrow-right ml-2';
     const text = (key, fallback) => typeof t === 'function' && t(key) ? t(key) : fallback;
     
-    // تعيين الوضع الافتراضي كـ "حساب جديد" ليظهر أولاً للزوار
-    if (typeof window.authMode === 'undefined') window.authMode = 'register';
+    // 🌟 جعل "تسجيل الدخول" هو الوضع الافتراضي الذي يظهر أولاً 🌟
+    if (typeof window.authMode === 'undefined') window.authMode = 'login';
 
     return `
         <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative" dir="${dir}">
@@ -4428,29 +4428,14 @@ async function deleteLeagueByAdmin() {
                     <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
                 
-                <!-- 🌟 تبويبات الدخول والتسجيل 🌟 -->
+                <!-- 🌟 تبويبات الدخول والتسجيل (تسجيل الدخول على اليمين) 🌟 -->
                 <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                    <button type="button" onclick="window.authMode='register'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
                     <button type="button" onclick="window.authMode='login'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
+                    <button type="button" onclick="window.authMode='register'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
                 </div>
 
-                ${window.authMode === 'register' ? `
-                    <!-- 🌟 قسم الحساب الجديد 🌟 -->
-                    <div class="text-center animate-fade-in">
-                        <div class="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-5 text-right">
-                            <p class="text-xs text-slate-300 font-bold leading-relaxed mb-2">
-                                <i class="fa-solid fa-shield-halved text-blue-400 ml-1"></i> لضمان الأمان، يتم إنشاء الحسابات الجديدة عبر غوغل حصراً.
-                            </p>
-                            <p class="text-[10px] text-slate-400 leading-relaxed">
-                                بعد اختيار إيميلك من الزر أدناه، ستظهر لك شاشة لإكمال بياناتك واختيار: <br>
-                                <span class="text-white font-bold">(اسم القناص، كلمة المرور، ورمز الدعوة)</span>.
-                            </p>
-                        </div>
-                        
-                        <div id="google-btn-container" class="mb-2 w-full h-[45px] overflow-hidden rounded-xl"></div>
-                    </div>
-                ` : `
-                    <!-- 🌟 قسم تسجيل الدخول (للقدامى) 🌟 -->
+                ${window.authMode === 'login' ? `
+                    <!-- 🌟 قسم تسجيل الدخول 🌟 -->
                     <div class="animate-fade-in">
                         <div id="google-btn-container" class="mb-4 w-full h-[45px] overflow-hidden rounded-xl"></div>
                         
@@ -4475,6 +4460,21 @@ async function deleteLeagueByAdmin() {
                                 ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
                             </button>
                         </form>
+                    </div>
+                ` : `
+                    <!-- 🌟 قسم الحساب الجديد 🌟 -->
+                    <div class="text-center animate-fade-in">
+                        <div class="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-5 text-right">
+                            <p class="text-xs text-slate-300 font-bold leading-relaxed mb-2">
+                                <i class="fa-solid fa-shield-halved text-blue-400 ml-1"></i> لضمان الأمان، يتم إنشاء الحسابات الجديدة عبر غوغل حصراً.
+                            </p>
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                بعد اختيار إيميلك من الزر أدناه، ستظهر لك شاشة لإكمال بياناتك واختيار: <br>
+                                <span class="text-white font-bold">(اسم القناص، كلمة المرور، ورمز الدعوة)</span>.
+                            </p>
+                        </div>
+                        
+                        <div id="google-btn-container" class="mb-2 w-full h-[45px] overflow-hidden rounded-xl"></div>
                     </div>
                 `}
 
