@@ -4186,64 +4186,95 @@ async function deleteLeagueByAdmin() {
             }
         }
 
-        // 🌟 دالة رسم شاشة اختيار اسم القناص 🌟
+        // 🌟 دالة رسم شاشة اختيار اسم القناص أو ربط الحساب 🌟
         function showGoogleUsernamePrompt(googleToken) {
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen p-4">
                     <div class="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-md border border-white/10 text-center">
                         <i class="fa-solid fa-crosshairs text-5xl text-blue-500 mb-4"></i>
-                        <h2 class="text-2xl font-bold text-white mb-2">اختر اسم القناص</h2>
-                        <p class="text-slate-400 mb-6 text-sm">تم ربط إيميلك بنجاح. الرجاء اختيار اسمك الذي سيظهر للمنافسين في المنصة.</p>
+                        <h2 class="text-2xl font-bold text-white mb-4">أهلاً بك في منصة القناص</h2>
                         
-                        <input type="text" id="google-new-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
-                        
-                        <button onclick="submitGoogleUsername('${googleToken}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all">
-                            تأكيد ودخول المنصة
-                        </button>
+                        <!-- تبويبات الخيارات -->
+                        <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                            <button onclick="toggleGoogleMode('new')" id="tab-new" class="flex-1 py-2.5 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30 transition-all">لاعب جديد</button>
+                            <button onclick="toggleGoogleMode('link')" id="tab-link" class="flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all">لدي حساب قديم</button>
+                        </div>
+
+                        <!-- قسم اللاعب الجديد -->
+                        <div id="section-new" class="block animate-fade-in">
+                            <p class="text-slate-400 mb-4 text-xs font-bold leading-relaxed">اختر اسم القناص الخاص بك للمشاركة في التوقعات:</p>
+                            <input type="text" id="google-new-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
+                            <button onclick="submitGoogleUsername('${googleToken}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all">تأكيد ودخول المنصة</button>
+                        </div>
+
+                        <!-- قسم ربط الحساب القديم -->
+                        <div id="section-link" class="hidden animate-fade-in">
+                            <p class="text-slate-400 mb-4 text-xs font-bold leading-relaxed">أدخل بياناتك السابقة لربطها بحساب غوغل للدخول السريع مستقبلاً:</p>
+                            <input type="text" id="google-old-username" placeholder="اسم القناص القديم" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-3 focus:border-blue-500 outline-none">
+                            <input type="password" id="google-old-pin" placeholder="الرمز السري القديم (PIN)" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
+                            <button onclick="linkOldAccount('${googleToken}')" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-emerald-700 transition-all">ربط الحساب والدخول</button>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // 🌟 دالة إرسال الاسم الجديد للسيرفر 🌟
+        // تبديل بين التبويبات
+        window.toggleGoogleMode = function(mode) {
+            if(mode === 'new') {
+                document.getElementById('section-new').classList.remove('hidden');
+                document.getElementById('section-link').classList.add('hidden');
+                document.getElementById('tab-new').className = "flex-1 py-2.5 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30 transition-all";
+                document.getElementById('tab-link').className = "flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all";
+            } else {
+                document.getElementById('section-link').classList.remove('hidden');
+                document.getElementById('section-new').classList.add('hidden');
+                document.getElementById('tab-link').className = "flex-1 py-2.5 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30 transition-all";
+                document.getElementById('tab-new').className = "flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all";
+            }
+        };
+
+        // إرسال الاسم الجديد
         async function submitGoogleUsername(googleToken) {
             const chosenUsername = document.getElementById('google-new-username').value.trim();
-            if (chosenUsername.length < 3) {
-                showCustomDialog('اسم القناص يجب أن يكون 3 أحرف على الأقل.');
-                return;
-            }
+            if (chosenUsername.length < 3) return showCustomDialog('اسم القناص يجب أن يكون 3 أحرف على الأقل.');
 
-            document.getElementById('app').innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                    <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري إنشاء الحساب...</span>
-                </div>`;
+            document.getElementById('app').innerHTML = '<div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4"><i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i><span class="font-bold text-white">جاري إنشاء الحساب...</span></div>';
 
             try {
                 const res = await fetch(`${API_BASE_URL}/auth/google/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token: googleToken, chosenUsername })
                 });
                 const data = await res.json();
-                
                 if (data.success) {
-                    currentUser = data.user;
-                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
-                    localStorage.setItem('oracle_token_v8', data.token);
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    window.isHandlingGoogleCallback = false;
-                    await syncData(); 
-                    render();    
-                    setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
-                } else {
-                    showCustomDialog(data.message);
-                    showGoogleUsernamePrompt(googleToken); // إعادته للمحاولة إذا كان الاسم محجوزاً
-                }
-            } catch(e) {
-                showCustomDialog('خطأ في الاتصال بالسيرفر.');
-                showGoogleUsernamePrompt(googleToken);
-            }
+                    currentUser = data.user; localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser)); localStorage.setItem('oracle_token_v8', data.token);
+                    window.history.replaceState({}, document.title, window.location.pathname); window.isHandlingGoogleCallback = false;
+                    await syncData(); render(); setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
+                } else { showCustomDialog(data.message); showGoogleUsernamePrompt(googleToken); }
+            } catch(e) { showCustomDialog('خطأ في الاتصال.'); showGoogleUsernamePrompt(googleToken); }
+        }
+
+        // إرسال طلب الدمج للحساب القديم
+        async function linkOldAccount(googleToken) {
+            const oldUsername = document.getElementById('google-old-username').value.trim();
+            const oldPin = document.getElementById('google-old-pin').value.trim();
+            if (!oldUsername || !oldPin) return showCustomDialog('يرجى إدخال الاسم والرمز السري.');
+
+            document.getElementById('app').innerHTML = '<div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4"><i class="fa-solid fa-spinner fa-spin text-4xl text-emerald-500"></i><span class="font-bold text-white">جاري ربط الحساب...</span></div>';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/auth/google/link`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: googleToken, oldUsername, oldPin })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    currentUser = data.user; localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser)); localStorage.setItem('oracle_token_v8', data.token);
+                    window.history.replaceState({}, document.title, window.location.pathname); window.isHandlingGoogleCallback = false;
+                    await syncData(); render(); setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
+                } else { showCustomDialog(data.message); showGoogleUsernamePrompt(googleToken); toggleGoogleMode('link'); }
+            } catch(e) { showCustomDialog('خطأ في الاتصال.'); showGoogleUsernamePrompt(googleToken); toggleGoogleMode('link'); }
         }
         
         function setAuthMode(mode) { authMode = mode; render(); }
