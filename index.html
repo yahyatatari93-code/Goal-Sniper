@@ -4186,7 +4186,7 @@ async function deleteLeagueByAdmin() {
             }
         }
 
-        // 🌟 دالة رسم شاشة اختيار اسم القناص أو ربط الحساب 🌟
+       // 🌟 1. دالة رسم شاشة إكمال حساب غوغل 🌟
         function showGoogleUsernamePrompt(googleToken) {
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen p-4">
@@ -4194,22 +4194,30 @@ async function deleteLeagueByAdmin() {
                         <i class="fa-solid fa-crosshairs text-5xl text-blue-500 mb-4"></i>
                         <h2 class="text-2xl font-bold text-white mb-4">أهلاً بك في منصة القناص</h2>
                         
-                        <!-- تبويبات الخيارات -->
                         <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
                             <button onclick="toggleGoogleMode('new')" id="tab-new" class="flex-1 py-2.5 rounded-lg text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/30 transition-all">لاعب جديد</button>
                             <button onclick="toggleGoogleMode('link')" id="tab-link" class="flex-1 py-2.5 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-all">لدي حساب قديم</button>
                         </div>
 
-                        <!-- قسم اللاعب الجديد -->
-                        <div id="section-new" class="block animate-fade-in">
-                            <p class="text-slate-400 mb-4 text-xs font-bold leading-relaxed">اختر اسم القناص الخاص بك للمشاركة في التوقعات:</p>
-                            <input type="text" id="google-new-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
-                            <button onclick="submitGoogleUsername('${googleToken}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all">تأكيد ودخول المنصة</button>
+                        <!-- قسم اللاعب الجديد (المطور) -->
+                        <div id="section-new" class="block animate-fade-in text-right">
+                            <p class="text-slate-400 mb-4 text-xs font-bold text-center">أكمل إعداد حسابك للبدء بالتوقعات:</p>
+                            
+                            <label class="block text-xs text-slate-400 mb-1">اسم القناص (يظهر للمنافسين)</label>
+                            <input type="text" id="google-new-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-3 focus:border-blue-500 outline-none">
+                            
+                            <label class="block text-xs text-slate-400 mb-1">كلمة المرور (للدخول السريع لاحقاً)</label>
+                            <input type="password" id="google-new-pin" placeholder="4 أرقام أو حروف على الأقل" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-3 focus:border-blue-500 outline-none">
+                            
+                            <label class="block text-xs text-slate-400 mb-1">رمز الدعوة (اختياري)</label>
+                            <input type="text" id="google-referral" placeholder="أدخل رمز دعوة صديقك إن وجد" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-5 focus:border-blue-500 outline-none uppercase">
+                            
+                            <button onclick="submitGoogleUsername('${googleToken}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all">إنشاء الحساب وبدء اللعب</button>
                         </div>
 
                         <!-- قسم ربط الحساب القديم -->
                         <div id="section-link" class="hidden animate-fade-in">
-                            <p class="text-slate-400 mb-4 text-xs font-bold leading-relaxed">أدخل بياناتك السابقة لربطها بحساب غوغل للدخول السريع مستقبلاً:</p>
+                            <p class="text-slate-400 mb-4 text-xs font-bold leading-relaxed text-center">أدخل بياناتك السابقة لربطها بحساب غوغل للدخول السريع مستقبلاً:</p>
                             <input type="text" id="google-old-username" placeholder="اسم القناص القديم" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-3 focus:border-blue-500 outline-none">
                             <input type="password" id="google-old-pin" placeholder="الرمز السري القديم (PIN)" class="w-full bg-slate-900/80 border border-white/5 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
                             <button onclick="linkOldAccount('${googleToken}')" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-emerald-700 transition-all">ربط الحساب والدخول</button>
@@ -4219,7 +4227,7 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
-        // تبديل بين التبويبات
+        // 🌟 2. تبديل بين التبويبات 🌟
         window.toggleGoogleMode = function(mode) {
             if(mode === 'new') {
                 document.getElementById('section-new').classList.remove('hidden');
@@ -4234,17 +4242,21 @@ async function deleteLeagueByAdmin() {
             }
         };
 
-        // إرسال الاسم الجديد
+        // 🌟 3. إرسال البيانات الجديدة للسيرفر 🌟
         async function submitGoogleUsername(googleToken) {
             const chosenUsername = document.getElementById('google-new-username').value.trim();
+            const chosenPin = document.getElementById('google-new-pin').value.trim();
+            const referralCode = document.getElementById('google-referral').value.trim();
+
             if (chosenUsername.length < 3) return showCustomDialog('اسم القناص يجب أن يكون 3 أحرف على الأقل.');
+            if (chosenPin.length < 4) return showCustomDialog('كلمة المرور يجب أن تكون 4 رموز على الأقل.');
 
             document.getElementById('app').innerHTML = '<div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4"><i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i><span class="font-bold text-white">جاري إنشاء الحساب...</span></div>';
 
             try {
                 const res = await fetch(`${API_BASE_URL}/auth/google/register`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: googleToken, chosenUsername })
+                    body: JSON.stringify({ token: googleToken, chosenUsername, chosenPin, referralCode })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -4255,7 +4267,7 @@ async function deleteLeagueByAdmin() {
             } catch(e) { showCustomDialog('خطأ في الاتصال.'); showGoogleUsernamePrompt(googleToken); }
         }
 
-        // إرسال طلب الدمج للحساب القديم
+        // 🌟 4. إرسال طلب الدمج للحساب القديم 🌟
         async function linkOldAccount(googleToken) {
             const oldUsername = document.getElementById('google-old-username').value.trim();
             const oldPin = document.getElementById('google-old-pin').value.trim();
@@ -4417,20 +4429,20 @@ async function deleteLeagueByAdmin() {
                     <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
                 
-                <!-- 🌟 زر غوغل 🌟 -->
-                <div id="google-btn-container" class="flex justify-center mb-4 w-full h-[40px] overflow-hidden rounded-xl"></div>
-                <div class="relative flex py-2 items-center mb-4">
-                    <div class="flex-grow border-t border-white/10"></div>
-                    <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold">أو بالطريقة التقليدية</span>
-                    <div class="flex-grow border-t border-white/10"></div>
-                </div>
+                <!-- 🌟 زر غوغل الأساسي (الخيار الوحيد للتسجيل الجديد) 🌟 -->
+                <div id="google-btn-container" class="mb-4 w-full h-[45px] overflow-hidden rounded-xl"></div>
                 
-                <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
-                    <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
-                    <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
+                <div class="relative flex py-2 items-center mb-6 mt-4">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-400 text-[11px] font-bold">${text('oldPlayersLogin', 'تسجيل دخول اللاعبين القدامى')}</span>
+                    <div class="flex-grow border-t border-white/10"></div>
                 </div>
 
-                <form onsubmit="handleAuth(event)" class="space-y-4">
+                <!-- 🌟 نموذج دخول القدامى (بُني خصيصاً بدون خيار إنشاء حساب) 🌟 -->
+                <form onsubmit="handleAuth(event); return false;" class="space-y-4">
+                    <!-- حقل مخفي لإجبار الدالة على وضع login -->
+                    <input type="hidden" id="auth-mode-hidden" value="login">
+                    
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('usernameLabel', 'اسم المستخدم')}</label>
                         <input type="text" id="auth-name" placeholder="${text('usernamePh', 'مثال: Ahmed99')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
@@ -4440,15 +4452,8 @@ async function deleteLeagueByAdmin() {
                         <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                     </div>
                     
-                    ${authMode === 'register' ? `
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('confirmPasswordLabel', 'تأكيد كلمة المرور')}</label>
-                            <input type="password" id="auth-pin-confirm" placeholder="${text('confirmPasswordPh', 'أعد كتابة الرمز السري')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                        </div>
-                    ` : ''}
-
-                    <button type="submit" class="w-full py-4 flex items-center justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 mt-4 transition-all active:scale-95 text-sm tracking-wide">
-                        ${authMode === 'login' ? `${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>` : `${text('registerSubmit', 'إنشاء الحساب والبدء')} <i class="fa-solid fa-check ${lang === 'ar' ? 'mr-2' : 'ml-2'}"></i>`}
+                    <button type="submit" onclick="authMode = 'login';" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                        ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
                     </button>
                 </form>
 
