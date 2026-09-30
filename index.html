@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -4091,6 +4092,60 @@ async function deleteLeagueByAdmin() {
                 </div>
             `;
         }
+
+        // 🌟 دوال تسجيل الدخول عبر غوغل 🌟
+        function renderGoogleButton() {
+            if (typeof google === 'undefined' || !document.getElementById('google-btn-container')) return;
+            
+            google.accounts.id.initialize({
+                client_id: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com",
+                callback: handleGoogleLogin
+            });
+            
+            google.accounts.id.renderButton(
+                document.getElementById('google-btn-container'),
+                { theme: "filled_black", size: "large", type: "standard", text: "continue_with", shape: "rectangular", width: "100%" }
+            );
+        }
+
+        async function handleGoogleLogin(response) {
+            const googleToken = response.credential; // هذا هو الختم الآمن من غوغل
+            
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
+                    <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
+                    <span class="font-bold text-lg text-white">جاري توثيق الحساب مع غوغل...</span>
+                </div>`;
+
+            try {
+                // سنقوم ببرمجة هذا المسار في السيرفر في الخطوة القادمة
+                const res = await fetch(`${API_BASE_URL}/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: googleToken })
+                });
+                
+                const data = await res.json();
+
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                    localStorage.setItem('oracle_token_v8', data.token);
+                    
+                    await syncData(); 
+                    render();    
+                    
+                    setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
+                } else {
+                    showCustomDialog(data.message || 'فشل التوثيق بحساب غوغل.');
+                    render(); 
+                }
+            } catch (error) {
+                console.error("Google Auth Error:", error);
+                showCustomDialog('تعذر الاتصال بالسيرفر للتوثيق.');
+                render();
+            }
+        }
         
         function setAuthMode(mode) { authMode = mode; render(); }
 
@@ -4232,6 +4287,14 @@ async function deleteLeagueByAdmin() {
                     <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
                 
+                <!-- 🌟 زر غوغل 🌟 -->
+                <div id="google-btn-container" class="flex justify-center mb-4 w-full h-[40px] overflow-hidden rounded-xl"></div>
+                <div class="relative flex py-2 items-center mb-4">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink-0 mx-4 text-slate-400 text-xs font-bold">أو بالطريقة التقليدية</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+                
                 <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
                     <button type="button" onclick="setAuthMode('login')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
                     <button type="button" onclick="setAuthMode('register')" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
@@ -4290,7 +4353,11 @@ async function deleteLeagueByAdmin() {
         
         function render() {
             const app = document.getElementById('app');
-            if (!currentUser) { app.innerHTML = renderAuthScreen(); return; }
+            if (!currentUser) { 
+                app.innerHTML = renderAuthScreen(); 
+                setTimeout(renderGoogleButton, 150); // تأخير بسيط لضمان رسم الواجهة أولاً
+                return; 
+            }
 
             // 🌟 السحر هنا: بناء الهيكل الثابت (الهيدر والشريط) مرة واحدة فقط! 🌟
             if (!document.getElementById('layout-wrapper')) {
