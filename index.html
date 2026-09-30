@@ -4141,33 +4141,71 @@ async function deleteLeagueByAdmin() {
             window.location.href = authUrl;
         }
 
+        // 🌟 دالة تجهيز التسجيل قبل الذهاب لغوغل 🌟
+        function prepareGoogleRegistration() {
+            const username = document.getElementById('reg-username').value.trim();
+            const pin = document.getElementById('reg-pin').value.trim();
+            const referral = document.getElementById('reg-referral').value.trim();
+
+            if (username.length < 3) return showCustomDialog('اسم القناص يجب أن يكون 3 أحرف على الأقل.');
+            if (pin.length < 4) return showCustomDialog('كلمة المرور يجب أن تكون 4 رموز على الأقل.');
+
+            // تخزين البيانات مؤقتاً في الهاتف لحين العودة من غوغل
+            sessionStorage.setItem('pending_reg_username', username);
+            sessionStorage.setItem('pending_reg_pin', pin);
+            sessionStorage.setItem('pending_reg_referral', referral);
+
+            // الانطلاق إلى غوغل!
+            startGoogleRedirect();
+        }
+        
         async function processGoogleCallback(googleToken) {
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                     <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري فحص الحساب...</span>
+                    <span class="font-bold text-lg text-white">جاري إدخالك للمنصة...</span>
                 </div>`;
 
+            // سحب البيانات المخبأة في الذاكرة
+            const pendingUser = sessionStorage.getItem('pending_reg_username');
+            const pendingPin = sessionStorage.getItem('pending_reg_pin');
+            const pendingRef = sessionStorage.getItem('pending_reg_referral');
+
             try {
-                const res = await fetch(`${API_BASE_URL}/auth/google`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: googleToken })
-                });
+                let res, data;
                 
-                const data = await res.json();
-                
-                // 🌟 إذا كان اللاعب جديداً، نعرض شاشة اختيار الاسم 🌟
-                if (data.requireUsername) {
-                    showGoogleUsernamePrompt(googleToken);
-                    return;
+                if (pendingUser && pendingPin) {
+                    // 🌟 مسار تسجيل حساب جديد 🌟
+                    res = await fetch(`${API_BASE_URL}/auth/google/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: googleToken, chosenUsername: pendingUser, chosenPin: pendingPin, referralCode: pendingRef })
+                    });
+                    data = await res.json();
+                    
+                    // مسح الذاكرة لتنظيف الهاتف
+                    sessionStorage.removeItem('pending_reg_username');
+                    sessionStorage.removeItem('pending_reg_pin');
+                    sessionStorage.removeItem('pending_reg_referral');
+                } else {
+                    // 🌟 مسار تسجيل الدخول العادي 🌟
+                    res = await fetch(`${API_BASE_URL}/auth/google`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: googleToken })
+                    });
+                    data = await res.json();
+                    
+                    if (data.requireUsername) {
+                        showGoogleUsernamePrompt(googleToken); // للاحتياط إذا دخل مستخدم جديد من زر الدخول بالخطأ
+                        return;
+                    }
                 }
 
                 if (data.success) {
                     currentUser = data.user;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     localStorage.setItem('oracle_token_v8', data.token);
-                    
                     window.history.replaceState({}, document.title, window.location.pathname);
                     window.isHandlingGoogleCallback = false;
                     
@@ -4177,6 +4215,7 @@ async function deleteLeagueByAdmin() {
                 } else {
                     window.isHandlingGoogleCallback = false;
                     showCustomDialog(data.message || 'فشل التوثيق بحساب غوغل.');
+                    window.authMode = pendingUser ? 'register' : 'login';
                     render(); 
                 }
             } catch (error) {
@@ -4405,7 +4444,6 @@ async function deleteLeagueByAdmin() {
     const arrowIcon = lang === 'ar' ? 'fa-arrow-left mr-2' : 'fa-arrow-right ml-2';
     const text = (key, fallback) => typeof t === 'function' && t(key) ? t(key) : fallback;
     
-    // 🌟 جعل "تسجيل الدخول" هو الوضع الافتراضي الذي يظهر أولاً 🌟
     if (typeof window.authMode === 'undefined') window.authMode = 'login';
 
     return `
@@ -4428,14 +4466,14 @@ async function deleteLeagueByAdmin() {
                     <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
                 
-                <!-- 🌟 تبويبات الدخول والتسجيل (تسجيل الدخول على اليمين) 🌟 -->
+                <!-- 🌟 تبويبات الدخول والتسجيل 🌟 -->
                 <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
                     <button type="button" onclick="window.authMode='login'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
                     <button type="button" onclick="window.authMode='register'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
                 </div>
 
                 ${window.authMode === 'login' ? `
-                    <!-- 🌟 قسم تسجيل الدخول 🌟 -->
+                    <!-- 🌟 قسم تسجيل الدخول (للقدامى) 🌟 -->
                     <div class="animate-fade-in">
                         <div id="google-btn-container" class="mb-4 w-full h-[45px] overflow-hidden rounded-xl"></div>
                         
@@ -4455,26 +4493,41 @@ async function deleteLeagueByAdmin() {
                                 <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
                                 <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                             </div>
-                            
                             <button type="submit" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
                                 ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
                             </button>
                         </form>
                     </div>
                 ` : `
-                    <!-- 🌟 قسم الحساب الجديد 🌟 -->
-                    <div class="text-center animate-fade-in">
-                        <div class="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-5 text-right">
-                            <p class="text-xs text-slate-300 font-bold leading-relaxed mb-2">
-                                <i class="fa-solid fa-shield-halved text-blue-400 ml-1"></i> لضمان الأمان، يتم إنشاء الحسابات الجديدة عبر غوغل حصراً.
-                            </p>
-                            <p class="text-[10px] text-slate-400 leading-relaxed">
-                                بعد اختيار إيميلك من الزر أدناه، ستظهر لك شاشة لإكمال بياناتك واختيار: <br>
-                                <span class="text-white font-bold">(اسم القناص، كلمة المرور، ورمز الدعوة)</span>.
-                            </p>
-                        </div>
+                    <!-- 🌟 قسم الحساب الجديد (مع الخانات أولاً) 🌟 -->
+                    <div class="animate-fade-in text-right">
+                        <p class="text-[11px] text-slate-300 mb-4 font-bold leading-relaxed text-center">قم بتعبئة بياناتك، ثم اضغط زر غوغل لربط حسابك وإكمال التسجيل بأمان:</p>
                         
-                        <div id="google-btn-container" class="mb-2 w-full h-[45px] overflow-hidden rounded-xl"></div>
+                        <div class="space-y-3 mb-5">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">اسم القناص (يظهر للمنافسين)</label>
+                                <input type="text" id="reg-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900/80 border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">كلمة المرور (للدخول السريع لاحقاً)</label>
+                                <input type="password" id="reg-pin" placeholder="4 أرقام أو حروف على الأقل" class="w-full bg-slate-900/80 border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">رمز الدعوة (اختياري)</label>
+                                <input type="text" id="reg-referral" placeholder="أدخل رمز دعوة صديقك إن وجد" class="w-full bg-slate-900/80 border border-white/5 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all uppercase">
+                            </div>
+                        </div>
+
+                        <!-- زر غوغل مخصص للتسجيل -->
+                        <button type="button" onclick="prepareGoogleRegistration()" class="w-full py-3.5 flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-slate-800 font-bold rounded-xl shadow-lg transition-all text-sm mb-2">
+                            <svg class="w-5 h-5" viewBox="0 0 48 48">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-17.65z"></path>
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                            </svg>
+                            المتابعة بحساب Google وإكمال التسجيل
+                        </button>
                     </div>
                 `}
 
