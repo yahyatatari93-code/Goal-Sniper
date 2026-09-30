@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<script src="https://accounts.google.com/gsi/client?hl=ar" async defer></script>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -4093,32 +4092,64 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
-        // 🌟 دوال تسجيل الدخول عبر غوغل 🌟
-        function renderGoogleButton() {
-            if (typeof google === 'undefined' || !document.getElementById('google-btn-container')) return;
-            
-            google.accounts.id.initialize({
-                client_id: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com",
-                callback: handleGoogleLogin
-            });
-            
-            google.accounts.id.renderButton(
-                document.getElementById('google-btn-container'),
-                { theme: "filled_black", size: "large", type: "standard", text: "continue_with", shape: "rectangular", width: "100%" }
-            );
+        // 🌟 نظام غوغل الجديد (التحويل المباشر - يمنع الشاشة البيضاء) 🌟
+        
+        // 1. التحقق فوراً عند فتح التطبيق إذا كان اللاعب عائداً من غوغل
+        const hash = window.location.hash;
+        if (hash && hash.includes('id_token=')) {
+            const urlParams = new URLSearchParams(hash.substring(1));
+            const idToken = urlParams.get('id_token');
+            if (idToken) {
+                window.isHandlingGoogleCallback = true; // إيقاف الشاشة العادية مؤقتاً
+                document.addEventListener('DOMContentLoaded', () => {
+                    processGoogleCallback(idToken);
+                });
+            }
         }
 
-        async function handleGoogleLogin(response) {
-            const googleToken = response.credential; // هذا هو الختم الآمن من غوغل
+        // 2. دالة رسم زر غوغل
+        function renderGoogleButton() {
+            const container = document.getElementById('google-btn-container');
+            if (!container) return;
+            
+            // تصميم زر احترافي مطابق لغوغل
+            container.innerHTML = `
+                <button onclick="startGoogleRedirect()" class="flex justify-center items-center gap-3 w-full bg-white text-slate-800 font-bold py-2 rounded-lg shadow hover:bg-gray-100 transition-all text-sm">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                    </svg>
+                    المتابعة بحساب Google
+                </button>
+            `;
+        }
+
+        // 3. دالة الانتقال الآمن لغوغل
+        function startGoogleRedirect() {
+            const clientId = "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com";
+            const redirectUri = "https://goal-sniper.vercel.app"; 
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=id_token&scope=openid email profile&nonce=sniper123`;
             
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
+                    <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
+                    <span class="font-bold text-lg text-white">جاري الانتقال بأمان...</span>
+                </div>`;
+                
+            window.location.href = authUrl;
+        }
+
+        // 4. دالة معالجة الدخول بعد العودة من غوغل
+        async function processGoogleCallback(googleToken) {
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                     <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري توثيق الحساب مع غوغل...</span>
+                    <span class="font-bold text-lg text-white">جاري إدخالك للمنصة...</span>
                 </div>`;
 
             try {
-                // سنقوم ببرمجة هذا المسار في السيرفر في الخطوة القادمة
                 const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4126,22 +4157,24 @@ async function deleteLeagueByAdmin() {
                 });
                 
                 const data = await res.json();
-
                 if (data.success) {
                     currentUser = data.user;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     localStorage.setItem('oracle_token_v8', data.token);
                     
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.isHandlingGoogleCallback = false;
+                    
                     await syncData(); 
                     render();    
-                    
                     setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
                 } else {
+                    window.isHandlingGoogleCallback = false;
                     showCustomDialog(data.message || 'فشل التوثيق بحساب غوغل.');
                     render(); 
                 }
             } catch (error) {
-                console.error("Google Auth Error:", error);
+                window.isHandlingGoogleCallback = false;
                 showCustomDialog('تعذر الاتصال بالسيرفر للتوثيق.');
                 render();
             }
@@ -4354,8 +4387,9 @@ async function deleteLeagueByAdmin() {
         function render() {
             const app = document.getElementById('app');
             if (!currentUser) { 
+                if (window.isHandlingGoogleCallback) return; // منع ظهور الشاشة لثانية أثناء المعالجة
                 app.innerHTML = renderAuthScreen(); 
-                setTimeout(renderGoogleButton, 150); // تأخير بسيط لضمان رسم الواجهة أولاً
+                setTimeout(renderGoogleButton, 150);
                 return; 
             }
 
