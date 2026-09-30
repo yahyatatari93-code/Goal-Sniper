@@ -4141,12 +4141,11 @@ async function deleteLeagueByAdmin() {
             window.location.href = authUrl;
         }
 
-        // 4. دالة معالجة الدخول بعد العودة من غوغل
         async function processGoogleCallback(googleToken) {
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                     <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري إدخالك للمنصة...</span>
+                    <span class="font-bold text-lg text-white">جاري فحص الحساب...</span>
                 </div>`;
 
             try {
@@ -4157,6 +4156,13 @@ async function deleteLeagueByAdmin() {
                 });
                 
                 const data = await res.json();
+                
+                // 🌟 إذا كان اللاعب جديداً، نعرض شاشة اختيار الاسم 🌟
+                if (data.requireUsername) {
+                    showGoogleUsernamePrompt(googleToken);
+                    return;
+                }
+
                 if (data.success) {
                     currentUser = data.user;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
@@ -4177,6 +4183,66 @@ async function deleteLeagueByAdmin() {
                 window.isHandlingGoogleCallback = false;
                 showCustomDialog('تعذر الاتصال بالسيرفر للتوثيق.');
                 render();
+            }
+        }
+
+        // 🌟 دالة رسم شاشة اختيار اسم القناص 🌟
+        function showGoogleUsernamePrompt(googleToken) {
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen p-4">
+                    <div class="bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-md border border-white/10 text-center">
+                        <i class="fa-solid fa-crosshairs text-5xl text-blue-500 mb-4"></i>
+                        <h2 class="text-2xl font-bold text-white mb-2">اختر اسم القناص</h2>
+                        <p class="text-slate-400 mb-6 text-sm">تم ربط إيميلك بنجاح. الرجاء اختيار اسمك الذي سيظهر للمنافسين في المنصة.</p>
+                        
+                        <input type="text" id="google-new-username" placeholder="مثال: Ahmed99" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-center mb-4 focus:border-blue-500 outline-none">
+                        
+                        <button onclick="submitGoogleUsername('${googleToken}')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-blue-700 transition-all">
+                            تأكيد ودخول المنصة
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 🌟 دالة إرسال الاسم الجديد للسيرفر 🌟
+        async function submitGoogleUsername(googleToken) {
+            const chosenUsername = document.getElementById('google-new-username').value.trim();
+            if (chosenUsername.length < 3) {
+                showCustomDialog('اسم القناص يجب أن يكون 3 أحرف على الأقل.');
+                return;
+            }
+
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
+                    <i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i>
+                    <span class="font-bold text-lg text-white">جاري إنشاء الحساب...</span>
+                </div>`;
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/auth/google/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: googleToken, chosenUsername })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    currentUser = data.user;
+                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                    localStorage.setItem('oracle_token_v8', data.token);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    window.isHandlingGoogleCallback = false;
+                    await syncData(); 
+                    render();    
+                    setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
+                } else {
+                    showCustomDialog(data.message);
+                    showGoogleUsernamePrompt(googleToken); // إعادته للمحاولة إذا كان الاسم محجوزاً
+                }
+            } catch(e) {
+                showCustomDialog('خطأ في الاتصال بالسيرفر.');
+                showGoogleUsernamePrompt(googleToken);
             }
         }
         
