@@ -4400,18 +4400,17 @@ async function deleteLeagueByAdmin() {
         }
 
         function renderAuthScreen() {
-    // تحديد الاتجاه وأيقونة السهم بناءً على اللغة الحالية
     const lang = typeof currentLang !== 'undefined' ? currentLang : (localStorage.getItem('appLang') || 'ar');
     const dir = lang === 'ar' ? 'rtl' : 'ltr';
     const arrowIcon = lang === 'ar' ? 'fa-arrow-left mr-2' : 'fa-arrow-right ml-2';
-
-    // دالة مساعدة لضمان جلب الترجمة أو إرجاع النص العربي كاحتياطي
     const text = (key, fallback) => typeof t === 'function' && t(key) ? t(key) : fallback;
+    
+    // تعيين الوضع الافتراضي كـ "حساب جديد" ليظهر أولاً للزوار
+    if (typeof window.authMode === 'undefined') window.authMode = 'register';
 
     return `
         <div class="min-h-screen flex items-center justify-center p-4 w-full bg-cover bg-center relative" dir="${dir}">
             
-            <!-- أزرار تغيير اللغة (تطفو في الزاوية العلوية) -->
             <div class="absolute top-4 ${lang === 'ar' ? 'left-4' : 'right-4'} flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg z-50" dir="ltr">
                 <button onclick="changeLanguage('ar')" class="px-2 py-1 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
                 <span class="text-white/20 text-xs px-1">|</span>
@@ -4429,35 +4428,56 @@ async function deleteLeagueByAdmin() {
                     <p class="text-xs text-slate-400 mt-2 font-bold">${text('appDesc', 'منصة التوقعات الأقوى للدوري الإنجليزي الممتاز')}</p>
                 </div>
                 
-                <!-- 🌟 زر غوغل الأساسي (الخيار الوحيد للتسجيل الجديد) 🌟 -->
-                <div id="google-btn-container" class="mb-4 w-full h-[45px] overflow-hidden rounded-xl"></div>
-                
-                <div class="relative flex py-2 items-center mb-6 mt-4">
-                    <div class="flex-grow border-t border-white/10"></div>
-                    <span class="flex-shrink-0 mx-4 text-slate-400 text-[11px] font-bold">${text('oldPlayersLogin', 'تسجيل دخول اللاعبين القدامى')}</span>
-                    <div class="flex-grow border-t border-white/10"></div>
+                <!-- 🌟 تبويبات الدخول والتسجيل 🌟 -->
+                <div class="flex gap-2 mb-6 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                    <button type="button" onclick="window.authMode='register'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'register' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('registerBtn', 'حساب جديد')}</button>
+                    <button type="button" onclick="window.authMode='login'; render();" class="flex-1 py-2.5 text-xs font-bold rounded-lg transition-all ${window.authMode === 'login' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}">${text('loginBtn', 'تسجيل الدخول')}</button>
                 </div>
 
-                <!-- 🌟 نموذج دخول القدامى (بُني خصيصاً بدون خيار إنشاء حساب) 🌟 -->
-                <form onsubmit="handleAuth(event); return false;" class="space-y-4">
-                    <!-- حقل مخفي لإجبار الدالة على وضع login -->
-                    <input type="hidden" id="auth-mode-hidden" value="login">
-                    
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('usernameLabel', 'اسم المستخدم')}</label>
-                        <input type="text" id="auth-name" placeholder="${text('usernamePh', 'مثال: Ahmed99')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                ${window.authMode === 'register' ? `
+                    <!-- 🌟 قسم الحساب الجديد 🌟 -->
+                    <div class="text-center animate-fade-in">
+                        <div class="bg-blue-900/20 border border-blue-500/20 rounded-xl p-4 mb-5 text-right">
+                            <p class="text-xs text-slate-300 font-bold leading-relaxed mb-2">
+                                <i class="fa-solid fa-shield-halved text-blue-400 ml-1"></i> لضمان الأمان، يتم إنشاء الحسابات الجديدة عبر غوغل حصراً.
+                            </p>
+                            <p class="text-[10px] text-slate-400 leading-relaxed">
+                                بعد اختيار إيميلك من الزر أدناه، ستظهر لك شاشة لإكمال بياناتك واختيار: <br>
+                                <span class="text-white font-bold">(اسم القناص، كلمة المرور، ورمز الدعوة)</span>.
+                            </p>
+                        </div>
+                        
+                        <div id="google-btn-container" class="mb-2 w-full h-[45px] overflow-hidden rounded-xl"></div>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
-                        <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
-                    </div>
-                    
-                    <button type="submit" onclick="authMode = 'login';" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
-                        ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
-                    </button>
-                </form>
+                ` : `
+                    <!-- 🌟 قسم تسجيل الدخول (للقدامى) 🌟 -->
+                    <div class="animate-fade-in">
+                        <div id="google-btn-container" class="mb-4 w-full h-[45px] overflow-hidden rounded-xl"></div>
+                        
+                        <div class="relative flex py-2 items-center mb-4 mt-2">
+                            <div class="flex-grow border-t border-white/10"></div>
+                            <span class="flex-shrink-0 mx-4 text-slate-400 text-[11px] font-bold">${lang === 'ar' ? 'أو دخول اللاعبين القدامى' : 'Or Old Players Login'}</span>
+                            <div class="flex-grow border-t border-white/10"></div>
+                        </div>
 
-                <!-- 🌟 زر التواصل مع الإدارة المحدث (أخضر وبارز) 🌟 -->
+                        <form onsubmit="handleAuth(event); return false;" class="space-y-4">
+                            <input type="hidden" id="auth-mode-hidden" value="login">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('usernameLabel', 'اسم المستخدم')}</label>
+                                <input type="text" id="auth-name" placeholder="${text('usernamePh', 'مثال: Ahmed99')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
+                                <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
+                            </div>
+                            
+                            <button type="submit" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                                ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
+                            </button>
+                        </form>
+                    </div>
+                `}
+
                 <div class="mt-8 flex justify-center">
                     <button type="button" onclick="contactSupport()" class="group flex items-center gap-2 text-sm font-bold text-emerald-500 hover:text-emerald-400 transition-all bg-transparent border-none drop-shadow-md hover:scale-105">
                         <i class="fa-brands fa-whatsapp text-xl"></i>
