@@ -1566,24 +1566,24 @@ function isMatchLocked(match) {
                 
                 <div class="flex justify-between items-start mb-5 relative z-10">
                     <div>
-                        <!-- اسم القناص بدون كلمة بطاقة القناص -->
+                        <!-- اسم القناص -->
                         <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-2">
                             ${currentUser.username}${myBadges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
                             ${myBadges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
                             ${myBadges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
                         </h2>
                         
-                        <!-- رمز الدعوة تحته مباشرة وقابل للنسخ بالنقر المباشر -->
-                        <div class="mt-2 flex items-center gap-1.5">
-                            <span class="text-[10px] text-slate-400 font-bold">رمز الدعوة:</span>
-                            <button onclick="copyReferralCode('${currentUser.referral_code || ''}')" class="group bg-slate-900/90 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/40 px-2.5 py-1 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-sm" title="انقر للنسخ">
-                                <span class="text-xs font-mono font-black text-emerald-400 tracking-wider uppercase">${currentUser.referral_code || 'جارِ التحميل...'}</span>
+                        <!-- رمز الدعوة بجانب بعضهما بشكل منسق وأفقي تماماً -->
+                        <div class="mt-2.5 flex items-center gap-2" dir="ltr">
+                            <button onclick="copyReferralCode('${currentUser.referral_code || ''}')" class="group bg-slate-900/90 hover:bg-emerald-600/20 border border-white/10 hover:border-emerald-500/40 px-3 py-1 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-sm" title="انقر للنسخ">
+                                <span class="text-xs font-mono font-black text-emerald-400 tracking-wider uppercase">${currentUser.referral_code || 'غير متوفر'}</span>
                                 <i class="fa-solid fa-copy text-[10px] text-slate-400 group-hover:text-emerald-400 transition-colors"></i>
                             </button>
+                            <span class="text-[11px] text-slate-400 font-bold" dir="rtl">رمز الدعوة:</span>
                         </div>
                     </div>
 
-                    <!-- 🌟 الترتيب المزدوج المحافظ عليه 🌟 -->
+                    <!-- أزرار الترتيب المزدوج -->
                     <div class="flex gap-2 ${isAr ? 'justify-end' : 'justify-start'}">
                         <div class="text-center bg-blue-900/30 border border-blue-500/30 px-3 py-1.5 rounded-xl shadow-inner flex flex-col justify-center">
                             <span class="text-[9px] text-blue-300 block font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-trophy"></i> ${isAr ? 'الإنجليزي' : 'EPL'}</span>
