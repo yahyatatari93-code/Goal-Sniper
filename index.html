@@ -1452,6 +1452,13 @@ function isMatchLocked(match) {
         window.open(playStoreUrl, '_blank');
     }
 }
+        function copyReferralCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                showCustomDialog("📋 تم نسخ رمز الدعوة بنجاح!<br>شاركه مع أصدقائك لتحصل على مكافآتك.");
+            }).catch(err => {
+                showCustomDialog("تعذر نسخ الكود تلقائياً.");
+            });
+        }
         
         function renderHomeTab() {
     const activeGw = getCurrentActiveGw();
@@ -1601,6 +1608,22 @@ function isMatchLocked(match) {
                 </div>
             </div>
 
+<!-- 🌟 بطاقة دعوة الأصدقاء 🌟 -->
+            <div class="glass p-4 rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/20 via-[#0f172a] to-slate-900 flex items-center justify-between shadow-lg">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/30 shrink-0">
+                        <i class="fa-solid fa-user-plus"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-300">رمز الدعوة الخاص بك</h4>
+                        <span class="text-base font-black text-emerald-400 tracking-widest uppercase font-mono">${currentUser.referral_code || 'غير متوفر'}</span>
+                    </div>
+                </div>
+                <button onclick="copyReferralCode('${currentUser.referral_code || ''}')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-emerald-600/20 flex items-center gap-1.5 shrink-0">
+                    <i class="fa-solid fa-copy"></i> نسخ
+                </button>
+            </div>
+            
             <div class="mt-2">
                 <div class="flex items-center justify-between mb-4 px-1 gap-2">
                     <h3 class="font-bold text-[13px] md:text-base flex items-center gap-1.5 flex-wrap">
