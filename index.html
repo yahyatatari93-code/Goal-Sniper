@@ -4668,6 +4668,9 @@ async function deleteLeagueByAdmin() {
 
             renderModal();
             updateTheme();
+            
+            // 🌟 إظهار المتجر لحساب الإدارة 🌟
+            document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore());
         }
 
         window.onload = async function() {
@@ -4732,6 +4735,131 @@ async function deleteLeagueByAdmin() {
                 }
             );
         }
+
+        // 🌟 1. دالة المتجر السري (تظهر فقط لحساب الإدارة Red Army) 🌟
+        function renderAdminStore() {
+            if (!currentUser || currentUser.username !== 'Red Army') return '';
+            
+            return `
+                <!-- زر المتجر العائم (أسفل اليسار) -->
+                <button onclick="toggleStoreModal()" class="fixed bottom-6 left-6 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-900 w-14 h-14 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] z-50 flex items-center justify-center transition-all hover:scale-110 border-2 border-white/20 animate-fade-up">
+                    <i class="fa-solid fa-store text-2xl"></i>
+                </button>
+
+                <!-- نافذة المتجر المنبثقة -->
+                <div id="store-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div class="bg-slate-800 border border-amber-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-in text-right" dir="rtl">
+                        
+                        <!-- رأس المتجر -->
+                        <div class="bg-gradient-to-l from-amber-600 to-orange-500 p-5 text-center relative">
+                            <button onclick="toggleStoreModal()" class="absolute top-4 left-4 text-white hover:text-slate-200 transition-colors bg-white/10 w-8 h-8 rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <i class="fa-solid fa-mask text-4xl text-white mb-2 drop-shadow-md"></i>
+                            <h2 class="text-2xl font-black text-white">متجر الإدارة السري</h2>
+                            <p class="text-amber-100 text-xs mt-1 font-bold">وضع الاختبار - حساب Red Army</p>
+                        </div>
+                        
+                        <!-- محتوى المتجر -->
+                        <div class="p-5">
+                            <div class="flex justify-between items-center bg-slate-900/80 rounded-xl p-4 mb-5 border border-white/5 shadow-inner">
+                                <span class="text-amber-400 font-black text-xl flex items-center gap-2">
+                                    <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
+                                </span>
+                                <span class="text-slate-400 text-sm font-bold">رصيد التوكن:</span>
+                            </div>
+
+                            <div class="space-y-3">
+                                <!-- درع حصانة -->
+                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-blue-500/50 transition-colors">
+                                    <button onclick="simulatePurchase('shield', 70)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                        70 <i class="fa-solid fa-coins text-[10px]"></i>
+                                    </button>
+                                    <div class="flex items-center gap-3 text-right">
+                                        <div>
+                                            <h3 class="text-white font-bold text-sm">درع حصانة</h3>
+                                            <p class="text-slate-400 text-[10px]">يحميك من رصاصة منافس</p>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0">
+                                            <i class="fa-solid fa-shield-halved text-blue-400"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- رصاصة قناص -->
+                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-red-500/50 transition-colors">
+                                    <button onclick="simulatePurchase('sniper', 120)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                        120 <i class="fa-solid fa-coins text-[10px]"></i>
+                                    </button>
+                                    <div class="flex items-center gap-3 text-right">
+                                        <div>
+                                            <h3 class="text-white font-bold text-sm">رصاصة قناص</h3>
+                                            <p class="text-slate-400 text-[10px]">لخصم نقاط من حساب منافس</p>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30 shrink-0">
+                                            <i class="fa-solid fa-crosshairs text-red-400"></i>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- تيشيرت التطبيق -->
+                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-emerald-500/50 transition-colors">
+                                    <button onclick="simulatePurchase('tshirt', 500)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                        500 <i class="fa-solid fa-coins text-[10px]"></i>
+                                    </button>
+                                    <div class="flex items-center gap-3 text-right">
+                                        <div>
+                                            <h3 class="text-white font-bold text-sm">تيشيرت Goal Sniper</h3>
+                                            <p class="text-slate-400 text-[10px]">جائزة كبرى تصلك لباب بيتك</p>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                                            <i class="fa-solid fa-shirt text-emerald-400"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 🌟 2. دوال التحكم بالمتجر 🌟
+        window.toggleStoreModal = function() {
+            const modal = document.getElementById('store-modal');
+            if (modal) {
+                modal.classList.toggle('hidden');
+            }
+        };
+
+        window.simulatePurchase = async function(item, cost) {
+            toggleStoreModal(); // إغلاق النافذة فوراً
+            showCustomDialog('جاري معالجة عملية الشراء...', 'alert');
+
+            try {
+                const token = localStorage.getItem('oracle_token_v8');
+                const res = await fetch(`${API_BASE_URL}/store/purchase`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ username: currentUser.username, item: item, cost: cost })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    // تحديث الرصيد محلياً
+                    currentUser.tokens = data.newTokens;
+                    localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                    
+                    showCustomDialog(`🎉 ${data.message}<br>رصيدك المتبقي: <strong class="text-amber-400">${data.newTokens}</strong> توكن`);
+                    await syncData(); // جلب البيانات المحدثة
+                    render(); // إعادة رسم الشاشة
+                } else {
+                    showCustomDialog(`⚠️ ${data.message}`);
+                }
+            } catch(e) {
+                showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء.');
+            }
+        };
     </script>
 </body>
 </html>
