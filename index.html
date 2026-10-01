@@ -4573,37 +4573,49 @@ async function deleteLeagueByAdmin() {
                 app.innerHTML = `
                     <div id="layout-wrapper" class="flex-1 flex flex-col w-full">
                         <div class="sticky top-0 z-50 w-full flex flex-col shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
-                            <header class="p-4 glass rounded-none border-x-0 border-t-0 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]/95 backdrop-blur-xl">
+                            <header class="p-4 glass rounded-none border-x-0 border-t-0 border-b border-white/10 flex justify-between items-center bg-[#0a0e17]/95 backdrop-blur-xl gap-2">
                                 
                                 <!-- 🌟 التعديل: زر واتساب الجديد في الهيدر 🌟 -->
-                                <button onclick="contactSupport()" class="flex items-center gap-3 group cursor-pointer bg-slate-800/40 hover:bg-slate-700/60 p-1.5 pr-4 rounded-full transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
-                                    <div class="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 group-hover:bg-emerald-500 hover:scale-105 transition-all duration-300">
-                                        <i class="fa-brands fa-whatsapp text-emerald-400 group-hover:text-white text-xl"></i>
+                                <button onclick="contactSupport()" class="flex items-center gap-2 group cursor-pointer bg-slate-800/40 hover:bg-slate-700/60 p-1 pr-3 rounded-full transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/5 shrink-0">
+                                    <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 group-hover:bg-emerald-500 hover:scale-105 transition-all duration-300">
+                                        <i class="fa-brands fa-whatsapp text-emerald-400 group-hover:text-white text-lg"></i>
                                     </div>
                                     <div class="flex flex-col items-start leading-none">
-                                        <span class="text-xs font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">${typeof t === 'function' ? t('contactUs') : 'تواصل معنا'}</span>
-                                        <span class="text-[9px] text-slate-400 font-bold mt-1">${typeof t === 'function' ? t('mgmtGoalSniper') : 'إدارة Goal Sniper'}</span>
+                                        <span class="text-[10px] font-black text-emerald-400 group-hover:text-emerald-300 transition-colors">${typeof t === 'function' ? t('contactUs') : 'تواصل معنا'}</span>
+                                        <span class="text-[8px] text-slate-400 font-bold mt-1">${typeof t === 'function' ? t('mgmtGoalSniper') : 'إدارة Goal Sniper'}</span>
                                     </div>
                                 </button>
                                 
-                                <div class="flex items-center gap-2">
-                                    ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-3 py-1.5 bg-rose-600/20 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-bold hover:bg-rose-600 hover:text-white transition-all"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
-                                    <div class="flex items-center gap-2">
-                                        <div class="flex items-center bg-slate-900/80 border border-white/10 rounded-lg p-0.5 shadow-lg">
-                                            <button onclick="changeLanguage('ar')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">عربي</button>
-                                            <span class="text-white/20 text-[10px] px-0.5">|</span>
-                                            <button onclick="changeLanguage('en')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">EN</button>
-                                            <span class="text-white/20 text-[10px] px-0.5">|</span>
-                                            <button onclick="changeLanguage('tr')" class="px-1.5 py-1 text-[10px] font-bold text-slate-300 hover:text-white hover:bg-slate-700 rounded transition-all">TR</button>
-                                        </div>
-                                        <!-- زر المزامنة اليدوية -->
-                                        <button onclick="manualSync()" class="p-1.5 glass text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all border-emerald-500/20" title="${typeof t === 'function' ? t('refresh') || 'تحديث البيانات' : 'تحديث البيانات'}">
-                                            <i id="sync-icon" class="fa-solid fa-arrows-rotate text-sm"></i>
-                                        </button>
-                                        <button onclick="logout()" class="p-1.5 glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
-                                            <i class="fa-solid fa-power-off text-sm"></i>
-                                        </button>
+                                <div class="flex flex-wrap justify-end items-center gap-1.5 flex-1">
+                                    <!-- زر تبويب الإدارة (مدمج ومصغر) -->
+                                    ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-2.5 py-1.5 h-8 bg-rose-600/20 border border-rose-500/30 rounded-lg text-rose-300 text-[10px] font-bold hover:bg-rose-600 hover:text-white transition-all flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
+                                    
+                                    <!-- 🌟 القائمة المنسدلة للغات (بديلة عن الأزرار الثلاثة) 🌟 -->
+                                    <div class="relative bg-slate-900/80 border border-white/10 rounded-lg shadow-lg flex items-center h-8">
+                                        <select onchange="changeLanguage(this.value)" class="bg-transparent text-slate-300 text-[10px] font-bold h-full pl-2 pr-5 outline-none appearance-none cursor-pointer" dir="ltr">
+                                            <option value="ar" ${currentLang === 'ar' ? 'selected' : ''} class="bg-slate-900">AR</option>
+                                            <option value="en" ${currentLang === 'en' ? 'selected' : ''} class="bg-slate-900">EN</option>
+                                            <option value="tr" ${currentLang === 'tr' ? 'selected' : ''} class="bg-slate-900">TR</option>
+                                        </select>
+                                        <i class="fa-solid fa-chevron-down text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px]"></i>
                                     </div>
+
+                                    <!-- 🌟 زر المتجر السري المدمج 🌟 -->
+                                    ${currentUser.username.toLowerCase() === 'red army' ? `
+                                    <button onclick="toggleStoreModal()" class="w-8 h-8 flex items-center justify-center glass text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                                        <i class="fa-solid fa-store text-xs"></i>
+                                    </button>
+                                    ` : ''}
+
+                                    <!-- زر المزامنة اليدوية -->
+                                    <button onclick="manualSync()" class="w-8 h-8 flex items-center justify-center glass text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all border-emerald-500/20" title="${typeof t === 'function' ? t('refresh') || 'تحديث البيانات' : 'تحديث البيانات'}">
+                                        <i id="sync-icon" class="fa-solid fa-arrows-rotate text-xs"></i>
+                                    </button>
+                                    
+                                    <!-- زر تسجيل الخروج -->
+                                    <button onclick="logout()" class="w-8 h-8 flex items-center justify-center glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
+                                        <i class="fa-solid fa-power-off text-xs"></i>
+                                    </button>
                                 </div>
                             </header>
 
@@ -4736,16 +4748,11 @@ async function deleteLeagueByAdmin() {
             );
         }
 
-        // 🌟 1. دالة المتجر السري (تظهر فقط لحساب الإدارة Red Army) 🌟
+        // 🌟 1. دالة المتجر السري (نافذة منبثقة فقط) 🌟
         function renderAdminStore() {
             if (!currentUser || currentUser.username !== 'Red Army') return '';
             
             return `
-                <!-- زر المتجر العائم (أسفل اليسار) -->
-                <button onclick="toggleStoreModal()" class="fixed bottom-6 left-6 bg-gradient-to-r from-amber-500 to-orange-600 text-slate-900 w-14 h-14 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.5)] z-50 flex items-center justify-center transition-all hover:scale-110 border-2 border-white/20 animate-fade-up">
-                    <i class="fa-solid fa-store text-2xl"></i>
-                </button>
-
                 <!-- نافذة المتجر المنبثقة -->
                 <div id="store-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div class="bg-slate-800 border border-amber-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-in text-right" dir="rtl">
