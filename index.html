@@ -4766,11 +4766,26 @@ async function deleteLeagueByAdmin() {
                         
                         <!-- محتوى المتجر -->
                         <div class="p-5">
-                            <div class="flex justify-between items-center bg-slate-900/80 rounded-xl p-4 mb-5 border border-white/5 shadow-inner">
-                                <span class="text-amber-400 font-black text-xl flex items-center gap-2">
-                                    <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
-                                </span>
-                                <span class="text-slate-400 text-sm font-bold">رصيد التوكن:</span>
+                            <!-- 🌟 شريط الرصيد والمخزون في المتجر 🌟 -->
+                            <div class="bg-slate-900/80 rounded-xl p-3 mb-5 border border-white/5 shadow-inner flex justify-between items-center divide-x divide-white/10 divide-x-reverse text-center">
+                                <div class="flex-1 px-1">
+                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">التوكن</span>
+                                    <span class="text-amber-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                        <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
+                                    </span>
+                                </div>
+                                <div class="flex-1 px-1">
+                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">الدروع</span>
+                                    <span class="text-blue-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                        <i class="fa-solid fa-shield-halved"></i> ${currentUser.shields || 0}
+                                    </span>
+                                </div>
+                                <div class="flex-1 px-1">
+                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">الرصاص</span>
+                                    <span class="text-rose-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                        <i class="fa-solid fa-crosshairs"></i> ${currentUser.extra_snipers || 0}
+                                    </span>
+                                </div>
                             </div>
 
                             <div class="space-y-3">
