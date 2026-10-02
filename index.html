@@ -1461,8 +1461,18 @@ function isMatchLocked(match) {
         }
         
         function renderHomeTab() {
-    const activeGw = getCurrentActiveGw();
-    const prevGw = activeGw > 1 ? activeGw - 1 : null;
+            // --- شبكة الأمان لسحب الكود للحسابات التي تدخل عبر غوغل ---
+            const myServerData = users.find(u => u.username === currentUser.username);
+            const myCode = currentUser.referral_code || (myServerData ? myServerData.referral_code : null);
+            
+            if (myCode && !currentUser.referral_code) {
+                currentUser.referral_code = myCode;
+                localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+            }
+            // --------------------------------------------------------
+
+            const activeGw = getCurrentActiveGw();
+            const prevGw = activeGw > 1 ? activeGw - 1 : null;
     let gwMatches = matches.filter(m => Number(m.gw) === activeGw);
     
     gwMatches.sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
@@ -1566,24 +1576,24 @@ function isMatchLocked(match) {
                 
                 <div class="flex justify-between items-start mb-5 relative z-10">
                     <div>
-                        <!-- اسم القناص -->
+                        <!-- اسم القناص والأوسمة -->
                         <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-2">
                             ${currentUser.username}${myBadges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
                             ${myBadges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
                             ${myBadges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
                         </h2>
                         
-                        <!-- رمز الدعوة المنسق أفقياً -->
-                        <div class="mt-3 flex items-center gap-2">
+                        <!-- رمز الدعوة المنسق أسفل الاسم مباشرة -->
+                        <div class="mt-2.5 flex items-center gap-2">
                             <span class="text-[11px] text-slate-400 font-bold whitespace-nowrap">رمز الدعوة:</span>
-                            <button onclick="copyReferralCode('${currentUser.referral_code || ''}')" class="group bg-slate-900/90 hover:bg-emerald-600/20 border border-white/10 px-3 py-1 rounded-lg flex items-center gap-2 transition-all cursor-pointer shadow-sm">
-                                <span class="text-xs font-mono font-black text-emerald-400 mt-0.5">${currentUser.referral_code || '---'}</span>
+                            <button onclick="copyReferralCode('${myCode || ''}')" class="group bg-slate-900/90 hover:bg-emerald-600/20 border border-white/10 px-3 py-1 rounded-lg flex items-center gap-2 transition-all cursor-pointer shadow-sm">
+                                <span class="text-xs font-mono font-black text-emerald-400 mt-0.5">${myCode || '---'}</span>
                                 <i class="fa-solid fa-copy text-[10px] text-slate-400 group-hover:text-emerald-400"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- أزرار الترتيب المزدوج -->
+                    <!-- أزرار الترتيب المزدوج (في الجهة المقابلة) -->
                     <div class="flex gap-2 ${isAr ? 'justify-end' : 'justify-start'}">
                         <div class="text-center bg-blue-900/30 border border-blue-500/30 px-3 py-1.5 rounded-xl shadow-inner flex flex-col justify-center">
                             <span class="text-[9px] text-blue-300 block font-bold flex items-center gap-1 justify-center"><i class="fa-solid fa-trophy"></i> ${isAr ? 'الإنجليزي' : 'EPL'}</span>
@@ -1596,6 +1606,7 @@ function isMatchLocked(match) {
                     </div>
                 </div>
                 
+                <!-- صندوق الإحصائيات المدمج (كما هو في الكود الأصلي لديك) -->
                 <div class="flex justify-between items-center bg-slate-900/60 p-2.5 rounded-2xl border border-white/5 divide-x divide-white/10 ${isAr ? 'divide-x-reverse' : ''} relative z-10 shadow-inner">
                     <div class="flex-1 text-center flex flex-col justify-center px-1">
                         <span class="text-[9px] text-slate-400 block mb-1 font-bold">${typeof t === 'function' ? t('favTeam') : 'المفضل'}</span>
