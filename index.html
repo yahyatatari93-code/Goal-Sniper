@@ -1420,6 +1420,7 @@ function isMatchLocked(match) {
             else if (platform === 'ig') url = 'https://www.instagram.com/goal.sniper02?igsh=Z2cyMXBpNjMxMm9j';
             else if (platform === 'tiktok') url = 'https://www.tiktok.com/@goal.sniper2';
             else if (platform === 'yt') url = 'https://www.youtube.com/@GoalSniper-r8p';
+            else if (platform === 'wa') url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36';  
             
             if (isAndroid) {
                 // إجبار الأندرويد على فتح التطبيق الأصلي
@@ -1434,6 +1435,26 @@ function isMatchLocked(match) {
             }
         }
 
+        function openWaChannel() {
+    // استبدل هذا الرابط بالرابط الحقيقي لقناتك الذي نسخته من الواتساب
+    const channelUrl = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; 
+    
+    const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || window.opera);
+    
+    if (isAndroid) {
+        // نظام أندرويد: محاولة فتح تطبيق واتساب مباشرة
+        window.location.href = channelUrl.replace('https://', 'intent://') + '#Intent;scheme=https;package=com.whatsapp;end';
+        
+        // خطة بديلة إذا فشل فتح التطبيق
+        setTimeout(() => {
+            window.location.href = channelUrl;
+        }, 1500);
+    } else {
+        // آيفون والكمبيوتر
+        window.open(channelUrl, '_blank');
+    }
+}
+        
         function shareApp() {
     // ضغ رابط تطبيقك الحقيقي على متجر غوغل بلاي هنا
     const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper';
@@ -1541,11 +1562,14 @@ function isMatchLocked(match) {
                 <span class="text-[11px] text-slate-400 mt-2 font-bold tracking-wide">${typeof t === 'function' ? t('slogan') : 'توقع بذكاء . تصدر بجدارة . اقنص بقوة'}</span>
             </div>
 
-            <div class="glass py-2.5 px-4 rounded-2xl border border-white/5 bg-slate-900/40 shadow-lg flex justify-center items-center gap-6 max-w-sm mx-auto relative z-20" dir="ltr">
+            <div class="glass py-2.5 px-4 rounded-2xl border border-white/5 bg-slate-900/40 shadow-lg flex justify-center items-center gap-4 max-w-sm mx-auto relative z-20" dir="ltr">
                 <button onclick="openSocial('fb')" class="text-[#1877F2] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(24,119,242,0.8)] transition-all outline-none"><i class="fa-brands fa-facebook-f"></i></button>
                 <button onclick="openSocial('ig')" class="text-[#E4405F] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(228,64,95,0.8)] transition-all outline-none"><i class="fa-brands fa-instagram"></i></button>
                 <button onclick="openSocial('tiktok')" class="text-white text-xl hover:scale-125 hover:text-[#25F4EE] hover:drop-shadow-[0_0_10px_rgba(37,244,238,0.8)] transition-all outline-none"><i class="fa-brands fa-tiktok"></i></button>
                 <button onclick="openSocial('yt')" class="text-[#FF0000] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(255,0,0,0.8)] transition-all outline-none"><i class="fa-brands fa-youtube"></i></button>
+                
+                <!-- زر قناة الواتساب الجديد -->
+                <button onclick="openSocial('wa')" class="text-[#25D366] text-xl hover:scale-125 hover:drop-shadow-[0_0_10px_rgba(37,211,102,0.8)] transition-all outline-none"><i class="fa-brands fa-whatsapp"></i></button>
             </div>
             
             <div class="flex justify-center mt-3 relative z-20">
