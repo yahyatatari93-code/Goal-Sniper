@@ -47,6 +47,36 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ==========================================
+// 🌟 نظام إرسال الإشعارات الشامل (البوسطجي) 🌟
+// ==========================================
+
+// 1. إرسال إشعار للاعب محدد
+async function sendFCMToUser(username, title, body) {
+    try {
+        const [users] = await pool.query('SELECT fcm_token FROM users WHERE username = ? AND fcm_token IS NOT NULL', [username]);
+        if (users.length > 0 && users[0].fcm_token) {
+            await admin.messaging().send({
+                notification: { title, body },
+                token: users[0].fcm_token
+            });
+        }
+    } catch (error) { console.error(`خطأ إشعار ${username}:`, error.message); }
+}
+
+// 2. إرسال إشعار جماعي لكل اللاعبين
+async function sendFCMToAll(title, body) {
+    try {
+        const [users] = await pool.query('SELECT fcm_token FROM users WHERE fcm_token IS NOT NULL');
+        const tokens = users.map(u => u.fcm_token);
+        if (tokens.length > 0) {
+            await admin.messaging().sendEachForMulticast({
+                notification: { title, body },
+                tokens: tokens
+            });
+        }
+    } catch (error) { console.error(`خطأ إشعار جماعي:`, error.message); }
+}
+// ==========================================
 // 1. مسارات الدخول القديمة
 // ==========================================
 app.post('/api/auth/login', async (req, res) => {
@@ -129,29 +159,23 @@ app.post('/api/auth/google', async (req, res) => {
 app.post('/api/auth/google/register', async (req, res) => {
     const { token, chosenUsername, chosenPin, referralCode } = req.body;
     try {
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com",
-        });
-        const payload = ticket.getPayload();
-        const googleId = payload['sub'];
-        const email = payload['email'];
+        const ticket = await googleClient.verifyIdToken({ idToken: token, audience: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com" });
+        const email = ticket.getPayload()['email'];
+        const googleId = ticket.getPayload()['sub'];
 
         const [existing] = await pool.query('SELECT * FROM users WHERE username = ?', [chosenUsername]);
-        if (existing.length > 0) return res.status(400).json({ success: false, message: 'اسم القناص هذا محجوز سلفاً، يرجى اختيار اسم آخر.' });
+        if (existing.length > 0) return res.status(400).json({ success: false, message: 'اسم القناص هذا محجوز سلفاً.' });
 
         let validReferredBy = null;
-
-        // 🌟 فحص رمز الدعوة وإعطاء المكافأة للداعي فقط 🌟
         if (referralCode && referralCode.trim() !== '') {
             const [refCheck] = await pool.query('SELECT username FROM users WHERE referral_code = ?', [referralCode.trim()]);
             if (refCheck.length > 0) {
                 validReferredBy = refCheck[0].username;
-
-                // إضافة 50 توكن في رصيد الصديق (الداعي) فقط
                 await pool.query('UPDATE users SET tokens = tokens + 50 WHERE username = ?', [validReferredBy]);
+                // 🌟 إشعار: مكافأة الدعوة 🌟
+                sendFCMToUser(validReferredBy, '🎁 قناص جديد في صفوفك!', `انضم صديق باستخدام الكود الخاص بك، وكسبت 50 توكن!`);
             } else {
-                return res.status(400).json({ success: false, message: 'رمز الدعوة غير صحيح. تأكد منه أو اتركه فارغاً.' });
+                return res.status(400).json({ success: false, message: 'رمز الدعوة غير صحيح.' });
             }
         }
 
@@ -163,7 +187,6 @@ app.post('/api/auth/google/register', async (req, res) => {
             [codeExists] = await pool.query('SELECT username FROM users WHERE referral_code = ?', [newReferralCode]);
         }
 
-        // حفظ اللاعب الجديد برصيد 0 توكن (لأنه المدعو)
         await pool.query(
             'INSERT INTO users (username, pin, email, google_id, referral_code, referred_by, tokens, shields, extra_snipers) VALUES (?, ?, ?, ?, ?, ?, 0, 0, 0)',
             [chosenUsername, chosenPin || 'GOOGLE_AUTH', email, googleId, newReferralCode, validReferredBy]
@@ -172,10 +195,7 @@ app.post('/api/auth/google/register', async (req, res) => {
         const jwtToken = jwt.sign({ username: chosenUsername }, process.env.JWT_SECRET || 'sniper_secret_key_123', { expiresIn: '365d' });
         res.json({ success: true, user: { username: chosenUsername, email: email, tokens: 0 }, token: jwtToken });
 
-    } catch (error) {
-        console.error("Google Register Error:", error);
-        res.status(401).json({ success: false, message: 'فشل إكمال التسجيل عبر غوغل.' });
-    }
+    } catch (error) { res.status(401).json({ success: false, message: 'فشل إكمال التسجيل.' }); }
 });
 
 // 🌟 3. مسار ربط الحسابات القديمة بحساب غوغل 🌟
@@ -316,11 +336,7 @@ app.post('/api/leagues/join', authenticateToken, async (req, res) => {
 // 🛡️ أضفنا authenticateToken هنا
 app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
     const { leagueCode, gw, sniper, victim, pointsDeducted, isBought } = req.body;
-
-    // 🛡️ حماية أمنية: منع اللاعب من القنص باسم لاعب آخر
-    if (req.user.username !== sniper) {
-        return res.status(403).json({ success: false, message: 'لا يمكنك إطلاق النار نيابة عن لاعب آخر!' });
-    }
+    if (req.user.username !== sniper) return res.status(403).json({ success: false, message: 'لا يمكنك إطلاق النار نيابة عن لاعب آخر!' });
 
     try {
         const [existing] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND sniper = ?', [leagueCode, gw, sniper]);
@@ -329,34 +345,28 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
         const [victimData] = await pool.query('SELECT shields FROM users WHERE username = ?', [victim]);
         const [sniperData] = await pool.query('SELECT extra_snipers FROM users WHERE username = ?', [sniper]);
 
-        if (isBought && sniperData[0].extra_snipers <= 0) {
-            return res.status(400).json({ success: false, message: 'لا تملك رصاصات إضافية، قم بالشراء من المتجر أولاً.' });
-        }
+        if (isBought && sniperData[0].extra_snipers <= 0) return res.status(400).json({ success: false, message: 'لا تملك رصاصات إضافية.' });
 
         let actualDeduction = pointsDeducted;
         let msg = 'تمت عملية القنص بنجاح!';
 
         if (victimData[0].shields > 0) {
             actualDeduction = 0; 
-            msg = `💥 الضربة طاشت! [${victim}] كان يمتلك درع حصانة سري وتصدى لرصاصتك.`;
+            msg = `💥 الضربة طاشت! [${victim}] تصدى للرصاصة.`;
             await pool.query('UPDATE users SET shields = shields - 1 WHERE username = ?', [victim]);
+            // 🌟 إشعار: الدرع السري 🌟
+            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك، لكن درعك السري تصدى للرصاصة بنجاح!`);
+        } else {
+            // 🌟 إشعار: الإصابة الناجحة 🌟
+            sendFCMToUser(victim, '💥 تمت إصابتك!', `القناص ${sniper} قنصك وخصم من رصيدك في دوري ${leagueCode}!`);
         }
 
-        if (isBought) {
-            await pool.query('UPDATE users SET extra_snipers = extra_snipers - 1 WHERE username = ?', [sniper]);
-        }
+        if (isBought) await pool.query('UPDATE users SET extra_snipers = extra_snipers - 1 WHERE username = ?', [sniper]);
 
-        await pool.query(
-            'INSERT INTO sniper_shots (league_code, gw, sniper, victim, points_deducted) VALUES (?, ?, ?, ?, ?)',
-            [leagueCode, gw, sniper, victim, actualDeduction]
-        );
-
+        await pool.query('INSERT INTO sniper_shots (league_code, gw, sniper, victim, points_deducted) VALUES (?, ?, ?, ?, ?)', [leagueCode, gw, sniper, victim, actualDeduction]);
         res.json({ success: true, message: msg });
 
-    } catch (error) {
-        console.error("Sniper Error:", error);
-        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء القنص.' });
-    }
+    } catch (error) { res.status(500).json({ success: false, message: 'خطأ في السيرفر.' }); }
 });
 
 // ==========================================
@@ -380,44 +390,35 @@ app.delete('/api/admin/match/:id', async (req, res) => {
 // 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن للمتوقعين بدقة 🌟
 app.post('/api/admin/result', async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
-
     try {
-        // حالة: إلغاء النتيجة (مسحها)
         if (actualH === null || actualA === null) {
             await pool.query('UPDATE matches SET actual_h = NULL, actual_a = NULL WHERE id = ?', [matchId]);
             return res.json({ success: true, message: 'تم إلغاء النتيجة بنجاح.' });
         }
 
-        // 1. حفظ النتيجة الرسمية للمباراة
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [actualH, actualA, matchId]);
-
-        // 2. سحب كل توقعات اللاعبين لهذه المباراة
         const [predictions] = await pool.query('SELECT username, pred_h, pred_a FROM predictions WHERE match_id = ?', [matchId]);
-
-        // 3. البحث عن القناصين الذين أصابوا النتيجة بدقة تامة
+        
         const exactGuessers = [];
         predictions.forEach(p => {
-            if (Number(p.pred_h) === Number(actualH) && Number(p.pred_a) === Number(actualA)) {
-                exactGuessers.push(p.username);
-            }
+            if (Number(p.pred_h) === Number(actualH) && Number(p.pred_a) === Number(actualA)) exactGuessers.push(p.username);
         });
 
-        // 4. ضخ المكافأة (+10 توكن) لحسابات الفائزين
         if (exactGuessers.length > 0) {
             const placeholders = exactGuessers.map(() => '?').join(',');
-            await pool.query(
-                `UPDATE users SET tokens = tokens + 10 WHERE username IN (${placeholders})`,
-                exactGuessers
-            );
-            console.log(`تم توزيع 10 توكن على: ${exactGuessers.join(', ')}`);
+            await pool.query(`UPDATE users SET tokens = tokens + 10 WHERE username IN (${placeholders})`, exactGuessers);
+            
+            // 🌟 إشعار: دقة التوقع والجائزة للمتوقعين بدقة فقط 🌟
+            exactGuessers.forEach(winner => {
+                sendFCMToUser(winner, '👑 عراف الأسبوع!', `لقد توقعت النتيجة بدقة تامة. تمت إضافة 10 توكن لمحفظتك!`);
+            });
         }
 
-        res.json({ success: true, message: 'تم تثبيت النتيجة وتوزيع الجوائز بنجاح!' });
+        // 🌟 إشعار جماعي: تثبيت النتائج للجميع 🌟
+        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة حصدت في الترتيب!');
 
-    } catch (error) {
-        console.error("Result Save Error:", error);
-        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة في السيرفر.' });
-    }
+        res.json({ success: true, message: 'تم تثبيت النتيجة وتوزيع الجوائز بنجاح!' });
+    } catch (error) { res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); }
 });
 
 app.post('/api/admin/update-time', authenticateToken, async (req, res) => {
@@ -466,6 +467,17 @@ app.post('/api/admin/announcement', async (req, res) => {
         await pool.query("CREATE TABLE IF NOT EXISTS settings (setting_key VARCHAR(50) PRIMARY KEY, setting_value TEXT)");
         await pool.query("INSERT INTO settings (setting_key, setting_value) VALUES ('marquee', ?) ON DUPLICATE KEY UPDATE setting_value = ?", [text, text]);
         res.json({ success: true, message: 'تم تحديث الشريط المتحرك بنجاح 🚀' });
+    } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+});
+
+// 🌟 مسار البث المباشر (إرسال إشعار مخصص للجميع) 🌟
+app.post('/api/admin/broadcast', async (req, res) => {
+    const { adminPassword, title, body } = req.body;
+    if (adminPassword !== '101383') return res.status(403).json({ success: false, message: 'غير مصرح!' });
+
+    try {
+        await sendFCMToAll(title, body);
+        res.json({ success: true, message: 'تم إطلاق الإشعار لجميع القناصين بنجاح 🚀' });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
