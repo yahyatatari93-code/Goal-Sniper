@@ -254,13 +254,19 @@ app.post('/api/predict', authenticateToken, async (req, res) => {
 
 // 🌟 مسار متجر التوكن 🌟
 app.post('/api/store/purchase', authenticateToken, async (req, res) => {
-    const { username, item, cost } = req.body;
+    const { username, item } = req.body; // 🛑 قمنا بإلغاء استقبال cost من الهاتف
 
     // حماية: التأكد من أن اللاعب يشتري لحسابه الخاص
     if (req.user.username !== username) return res.status(403).json({ success: false, message: 'غير مصرح.' });
 
+    // 🛡️ تحديد السعر بشكل صارم من داخل السيرفر 
+    let cost = 0;
+    if (item === 'shield') cost = 30; // استبدل الرقم بسعرك الفعلي
+    else if (item === 'sniper') cost = 50; // استبدل الرقم بسعرك الفعلي
+    else if (item === 'tshirt') cost = 500; // استبدل الرقم بسعرك الفعلي
+    else return res.status(400).json({ success: false, message: 'عنصر غير معروف.' });
+
     try {
-        // 1. فحص الرصيد
         const [users] = await pool.query('SELECT tokens FROM users WHERE username = ?', [username]);
         if (users.length === 0) return res.status(404).json({ success: false, message: 'حساب غير موجود.' });
 
@@ -268,19 +274,14 @@ app.post('/api/store/purchase', authenticateToken, async (req, res) => {
             return res.status(400).json({ success: false, message: 'رصيد التوكن غير كافٍ.' });
         }
 
-        // 2. خصم التوكن وإضافة العنصر
         if (item === 'shield') {
             await pool.query('UPDATE users SET tokens = tokens - ?, shields = shields + 1 WHERE username = ?', [cost, username]);
         } else if (item === 'sniper') {
             await pool.query('UPDATE users SET tokens = tokens - ?, extra_snipers = extra_snipers + 1 WHERE username = ?', [cost, username]);
         } else if (item === 'tshirt') {
-            // للتيشيرت نخصم الرصيد فقط
             await pool.query('UPDATE users SET tokens = tokens - ? WHERE username = ?', [cost, username]);
-        } else {
-            return res.status(400).json({ success: false, message: 'عنصر غير معروف.' });
         }
 
-        // 3. جلب الرصيد الجديد لإعادته للتطبيق
         const [updatedUsers] = await pool.query('SELECT tokens FROM users WHERE username = ?', [username]);
         res.json({ success: true, message: 'تم الشراء بنجاح!', newTokens: updatedUsers[0].tokens });
 
@@ -312,19 +313,22 @@ app.post('/api/leagues/join', authenticateToken, async (req, res) => {
 });
 
 // 🌟 مسار إطلاق رصاصة القناص (محدث لدعم الدروع والرصاص المشترى) 🌟
-app.post('/api/sniper/shoot', async (req, res) => {
+// 🛡️ أضفنا authenticateToken هنا
+app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
     const { leagueCode, gw, sniper, victim, pointsDeducted, isBought } = req.body;
 
+    // 🛡️ حماية أمنية: منع اللاعب من القنص باسم لاعب آخر
+    if (req.user.username !== sniper) {
+        return res.status(403).json({ success: false, message: 'لا يمكنك إطلاق النار نيابة عن لاعب آخر!' });
+    }
+
     try {
-        // 1. فحص هل المهاجم قنص مسبقاً في هذه الجولة؟ (يحق له طلقة واحدة في الجولة سواء مجانية أو مشتراة)
         const [existing] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND sniper = ?', [leagueCode, gw, sniper]);
         if (existing.length > 0) return res.status(400).json({ success: false, message: 'استخدمت رصاصتك في هذا الدوري لهذه الجولة مسبقاً!' });
 
-        // 2. جلب بيانات الضحية والمهاجم من القاعدة
         const [victimData] = await pool.query('SELECT shields FROM users WHERE username = ?', [victim]);
         const [sniperData] = await pool.query('SELECT extra_snipers FROM users WHERE username = ?', [sniper]);
 
-        // 3. التحقق من الرصاصة المشتراة
         if (isBought && sniperData[0].extra_snipers <= 0) {
             return res.status(400).json({ success: false, message: 'لا تملك رصاصات إضافية، قم بالشراء من المتجر أولاً.' });
         }
@@ -332,20 +336,16 @@ app.post('/api/sniper/shoot', async (req, res) => {
         let actualDeduction = pointsDeducted;
         let msg = 'تمت عملية القنص بنجاح!';
 
-        // 4. فحص الدرع السري للضحية (المفاجأة)
         if (victimData[0].shields > 0) {
-            actualDeduction = 0; // كسر الدرع يحمي من خصم النقاط
+            actualDeduction = 0; 
             msg = `💥 الضربة طاشت! [${victim}] كان يمتلك درع حصانة سري وتصدى لرصاصتك.`;
-            // خصم درع واحد من الضحية
             await pool.query('UPDATE users SET shields = shields - 1 WHERE username = ?', [victim]);
         }
 
-        // 5. خصم الرصاصة المشتراة من المهاجم (إذا كانت مدفوعة وليست مجانية للصدارة)
         if (isBought) {
             await pool.query('UPDATE users SET extra_snipers = extra_snipers - 1 WHERE username = ?', [sniper]);
         }
 
-        // 6. تسجيل الضربة في التاريخ (حتى لو طاشت ليراها الجميع)
         await pool.query(
             'INSERT INTO sniper_shots (league_code, gw, sniper, victim, points_deducted) VALUES (?, ?, ?, ?, ?)',
             [leagueCode, gw, sniper, victim, actualDeduction]
