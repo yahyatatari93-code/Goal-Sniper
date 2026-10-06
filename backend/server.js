@@ -5,7 +5,13 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
+// 🌟 إعدادات فايربيس للإشعارات
+const admin = require("firebase-admin");
+const serviceAccount = require("./firebase-key.json");
 
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 // 🌟 الجدار الأمني المطور (يسمح بمرور طلبات الآيفون و Vercel بأمان) 🌟
 app.use(cors({
     origin: '*',
@@ -79,6 +85,24 @@ app.post('/api/auth/register', async (req, res) => {
     }
 });
 
+// 🌟 مسار استقبال وحفظ رمز الإشعارات من هاتف اللاعب
+app.post('/api/auth/save-fcm', authenticateToken, async (req, res) => {
+    const { username, fcmToken } = req.body;
+    
+    // حماية أمنية: التأكد أن المستخدم يعدل الرمز الخاص به فقط وليس حساباً آخر
+    if (req.user.username !== username) {
+        return res.status(403).json({ success: false, message: 'غير مصرح لك بهذا الإجراء' });
+    }
+
+    try {
+        // تحديث عمود fcm_token في قاعدة البيانات للمستخدم الحالي
+        await pool.query('UPDATE users SET fcm_token = ? WHERE username = ?', [fcmToken, username]);
+        res.json({ success: true, message: 'تم حفظ رمز الإشعارات بنجاح' });
+    } catch (error) {
+        console.error("FCM Token Save Error:", error);
+        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء حفظ الرمز' });
+    }
+});
 // ==========================================
 // 2. مسار المزامنة الشامل (الذي كان مفقوداً)
 // ==========================================
