@@ -47,34 +47,53 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ==========================================
-// 🌟 نظام إرسال الإشعارات الشامل (البوسطجي) 🌟
+// 🌟 نظام إرسال الإشعارات عبر OneSignal 🌟
 // ==========================================
 
-// 1. إرسال إشعار للاعب محدد
+// 1. إشعار للاعب محدد
 async function sendFCMToUser(username, title, body) {
     try {
-        const [users] = await pool.query('SELECT fcm_token FROM users WHERE username = ? AND fcm_token IS NOT NULL', [username]);
-        if (users.length > 0 && users[0].fcm_token) {
-            await admin.messaging().send({
-                notification: { title, body },
-                token: users[0].fcm_token
-            });
-        }
-    } catch (error) { console.error(`خطأ إشعار ${username}:`, error.message); }
+        const appId = process.env.ONESIGNAL_APP_ID;
+        const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+        if (!appId || !apiKey) return;
+
+        await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': `Basic ${apiKey}`
+            },
+            body: JSON.stringify({
+                app_id: appId,
+                include_external_user_ids: [username],
+                headings: { "en": title, "ar": title },
+                contents: { "en": body, "ar": body }
+            })
+        });
+    } catch (error) { console.error(`خطأ إشعار OneSignal لـ ${username}:`, error.message); }
 }
 
-// 2. إرسال إشعار جماعي لكل اللاعبين
+// 2. إشعار جماعي لكل اللاعبين
 async function sendFCMToAll(title, body) {
     try {
-        const [users] = await pool.query('SELECT fcm_token FROM users WHERE fcm_token IS NOT NULL');
-        const tokens = users.map(u => u.fcm_token);
-        if (tokens.length > 0) {
-            await admin.messaging().sendEachForMulticast({
-                notification: { title, body },
-                tokens: tokens
-            });
-        }
-    } catch (error) { console.error(`خطأ إشعار جماعي:`, error.message); }
+        const appId = process.env.ONESIGNAL_APP_ID;
+        const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+        if (!appId || !apiKey) return;
+
+        await fetch('https://onesignal.com/api/v1/notifications', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Authorization': `Basic ${apiKey}`
+            },
+            body: JSON.stringify({
+                app_id: appId,
+                included_segments: ["All"],
+                headings: { "en": title, "ar": title },
+                contents: { "en": body, "ar": body }
+            })
+        });
+    } catch (error) { console.error(`خطأ إشعار جماعي OneSignal:`, error.message); }
 }
 // ==========================================
 // 1. مسارات الدخول القديمة
