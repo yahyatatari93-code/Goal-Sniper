@@ -3695,27 +3695,35 @@ function renderPrizesTab() {
                     const token = localStorage.getItem('oracle_token_v8');
                     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
+                    // تجهيز سلة الطلبات لإطلاقها معاً
+                    const fetchRequests = [];
+
                     if (isCap && oldExplicitCapId) {
                         const oldP = predictions[currentUser.username][oldExplicitCapId];
-                        await fetch(`${API_BASE_URL}/predict`, {
+                        fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                             method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitCapId, predH: oldP.home, predA: oldP.away, isCaptain: false, isTripleCaptain: oldP.isTripleCaptain, isMagnet: oldP.isMagnet })
-                        });
+                        }));
                     }
                     
                     if (isMag && oldExplicitMagId) {
                         const oldP = predictions[currentUser.username][oldExplicitMagId];
-                        await fetch(`${API_BASE_URL}/predict`, {
+                        fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                             method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitMagId, predH: oldP.home, predA: oldP.away, isCaptain: oldP.isCaptain, isTripleCaptain: oldP.isTripleCaptain, isMagnet: false })
-                        });
+                        }));
                     }
 
-                    const response = await fetch(`${API_BASE_URL}/predict`, {
+                    // إضافة طلب التوقع الأساسي
+                    fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                         method: 'POST', headers,
                         body: JSON.stringify({ 
                             username: currentUser.username, matchId: reqMatchId, 
                             predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag
                         })
-                    });
+                    }));
+                    
+                    // 🚀 إطلاق جميع الطلبات للسيرفر في نفس الجزء من الثانية!
+                    const responses = await Promise.all(fetchRequests);
+                    const response = responses[responses.length - 1]; // الطلب الأساسي هو الأخير دائماً
                     
                     const data = await response.json();
                 
