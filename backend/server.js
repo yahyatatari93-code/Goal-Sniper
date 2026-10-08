@@ -6,6 +6,8 @@ const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 const admin = require("firebase-admin");
 const serviceAccount = require("./firebase-key.json");
+const compression = require('compression');
+app.use(compression()); // 🚀 تفعيل الضغط الفوري لكل ردود السيرفر
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
