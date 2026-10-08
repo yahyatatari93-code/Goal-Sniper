@@ -251,7 +251,8 @@ app.post('/api/auth/google/link', async (req, res) => {
 // ==========================================
 app.get('/api/sync', async (req, res) => {
     try {
-        const [users] = await pool.query('SELECT username, tokens, referral_code FROM users');
+        // 🌟 تم إضافة جلب الدروع والرصاص لكي يتحدث المتجر 🌟
+        const [users] = await pool.query('SELECT username, tokens, shields, extra_snipers, referral_code FROM users');
         const [matches] = await pool.query('SELECT id, gw, home, away, date, time, actual_h as actualH, actual_a as actualA FROM matches');
         const [preds] = await pool.query('SELECT username, match_id, pred_h, pred_a, is_captain, is_triple_captain, is_magnet FROM predictions');
         const [leagues] = await pool.query('SELECT name, league_code as code, creator FROM mini_leagues');
@@ -406,7 +407,7 @@ app.delete('/api/admin/match/:id', async (req, res) => {
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن للمتوقعين بدقة 🌟
+// 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن للمتوقعين بدقة حصراً 🌟
 app.post('/api/admin/result', async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
@@ -416,28 +417,46 @@ app.post('/api/admin/result', async (req, res) => {
         }
 
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [actualH, actualA, matchId]);
-        const [predictions] = await pool.query('SELECT username, pred_h, pred_a FROM predictions WHERE match_id = ?', [matchId]);
+        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
         
         const exactGuessers = [];
+
         predictions.forEach(p => {
-            if (Number(p.pred_h) === Number(actualH) && Number(p.pred_a) === Number(actualA)) exactGuessers.push(p.username);
+            const ph = Number(p.pred_h);
+            const pa = Number(p.pred_a);
+            const ah = Number(actualH);
+            const aa = Number(actualA);
+            
+            // تفعيل المغناطيس: إذا كان الفارق هدفاً واحداً فقط يعتبر التوقع دقيقاً
+            const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
+            let isExact = (ph === ah && pa === aa);
+            if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) {
+                isExact = true; 
+            }
+
+            // إضافة الفائزين بالتوقع الدقيق حصراً (لا توجد جوائز ترضية)
+            if (isExact) exactGuessers.push(p.username);
         });
 
+        // توزيع 10 توكن لأصحاب التوقع الدقيق فقط
         if (exactGuessers.length > 0) {
             const placeholders = exactGuessers.map(() => '?').join(',');
             await pool.query(`UPDATE users SET tokens = tokens + 10 WHERE username IN (${placeholders})`, exactGuessers);
             
-            // 🌟 إشعار: دقة التوقع والجائزة للمتوقعين بدقة فقط 🌟
+            // إشعار للفائزين
             exactGuessers.forEach(winner => {
-                sendFCMToUser(winner, '👑 عراف الأسبوع!', `لقد توقعت النتيجة بدقة تامة. تمت إضافة 10 توكن لمحفظتك!`);
+                sendFCMToUser(winner, '🎯 قناص محترف!', `توقعك للمباراة كان دقيقاً. تمت إضافة 10 توكن لمحفظتك في المتجر!`);
             });
         }
 
-        // 🌟 إشعار جماعي: تثبيت النتائج للجميع 🌟
-        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة حصدت في الترتيب!');
+        // 🌟 إشعار جماعي بانتهاء المباراة 🌟
+        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة حصدت!');
 
-        res.json({ success: true, message: 'تم تثبيت النتيجة وتوزيع الجوائز بنجاح!' });
-    } catch (error) { res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); }
+        res.json({ success: true, message: 'تم تثبيت النتيجة وتوزيع التوكن للقناصين الفائزين بنجاح!' });
+    } catch (error) { 
+        console.error(error);
+        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة وتوزيع التوكن.' }); 
+    }
 });
 
 app.post('/api/admin/update-time', authenticateToken, async (req, res) => {
