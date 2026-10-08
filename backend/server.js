@@ -47,8 +47,11 @@ const authenticateToken = (req, res, next) => {
 };
 
 // ==========================================
-// 🌟 نظام إرسال الإشعارات عبر OneSignal 🌟
+// 🌟 نظام إرسال الإشعارات عبر OneSignal (مع الشعار) 🌟
 // ==========================================
+
+// رابط الشعار الخاص بلعبتك (ضع رابط صورتك المباشر هنا)
+const NOTIFICATION_ICON_URL = 'https://github.com/yahyatatari93-code/Goal-Sniper/raw/main/goal-sniper.png'; // 👈 استبدله برابط شعارك المباشر
 
 // 1. إشعار للاعب محدد
 async function sendFCMToUser(username, title, body) {
@@ -67,7 +70,10 @@ async function sendFCMToUser(username, title, body) {
                 app_id: appId,
                 include_external_user_ids: [username],
                 headings: { "en": title, "ar": title },
-                contents: { "en": body, "ar": body }
+                contents: { "en": body, "ar": body },
+                // 🌟 إضافة الشعار هنا 🌟
+                large_icon: NOTIFICATION_ICON_URL,
+                ios_attachments: { id: NOTIFICATION_ICON_URL }
             })
         });
     } catch (error) { console.error(`خطأ إشعار OneSignal لـ ${username}:`, error.message); }
@@ -90,7 +96,10 @@ async function sendFCMToAll(title, body) {
                 app_id: appId,
                 included_segments: ["All"],
                 headings: { "en": title, "ar": title },
-                contents: { "en": body, "ar": body }
+                contents: { "en": body, "ar": body },
+                // 🌟 إضافة الشعار هنا 🌟
+                large_icon: NOTIFICATION_ICON_URL,
+                ios_attachments: { id: NOTIFICATION_ICON_URL }
             })
         });
     } catch (error) { console.error(`خطأ إشعار جماعي OneSignal:`, error.message); }
