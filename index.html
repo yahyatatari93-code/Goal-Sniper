@@ -4755,39 +4755,34 @@ async function deleteLeagueByAdmin() {
                                 </button>
                                 
                                 <div class="flex flex-wrap justify-end items-center gap-1.5 flex-1">
-                                    <!-- زر تبويب الإدارة (مدمج ومصغر) -->
-                                    <!-- 🌟 زر المتجر للجميع 🌟 -->
-                                    <button onclick="toggleStoreModal()" class="w-8 h-8 flex items-center justify-center glass text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
-                                    <i class="fa-solid fa-store text-xs"></i>
-                                </button>
-                                    
-                                    <!-- 🌟 القائمة المنسدلة للغات (بديلة عن الأزرار الثلاثة) 🌟 -->
-                                    <div class="relative bg-slate-900/80 border border-white/10 rounded-lg shadow-lg flex items-center h-8">
-                                        <select onchange="changeLanguage(this.value)" class="bg-transparent text-slate-300 text-[10px] font-bold h-full pl-2 pr-5 outline-none appearance-none cursor-pointer" dir="ltr">
-                                            <option value="ar" ${currentLang === 'ar' ? 'selected' : ''} class="bg-slate-900">AR</option>
-                                            <option value="en" ${currentLang === 'en' ? 'selected' : ''} class="bg-slate-900">EN</option>
-                                            <option value="tr" ${currentLang === 'tr' ? 'selected' : ''} class="bg-slate-900">TR</option>
-                                        </select>
-                                        <i class="fa-solid fa-chevron-down text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px]"></i>
-                                    </div>
+    <!-- زر تبويب الإدارة (يظهر حصرياً لحساب Red Army) -->
+    ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-2.5 py-1.5 h-8 bg-rose-600/20 border border-rose-500/30 rounded-lg text-rose-300 text-[10px] font-bold hover:bg-rose-600 hover:text-white transition-all flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
+    
+    <!-- القائمة المنسدلة للغات -->
+    <div class="relative bg-slate-900/80 border border-white/10 rounded-lg shadow-lg flex items-center h-8">
+        <select onchange="changeLanguage(this.value)" class="bg-transparent text-slate-300 text-[10px] font-bold h-full pl-2 pr-5 outline-none appearance-none cursor-pointer" dir="ltr">
+            <option value="ar" ${currentLang === 'ar' ? 'selected' : ''} class="bg-slate-900">AR</option>
+            <option value="en" ${currentLang === 'en' ? 'selected' : ''} class="bg-slate-900">EN</option>
+            <option value="tr" ${currentLang === 'tr' ? 'selected' : ''} class="bg-slate-900">TR</option>
+        </select>
+        <i class="fa-solid fa-chevron-down text-slate-500 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px]"></i>
+    </div>
 
-                                    <!-- 🌟 زر المتجر السري المدمج 🌟 -->
-                                    ${currentUser.username.toLowerCase() === 'red army' ? `
-                                    <button onclick="toggleStoreModal()" class="w-8 h-8 flex items-center justify-center glass text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
-                                        <i class="fa-solid fa-store text-xs"></i>
-                                    </button>
-                                    ` : ''}
+    <!-- 🌟 زر متجر القناص (متاح للجميع) 🌟 -->
+    <button onclick="toggleStoreModal()" class="w-8 h-8 flex items-center justify-center glass text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.3)]" title="متجر القناص">
+        <i class="fa-solid fa-store text-xs"></i>
+    </button>
 
-                                    <!-- زر المزامنة اليدوية -->
-                                    <button onclick="manualSync()" class="w-8 h-8 flex items-center justify-center glass text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all border-emerald-500/20" title="${typeof t === 'function' ? t('refresh') || 'تحديث البيانات' : 'تحديث البيانات'}">
-                                        <i id="sync-icon" class="fa-solid fa-arrows-rotate text-xs"></i>
-                                    </button>
-                                    
-                                    <!-- زر تسجيل الخروج -->
-                                    <button onclick="logout()" class="w-8 h-8 flex items-center justify-center glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
-                                        <i class="fa-solid fa-power-off text-xs"></i>
-                                    </button>
-                                </div>
+    <!-- زر المزامنة اليدوية -->
+    <button onclick="manualSync()" class="w-8 h-8 flex items-center justify-center glass text-emerald-400 rounded-lg hover:bg-emerald-500 hover:text-white transition-all border-emerald-500/20" title="تحديث البيانات">
+        <i id="sync-icon" class="fa-solid fa-arrows-rotate text-xs"></i>
+    </button>
+    
+    <!-- زر تسجيل الخروج -->
+    <button onclick="logout()" class="w-8 h-8 flex items-center justify-center glass text-rose-400 rounded-lg hover:bg-rose-600 hover:text-white transition-all border-rose-500/20">
+        <i class="fa-solid fa-power-off text-xs"></i>
+    </button>
+</div>
                             </header>
 
                             <div id="marquee-wrapper">
