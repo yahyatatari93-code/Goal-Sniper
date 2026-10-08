@@ -8,14 +8,13 @@ const admin = require("firebase-admin");
 const serviceAccount = require("./firebase-key.json");
 const compression = require('compression');
 
-const app = express();       // 👈 1. تعريف app هنا أولاً
-app.use(compression());      // 👈 2. استخدام الضغط بعدها مباشرة
+const app = express();       // 👈 تعريف app لمرة واحدة فقط هنا
+app.use(compression());      // 👈 تفعيل الضغط
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-const app = express();
 const googleClient = new OAuth2Client("59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com");
 
 app.use(cors({
