@@ -7,7 +7,9 @@ require('dotenv').config();
 const admin = require("firebase-admin");
 const serviceAccount = require("./firebase-key.json");
 const compression = require('compression');
-app.use(compression()); // 🚀 تفعيل الضغط الفوري لكل ردود السيرفر
+
+const app = express();       // 👈 1. تعريف app هنا أولاً
+app.use(compression());      // 👈 2. استخدام الضغط بعدها مباشرة
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
