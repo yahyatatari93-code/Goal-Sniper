@@ -4739,9 +4739,14 @@ async function deleteLeagueByAdmin() {
         }
         
         function render() {
+            // 🔴 إخبار تطبيق فلاتر باسم اللاعب لكي تصله الإشعارات الفردية
+            if (typeof currentUser !== 'undefined' && currentUser && window.OneSignalChannel) {
+                window.OneSignalChannel.postMessage(currentUser.username);
+            }
+
             const app = document.getElementById('app');
             if (!currentUser) { 
-                if (window.isHandlingGoogleCallback) return; // منع ظهور الشاشة لثانية أثناء المعالجة
+                if (window.isHandlingGoogleCallback) return;
                 app.innerHTML = renderAuthScreen(); 
                 setTimeout(renderGoogleButton, 150);
                 return; 
