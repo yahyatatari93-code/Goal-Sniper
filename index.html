@@ -4756,7 +4756,10 @@ async function deleteLeagueByAdmin() {
                                 
                                 <div class="flex flex-wrap justify-end items-center gap-1.5 flex-1">
                                     <!-- زر تبويب الإدارة (مدمج ومصغر) -->
-                                    ${currentUser.username.toLowerCase() === 'red army' ? `<button onclick="switchTab('admin')" class="px-2.5 py-1.5 h-8 bg-rose-600/20 border border-rose-500/30 rounded-lg text-rose-300 text-[10px] font-bold hover:bg-rose-600 hover:text-white transition-all flex items-center gap-1"><i class="fa-solid fa-shield-halved"></i> الإدارة</button>` : ''}
+                                    <!-- 🌟 زر المتجر للجميع 🌟 -->
+                                    <button onclick="toggleStoreModal()" class="w-8 h-8 flex items-center justify-center glass text-amber-400 rounded-lg hover:bg-amber-500 hover:text-white transition-all border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                                    <i class="fa-solid fa-store text-xs"></i>
+                                </button>
                                     
                                     <!-- 🌟 القائمة المنسدلة للغات (بديلة عن الأزرار الثلاثة) 🌟 -->
                                     <div class="relative bg-slate-900/80 border border-white/10 rounded-lg shadow-lg flex items-center h-8">
@@ -4907,103 +4910,102 @@ async function deleteLeagueByAdmin() {
             );
         }
 
-        // 🌟 1. دالة المتجر السري (نافذة منبثقة فقط) 🌟
         function renderAdminStore() {
-            if (!currentUser || currentUser.username !== 'Red Army') return '';
-            
-            return `
-                <!-- نافذة المتجر المنبثقة -->
-                <div id="store-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div class="bg-slate-800 border border-amber-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-in text-right" dir="rtl">
-                        
-                        <!-- رأس المتجر -->
-                        <div class="bg-gradient-to-l from-amber-600 to-orange-500 p-5 text-center relative">
-                            <button onclick="toggleStoreModal()" class="absolute top-4 left-4 text-white hover:text-slate-200 transition-colors bg-white/10 w-8 h-8 rounded-full flex items-center justify-center">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                            <i class="fa-solid fa-mask text-4xl text-white mb-2 drop-shadow-md"></i>
-                            <h2 class="text-2xl font-black text-white">متجر الإدارة السري</h2>
-                            <p class="text-amber-100 text-xs mt-1 font-bold">وضع الاختبار - حساب Red Army</p>
+    if (!currentUser) return ''; // إخفاء المتجر فقط للزوار غير المسجلين الدخول
+    
+    return `
+        <!-- نافذة المتجر المنبثقة -->
+        <div id="store-modal" class="hidden fixed inset-0 bg-slate-900/95 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-slate-800 border border-amber-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative animate-fade-in text-right" dir="rtl">
+                
+                <!-- رأس المتجر -->
+                <div class="bg-gradient-to-l from-amber-600 to-orange-500 p-5 text-center relative">
+                    <button onclick="toggleStoreModal()" class="absolute top-4 left-4 text-white hover:text-slate-200 transition-colors bg-white/10 w-8 h-8 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <i class="fa-solid fa-store text-4xl text-white mb-2 drop-shadow-md"></i>
+                    <h2 class="text-2xl font-black text-white">متجر القناص</h2>
+                    <p class="text-amber-100 text-xs mt-1 font-bold">استبدل التوكن الخاص بك بمكافآت وعتاد حصري</p>
+                </div>
+                
+                <!-- محتوى المتجر -->
+                <div class="p-5">
+                    <!-- 🌟 شريط الرصيد والمخزون في المتجر 🌟 -->
+                    <div class="bg-slate-900/80 rounded-xl p-3 mb-5 border border-white/5 shadow-inner flex justify-between items-center divide-x divide-white/10 divide-x-reverse text-center">
+                        <div class="flex-1 px-1">
+                            <span class="text-slate-400 text-[10px] font-bold block mb-1">التوكن</span>
+                            <span class="text-amber-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
+                            </span>
                         </div>
-                        
-                        <!-- محتوى المتجر -->
-                        <div class="p-5">
-                            <!-- 🌟 شريط الرصيد والمخزون في المتجر 🌟 -->
-                            <div class="bg-slate-900/80 rounded-xl p-3 mb-5 border border-white/5 shadow-inner flex justify-between items-center divide-x divide-white/10 divide-x-reverse text-center">
-                                <div class="flex-1 px-1">
-                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">التوكن</span>
-                                    <span class="text-amber-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
-                                        <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
-                                    </span>
+                        <div class="flex-1 px-1">
+                            <span class="text-slate-400 text-[10px] font-bold block mb-1">الدروع</span>
+                            <span class="text-blue-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                <i class="fa-solid fa-shield-halved"></i> ${currentUser.shields || 0}
+                            </span>
+                        </div>
+                        <div class="flex-1 px-1">
+                            <span class="text-slate-400 text-[10px] font-bold block mb-1">الرصاصات</span>
+                            <span class="text-rose-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                                <i class="fa-solid fa-crosshairs"></i> ${currentUser.extra_snipers || 0}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- درع حصانة -->
+                        <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-blue-500/50 transition-colors">
+                            <button onclick="simulatePurchase('shield', 70)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                70 <i class="fa-solid fa-coins text-[10px]"></i>
+                            </button>
+                            <div class="flex items-center gap-3 text-right">
+                                <div>
+                                    <h3 class="text-white font-bold text-sm">درع حصانة</h3>
+                                    <p class="text-slate-400 text-[10px]">يحميك من رصاصة منافس</p>
                                 </div>
-                                <div class="flex-1 px-1">
-                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">الدروع</span>
-                                    <span class="text-blue-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
-                                        <i class="fa-solid fa-shield-halved"></i> ${currentUser.shields || 0}
-                                    </span>
-                                </div>
-                                <div class="flex-1 px-1">
-                                    <span class="text-slate-400 text-[10px] font-bold block mb-1">الرصاصات</span>
-                                    <span class="text-rose-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
-                                        <i class="fa-solid fa-crosshairs"></i> ${currentUser.extra_snipers || 0}
-                                    </span>
+                                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0">
+                                    <i class="fa-solid fa-shield-halved text-blue-400"></i>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="space-y-3">
-                                <!-- درع حصانة -->
-                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-blue-500/50 transition-colors">
-                                    <button onclick="simulatePurchase('shield', 70)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
-                                        70 <i class="fa-solid fa-coins text-[10px]"></i>
-                                    </button>
-                                    <div class="flex items-center gap-3 text-right">
-                                        <div>
-                                            <h3 class="text-white font-bold text-sm">درع حصانة</h3>
-                                            <p class="text-slate-400 text-[10px]">يحميك من رصاصة منافس</p>
-                                        </div>
-                                        <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shrink-0">
-                                            <i class="fa-solid fa-shield-halved text-blue-400"></i>
-                                        </div>
-                                    </div>
+                        <!-- رصاصة قناص -->
+                        <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-red-500/50 transition-colors">
+                            <button onclick="simulatePurchase('sniper', 120)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                120 <i class="fa-solid fa-coins text-[10px]"></i>
+                            </button>
+                            <div class="flex items-center gap-3 text-right">
+                                <div>
+                                    <h3 class="text-white font-bold text-sm">رصاصة قناص</h3>
+                                    <p class="text-slate-400 text-[10px]">لخصم نقاط من حساب منافس</p>
                                 </div>
-
-                                <!-- رصاصة قناص -->
-                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-red-500/50 transition-colors">
-                                    <button onclick="simulatePurchase('sniper', 120)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
-                                        120 <i class="fa-solid fa-coins text-[10px]"></i>
-                                    </button>
-                                    <div class="flex items-center gap-3 text-right">
-                                        <div>
-                                            <h3 class="text-white font-bold text-sm">رصاصة قناص</h3>
-                                            <p class="text-slate-400 text-[10px]">لخصم نقاط من حساب منافس</p>
-                                        </div>
-                                        <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30 shrink-0">
-                                            <i class="fa-solid fa-crosshairs text-red-400"></i>
-                                        </div>
-                                    </div>
+                                <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/30 shrink-0">
+                                    <i class="fa-solid fa-crosshairs text-red-400"></i>
                                 </div>
+                            </div>
+                        </div>
 
-                                <!-- تيشيرت التطبيق -->
-                                <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-emerald-500/50 transition-colors">
-                                    <button onclick="simulatePurchase('tshirt', 500)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
-                                        500 <i class="fa-solid fa-coins text-[10px]"></i>
-                                    </button>
-                                    <div class="flex items-center gap-3 text-right">
-                                        <div>
-                                            <h3 class="text-white font-bold text-sm">تيشيرت Goal Sniper</h3>
-                                            <p class="text-slate-400 text-[10px]">جائزة كبرى تصلك لباب بيتك</p>
-                                        </div>
-                                        <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shrink-0">
-                                            <i class="fa-solid fa-shirt text-emerald-400"></i>
-                                        </div>
-                                    </div>
+                        <!-- تيشيرت التطبيق -->
+                        <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-emerald-500/50 transition-colors">
+                            <button onclick="simulatePurchase('tshirt', 500)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                                500 <i class="fa-solid fa-coins text-[10px]"></i>
+                            </button>
+                            <div class="flex items-center gap-3 text-right">
+                                <div>
+                                    <h3 class="text-white font-bold text-sm">تيشيرت Goal Sniper</h3>
+                                    <p class="text-slate-400 text-[10px]">جائزة كبرى تصلك لباب بيتك</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shrink-0">
+                                    <i class="fa-solid fa-shirt text-emerald-400"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
         // 🌟 2. دوال التحكم بالمتجر 🌟
         window.toggleStoreModal = function() {
