@@ -407,7 +407,7 @@ app.delete('/api/admin/match/:id', async (req, res) => {
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن للمتوقعين بدقة حصراً 🌟
+// 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن للمتوقعين بدقة حصراً (من الجولة 6 إنجليزي، والجولة 2 أبطال) 🌟
 app.post('/api/admin/result', async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
@@ -415,6 +415,10 @@ app.post('/api/admin/result', async (req, res) => {
             await pool.query('UPDATE matches SET actual_h = NULL, actual_a = NULL WHERE id = ?', [matchId]);
             return res.json({ success: true, message: 'تم إلغاء النتيجة بنجاح.' });
         }
+
+        // جلب رقم الجولة للمباراة
+        const [matchDetails] = await pool.query('SELECT gw FROM matches WHERE id = ?', [matchId]);
+        const matchGw = matchDetails.length > 0 ? Number(matchDetails[0].gw) : 1;
 
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [actualH, actualA, matchId]);
         const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
@@ -427,19 +431,21 @@ app.post('/api/admin/result', async (req, res) => {
             const ah = Number(actualH);
             const aa = Number(actualA);
             
-            // تفعيل المغناطيس: إذا كان الفارق هدفاً واحداً فقط يعتبر التوقع دقيقاً
             const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
             let isExact = (ph === ah && pa === aa);
             if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) {
                 isExact = true; 
             }
 
-            // إضافة الفائزين بالتوقع الدقيق حصراً (لا توجد جوائز ترضية)
             if (isExact) exactGuessers.push(p.username);
         });
 
-        // توزيع 10 توكن لأصحاب التوقع الدقيق فقط
-        if (exactGuessers.length > 0) {
+        // 🌟 الشرط الذهبي المحدث: 🌟
+        // (أكبر من أو يساوي 6) لكي نستبعد جولات الإنجليزي القديمة
+        // و (لا يساوي 101) لكي نستبعد الجولة الأولى من الأبطال
+        const isEligibleForTokens = (matchGw >= 6 && matchGw !== 101);
+
+        if (isEligibleForTokens && exactGuessers.length > 0) {
             const placeholders = exactGuessers.map(() => '?').join(',');
             await pool.query(`UPDATE users SET tokens = tokens + 10 WHERE username IN (${placeholders})`, exactGuessers);
             
@@ -449,10 +455,15 @@ app.post('/api/admin/result', async (req, res) => {
             });
         }
 
-        // 🌟 إشعار جماعي بانتهاء المباراة 🌟
+        // إشعار جماعي بانتهاء المباراة
         sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة حصدت!');
 
-        res.json({ success: true, message: 'تم تثبيت النتيجة وتوزيع التوكن للقناصين الفائزين بنجاح!' });
+        // رسالة الإدارة
+        const adminMsg = isEligibleForTokens 
+            ? 'تم تثبيت النتيجة وتوزيع التوكن للقناصين بنجاح!' 
+            : 'تم تثبيت النتيجة فقط (بدون توكن لأنها جولة سابقة)';
+
+        res.json({ success: true, message: adminMsg });
     } catch (error) { 
         console.error(error);
         res.status(500).json({ success: false, message: 'فشل حفظ النتيجة وتوزيع التوكن.' }); 
