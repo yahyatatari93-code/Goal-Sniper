@@ -839,7 +839,18 @@ function updateTheme() {
                 
                 if (json.success) {
                     users = json.data.users || [];
-            
+                    
+                    // 🌟 التحديث التلقائي لمحفظة اللاعب (التوكن والعتاد) لكي تظهر بالمتجر فوراً 🌟
+                    if (currentUser) {
+                        const myServerData = users.find(u => u.username === currentUser.username);
+                        if (myServerData) {
+                            currentUser.tokens = myServerData.tokens || 0;
+                            currentUser.shields = myServerData.shields || 0;
+                            currentUser.extra_snipers = myServerData.extra_snipers || 0;
+                            localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
+                        }
+                    }
+
                     matches = (json.data.matches || []).map(m => ({
                         id: m.id, gw: m.gw, home: m.home, away: m.away,
                         date: m.match_date || m.date, time: m.match_time || m.time,
