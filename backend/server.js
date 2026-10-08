@@ -531,6 +531,85 @@ app.post('/api/admin/broadcast', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+
+// ==========================================
+// 🌟 نظام المراقب الآلي (Cron Job) للتذكير بالمباريات (يومياً) 🌟
+// ==========================================
+const notifiedDays = new Set(); // ذاكرة مؤقتة لمنع تكرار الإشعار لنفس اليوم في نفس الجولة
+
+function parseMatchDateTime(dateStr, timeStr) {
+    try {
+        let [d, m, y] = dateStr.split('/');
+        let [time, period] = (timeStr || '').trim().split(/\s+/);
+        let [hours, minutes] = (time || '0:0').split(':');
+        hours = parseInt(hours, 10);
+        minutes = parseInt(minutes, 10);
+        
+        if (period === 'م' || period === 'PM') {
+            if (hours !== 12) hours += 12;
+        } else if (period === 'ص' || period === 'AM') {
+            if (hours === 12) hours = 0;
+        }
+        
+        // دمج الوقت مع (توقيت تركيا وسوريا +03:00)
+        const isoString = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00+03:00`;
+        return new Date(isoString).getTime();
+    } catch (e) {
+        return 0;
+    }
+}
+
+async function checkUpcomingMatches() {
+    try {
+        const [matches] = await pool.query('SELECT gw, league, date, time FROM matches WHERE actual_h IS NULL');
+        if (matches.length === 0) return;
+
+        const firstMatchesPerDay = {};
+
+        // 1. تجميع المباريات لمعرفة "المباراة الافتتاحية" في *كل يوم*
+        matches.forEach(m => {
+            // 🌟 التعديل الجذري: دمج التاريخ في المفتاح ليكون الفحص يومياً 🌟
+            const dayKey = `${m.league || 'EPL'}_${m.gw}_${m.date}`; 
+            const matchTime = parseMatchDateTime(m.date, m.time);
+            if (matchTime === 0) return;
+
+            // حفظ المباراة صاحبة الوقت الأبكر في هذا اليوم بالتحديد
+            if (!firstMatchesPerDay[dayKey] || matchTime < firstMatchesPerDay[dayKey].time) {
+                firstMatchesPerDay[dayKey] = { gw: m.gw, league: m.league, time: matchTime, date: m.date };
+            }
+        });
+
+        const now = Date.now();
+        
+        // 2. فحص كل مباراة افتتاحية يومية
+        Object.keys(firstMatchesPerDay).forEach(async (dayKey) => {
+            const firstMatch = firstMatchesPerDay[dayKey];
+            const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
+
+            // 3. إذا كان الوقت المتبقي هو ساعتين ولم نرسل الإشعار بعد لهذا اليوم
+            if (timeDiffMinutes > 118 && timeDiffMinutes <= 120) {
+                if (!notifiedDays.has(dayKey)) {
+                    notifiedDays.add(dayKey); // قفل الإرسال لهذا اليوم لكي لا يتكرر
+
+                    const leagueName = firstMatch.league === 'UCL' ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
+                    const gwLabel = firstMatch.league === 'UCL' ? `الجولة ${firstMatch.gw - 100}` : `الجولة ${firstMatch.gw}`;
+                    
+                    // 🌟 تعديل نص الإشعار ليناسب اليوم 🌟
+                    const title = `🚨 مباريات اليوم من ${gwLabel} تقترب!`;
+                    const body = `باقي ساعة واحدة فقط على إغلاق التوقعات لأولى مباريات اليوم في ${leagueName}. ادخل واقنص نقاطك الآن قبل فوات الأوان! ⏱️`;
+
+                    await sendFCMToAll(title, body);
+                    console.log(`[Auto-Reminder] Sent for ${dayKey}`);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Auto Reminder Error:", error.message);
+    }
+}
+
+// ⏱️ تشغيل المراقب كل 60 ثانية (دقيقة واحدة)
+setInterval(checkUpcomingMatches, 60 * 1000);
 app.listen(PORT, () => {
     console.log(`Server running securely on port ${PORT}`);
 });
