@@ -48,9 +48,6 @@ const authenticateToken = (req, res, next) => {
 // 🌟 نظام إرسال الإشعارات عبر OneSignal (مع الشعار) 🌟
 // ==========================================
 
-// رابط الشعار الخاص بلعبتك (ضع رابط صورتك المباشر هنا)
-const NOTIFICATION_ICON_URL = 'https://github.com/yahyatatari93-code/Goal-Sniper/raw/main/goal-sniper.png'; // 👈 استبدله برابط شعارك المباشر
-
 // 1. إشعار للاعب محدد
 async function sendFCMToUser(username, title, body) {
     try {
