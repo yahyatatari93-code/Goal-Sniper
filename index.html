@@ -3575,7 +3575,7 @@ function renderPrizesTab() {
             const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain && !pred.isMagnet);
 
             container.innerHTML = `
-                <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" dir="${direction}">
+                <div class="fixed inset-0 z-50 bg-[#060b19] flex items-center justify-center p-4" dir="${direction}">
                     <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
                         <div class="text-center border-b border-white/5 pb-3">
                             <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
@@ -4790,27 +4790,29 @@ async function deleteLeagueByAdmin() {
             document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore());
         }
 
-        window.onload = async function() {
+        window.onload = function() {
+            // 1. جلب بيانات المستخدم من الذاكرة وفورا رسم الشاشة (صفر تأخير)
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
-            fetchMarquee(); // جلب الإعلان عند فتح التطبيق
-            
-            // 🚀 السر هنا: رسم الشاشة فوراً للمستخدم من الذاكرة المحلية (بدون شاشة تحميل)
+            fetchMarquee(); 
             render(); 
 
+            // 2. إذا كان مسجلاً، نجلب البيانات الجديدة في الخلفية دون تجميد الواجهة
             if (currentUser) {
-                // مزامنة البيانات في الخلفية بصمت تام دون إزعاج المستخدم
-                await syncData(); 
-                             
-                // إعادة رسم خفيفة لتحديث الأرقام والنتائج إن تغيرت في السيرفر
-                render(); 
+                setTimeout(async () => {
+                    try {
+                        await syncData(); 
+                        render(); // تحديث صامت للأرقام بعد اكتمال الجلب
+                    } catch(e) {
+                        console.error(e);
+                    }
+                }, 500); // تأخير نصف ثانية لضمان أن فلاتر قام بتحميل الواجهة أولاً
             }
             
-            // 🌟 السحر هنا: استدعاء الرسالة الترحيبية بلمسة تأخير أنيقة 🌟
             setTimeout(() => {
                 if (typeof showWelcomeMessage === 'function') {
                     showWelcomeMessage();
                 }
-            }, 800); 
+            }, 1200); 
         };
         
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw, isBought = false) {
