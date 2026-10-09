@@ -3866,41 +3866,47 @@ function renderPrizesTab() {
         }
 
         async function addMatch(e) {
-            e.preventDefault();
-            const league = document.getElementById('adm-league').value;
-            // اختيار رقم الجولة بناءً على القائمة الظاهرة
-            const gw = league === 'UCL' ? document.getElementById('adm-gw-ucl').value : document.getElementById('adm-gw-epl').value;
-            
-            const home = document.getElementById('adm-home').value;
-            const away = document.getElementById('adm-away').value;
-            const dateInput = document.getElementById('adm-date').value;
-            const timeInput = document.getElementById('adm-time').value;
-            
-            if(!gw || !home || !away || !dateInput || !timeInput) return;
+    e.preventDefault();
+    const league = document.getElementById('adm-league').value;
+    // اختيار رقم الجولة بناءً على القائمة الظاهرة
+    const gw = league === 'UCL' ? document.getElementById('adm-gw-ucl').value : document.getElementById('adm-gw-epl').value;
+    
+    const home = document.getElementById('adm-home').value;
+    const away = document.getElementById('adm-away').value;
+    const dateInput = document.getElementById('adm-date').value;
+    const timeInput = document.getElementById('adm-time').value;
+    
+    if(!gw || !home || !away || !dateInput || !timeInput) return;
 
-            const formattedDate = dateInput.replace(/-/g, '/');
-            let [hours, minutes] = timeInput.split(':'); hours = parseInt(hours, 10);
-            let period = hours >= 12 ? 'م' : 'ص'; hours = hours % 12 || 12;
-            const formattedTime = `${hours}:${minutes} ${period}`;
-            
-            try {
-                await fetch(`${API_BASE_URL}/admin/match`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime, league: league})
-                });
-                showCustomDialog(`تمت إضافة المباراة بنجاح!`);
-                await syncData(); render();
-            } catch(e) {}
-        }
+    const formattedDate = dateInput.replace(/-/g, '/');
+    let [hours, minutes] = timeInput.split(':'); hours = parseInt(hours, 10);
+    let period = hours >= 12 ? 'م' : 'ص'; hours = hours % 12 || 12;
+    const formattedTime = `${hours}:${minutes} ${period}`;
+    
+    try {
+        const token = localStorage.getItem('oracle_token_v8'); // 👈 سحب مفتاح الأمان من الهاتف
+        await fetch(`${API_BASE_URL}/admin/match`, {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, // 👈 إرفاق المفتاح كبطاقة هوية
+            body: JSON.stringify({id: 'm_custom_' + Date.now(), gw: Number(gw), home, away, date: formattedDate, time: formattedTime, league: league})
+        });
+        showCustomDialog(`تمت إضافة المباراة بنجاح!`);
+        await syncData(); render();
+    } catch(e) {}
+}
 
         function deleteMatch(id) {
-            showCustomDialog('هل أنت متأكد من حذف هذه المباراة نهائياً من قاعدة البيانات؟', 'confirm', async () => {
-                try {
-                    await fetch(`${API_BASE_URL}/admin/match/${id}`, { method: 'DELETE' });
-                    await syncData(); render();
-                } catch(e){}
+    showCustomDialog('هل أنت متأكد من حذف هذه المباراة نهائياً من قاعدة البيانات؟', 'confirm', async () => {
+        try {
+            const token = localStorage.getItem('oracle_token_v8');
+            await fetch(`${API_BASE_URL}/admin/match/${id}`, { 
+                method: 'DELETE',
+                headers: {'Authorization': `Bearer ${token}`} 
             });
-        }
+            await syncData(); render();
+        } catch(e){}
+    });
+}
 
         function editMatchTime(matchId, currentDate, currentTime) {
     const container = document.getElementById('dialog-container');
@@ -4115,41 +4121,37 @@ async function deleteLeagueByAdmin() {
     if (hVal === '' || aVal === '') { showCustomDialog('يرجى إدخال النتيجة كاملة.'); return; }
     
     try {
+        const token = localStorage.getItem('oracle_token_v8'); // 👈 سحب المفتاح
         await fetch(`${API_BASE_URL}/admin/result`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`}, // 👈 إرفاقه
             body: JSON.stringify({ matchId: id, actualH: hVal, actualA: aVal })
         });
         showCustomDialog('تم تثبيت النتيجة رسمياً بنجاح!', 'alert');
         
         await syncData(); 
-        render(); // الشاشة تُمسح وتُعاد من جديد
+        render(); 
         
-        // الحل القاطع: البحث عن مربع النتيجة لنفس المباراة والقفز إليه مباشرة
         setTimeout(() => {
             const matchInput = document.getElementById(`actual-h-${id}`);
-            if (matchInput) {
-                matchInput.scrollIntoView({ 
-                    behavior: 'instant', 
-                    block: 'center' // يضع المباراة في منتصف الشاشة لراحة عينك
-                });
-            }
+            if (matchInput) { matchInput.scrollIntoView({ behavior: 'instant', block: 'center' }); }
         }, 100);
         
-    } catch(e){
-        console.error("Error saving result:", e);
-    }
+    } catch(e){ console.error("Error saving result:", e); }
 }
 
         async function clearActual(id) {
-            try {
-                await fetch(`${API_BASE_URL}/admin/result`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ matchId: id, actualH: null, actualA: null })
-                });
-                showCustomDialog('تم إلغاء النتيجة، المباراة الآن مفتوحة للتوقعات (إذا لم يمر وقتها).', 'alert');
-                await syncData(); render();
-            } catch(e){}
-        }
+    try {
+        const token = localStorage.getItem('oracle_token_v8');
+        await fetch(`${API_BASE_URL}/admin/result`, {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+            body: JSON.stringify({ matchId: id, actualH: null, actualA: null })
+        });
+        showCustomDialog('تم إلغاء النتيجة، المباراة الآن مفتوحة للتوقعات (إذا لم يمر وقتها).', 'alert');
+        await syncData(); render();
+    } catch(e){}
+}
 
         function showCustomDialog(message, type = 'alert', onConfirm = null) {
             const container = document.getElementById('dialog-container');
