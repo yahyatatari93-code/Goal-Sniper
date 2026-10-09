@@ -125,10 +125,7 @@ body.epl-theme {
             border-bottom-color: rgba(168, 85, 247, 0.4) !important;
         }
     </style>
-    <!-- مكتبات Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-messaging-compat.js"></script>
-</head>
+    </head>
 <body class="min-h-screen flex flex-col bottom-nav-pb">
 
     <div id="app" class="flex-1 flex flex-col">
@@ -147,64 +144,7 @@ body.epl-theme {
         // الإعدادات العامة (يمكنك تغييرها بسهولة)
         // ==========================================
         const API_BASE_URL = 'https://5.189.138.161.nip.io/api';
-       // 🌟 إعدادات Firebase للإشعارات 🌟
-        const firebaseConfig = {
-  apiKey: "AIzaSyA9w3alaXxOuKvitoRJ57DFT6jxz869mjE",
-  authDomain: "goal-sniper-2d638.firebaseapp.com",
-  projectId: "goal-sniper-2d638",
-  storageBucket: "goal-sniper-2d638.firebasestorage.app",
-  messagingSenderId: "426882285395",
-  appId: "1:426882285395:web:ffda11060db3ee1bc8aba6"
-};
-
-        // تهيئة فايربيس فقط إذا لم يتم تهيئته مسبقاً
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const messaging = firebase.messaging();
-
-        // دالة طلب الإذن وجلب الـ Token
-        async function requestNotificationPermission() {
-            try {
-                console.log('جاري طلب إذن الإشعارات...');
-                const permission = await Notification.requestPermission();
-                
-                if (permission === 'granted') {
-                    console.log('تم منح الإذن!');
-                    // سحب الـ Token الخاص بالهاتف
-                    const token = await messaging.getToken({ 
-                        vapidKey: 'BI7MRKOmJiDHWQbhZHPFCWRKDvFtsPSyPdZo7sfQFr1acqpcHu-S7kOv4LzfQDVIyQqLb_VEfcv89pfQ2axdLF8' 
-                    });
-                    
-                    if (token && currentUser) {
-                        // إرسال الرمز للسيرفر لحفظه مع بيانات اللاعب
-                        await saveFcmTokenToServer(token);
-                    }
-                } else {
-                    console.log('تم رفض إذن الإشعارات.');
-                }
-            } catch (error) {
-                console.error('حدث خطأ أثناء إعداد الإشعارات:', error);
-            }
-        }
-
-        // دالة إرسال الرمز للسيرفر
-        async function saveFcmTokenToServer(token) {
-            try {
-                const authToken = localStorage.getItem('oracle_token_v8');
-                await fetch(`${API_BASE_URL}/auth/save-fcm`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify({ username: currentUser.username, fcmToken: token })
-                });
-            } catch (e) {
-                console.error('فشل إرسال Token للسيرفر');
-            }
-        }
-        // رابط الشعار (ارفع صورتك على imgur.com مثلاً وضع الرابط هنا)
+               // رابط الشعار (ارفع صورتك على imgur.com مثلاً وضع الرابط هنا)
         const APP_LOGO_URL = 'goal-sniper.png'; 
         // ==========================================
 
@@ -4860,8 +4800,7 @@ async function deleteLeagueByAdmin() {
             if (currentUser) {
                 // مزامنة البيانات في الخلفية بصمت تام دون إزعاج المستخدم
                 await syncData(); 
-                requestNotificationPermission();
-                
+                             
                 // إعادة رسم خفيفة لتحديث الأرقام والنتائج إن تغيرت في السيرفر
                 render(); 
             }
