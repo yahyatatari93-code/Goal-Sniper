@@ -402,9 +402,18 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
 });
 
 // ==========================================
-// 4. لوحة الإدارة
+// 4. لوحة الإدارة (تمت حمايتها بالكامل 🔒)
 // ==========================================
-app.post('/api/admin/match', async (req, res) => {
+
+// دالة مساعدة للتحقق من أن المستخدم هو الإدارة
+const isAdmin = (req, res, next) => {
+    if (!req.user || req.user.username.toLowerCase() !== 'red army') {
+        return res.status(403).json({ success: false, message: 'غير مصرح لك! هذا الإجراء للإدارة فقط.' });
+    }
+    next();
+};
+
+app.post('/api/admin/match', authenticateToken, isAdmin, async (req, res) => {
     const { id, gw, home, away, date, time } = req.body;
     try {
         await pool.query('INSERT INTO matches (id, gw, home, away, date, time) VALUES (?, ?, ?, ?, ?, ?)', [id, gw, home, away, date, time]);
@@ -412,7 +421,7 @@ app.post('/api/admin/match', async (req, res) => {
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-app.delete('/api/admin/match/:id', async (req, res) => {
+app.delete('/api/admin/match/:id', authenticateToken, isAdmin, async (req, res) => {
     try {
         await pool.query('DELETE FROM matches WHERE id = ?', [req.params.id]);
         res.json({ success: true });
@@ -420,7 +429,7 @@ app.delete('/api/admin/match/:id', async (req, res) => {
 });
 
 // 🌟 مسار حفظ النتيجة وتوزيع أو خصم مكافآت التوكن (مع دعم الحذف والإلغاء) 🌟
-app.post('/api/admin/result', async (req, res) => {
+app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
         // 1. جلب النتيجة القديمة للمباراة قبل التعديل (لنكتشف هل كان هناك نتيجة مثبتة مسبقاً)
@@ -503,7 +512,7 @@ app.post('/api/admin/result', async (req, res) => {
     }
 });
 
-app.post('/api/admin/update-time', authenticateToken, async (req, res) => {
+app.post('/api/admin/update-time', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, newDate, newTime } = req.body;
     try {
         await pool.query('UPDATE matches SET date = ?, time = ? WHERE id = ?', [newDate, newTime, matchId]);
