@@ -3744,103 +3744,84 @@ function renderPrizesTab() {
 
             if (isCap || isTC || isMag) playSound('captain'); else playSound('success'); 
 
-            setTimeout(async () => {
-                let oldExplicitCapId = null;
-                let oldExplicitMagId = null;
-                const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
-                
-                gwMatches.forEach(m => {
-                    if (m.id !== activeMatchModal.id) {
-                        if (predictions[currentUser.username]?.[m.id]?.isCaptain) {
-                            if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitCapId = m.id; } 
-                            else { oldExplicitCapId = m.id; }
-                        }
-                        if (predictions[currentUser.username]?.[m.id]?.isMagnet) {
-                            if (isUCL) { 
-                                if (formatMatchDate(m.date) === matchDate) oldExplicitMagId = m.id; 
-                            } else { 
-                                oldExplicitMagId = m.id; 
-                            }
-                        }
+            // 🚀 1. التحديث الفوري للواجهة (سرعة البرق للاعب)
+            let oldExplicitCapId = null;
+            let oldExplicitMagId = null;
+            const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
+            
+            gwMatches.forEach(m => {
+                if (m.id !== activeMatchModal.id) {
+                    if (predictions[currentUser.username]?.[m.id]?.isCaptain) {
+                        if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitCapId = m.id; } 
+                        else { oldExplicitCapId = m.id; }
                     }
-                });
+                    if (predictions[currentUser.username]?.[m.id]?.isMagnet) {
+                        if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitMagId = m.id; } 
+                        else { oldExplicitMagId = m.id; }
+                    }
+                }
+            });
 
-                const reqMatchId = activeMatchModal.id;
-                closeModal();
-                showCustomDialog("جاري إرسال التوقع للقاعدة...", "alert");
+            const reqMatchId = activeMatchModal.id;
+            
+            // الاحتفاظ بالنسخة القديمة للتراجع في حال انقطع الإنترنت
+            const oldPrediction = userPreds[reqMatchId] ? {...userPreds[reqMatchId]} : null;
 
+            closeModal(); // إغلاق النافذة فوراً
+            
+            // تحديث الذاكرة ورسم الشاشة فوراً
+            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+            if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
+            if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
+            
+            predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
+            globalStandingsCache = {};
+            render(); 
+
+            // 🚀 2. إرسال الطلب للسيرفر في الخلفية بصمت
+            setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
                     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-
-                    // تجهيز سلة الطلبات لإطلاقها معاً
                     const fetchRequests = [];
 
                     if (isCap && oldExplicitCapId) {
-                        const oldP = predictions[currentUser.username][oldExplicitCapId];
+                        const oldP = predictions[currentUser.username][oldExplicitCapId] || {};
                         fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
-                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitCapId, predH: oldP.home, predA: oldP.away, isCaptain: false, isTripleCaptain: oldP.isTripleCaptain, isMagnet: oldP.isMagnet })
+                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitCapId, predH: oldP.home||'', predA: oldP.away||'', isCaptain: false, isTripleCaptain: oldP.isTripleCaptain||false, isMagnet: oldP.isMagnet||false })
                         }));
                     }
-                    
                     if (isMag && oldExplicitMagId) {
-                        const oldP = predictions[currentUser.username][oldExplicitMagId];
+                        const oldP = predictions[currentUser.username][oldExplicitMagId] || {};
                         fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
-                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitMagId, predH: oldP.home, predA: oldP.away, isCaptain: oldP.isCaptain, isTripleCaptain: oldP.isTripleCaptain, isMagnet: false })
+                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitMagId, predH: oldP.home||'', predA: oldP.away||'', isCaptain: oldP.isCaptain||false, isTripleCaptain: oldP.isTripleCaptain||false, isMagnet: false })
                         }));
                     }
 
-                    // إضافة طلب التوقع الأساسي
                     fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                         method: 'POST', headers,
-                        body: JSON.stringify({ 
-                            username: currentUser.username, matchId: reqMatchId, 
-                            predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag
-                        })
+                        body: JSON.stringify({ username: currentUser.username, matchId: reqMatchId, predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag })
                     }));
                     
-                    // 🚀 إطلاق جميع الطلبات للسيرفر في نفس الجزء من الثانية!
                     const responses = await Promise.all(fetchRequests);
-                    const response = responses[responses.length - 1]; // الطلب الأساسي هو الأخير دائماً
-                    
+                    const response = responses[responses.length - 1]; 
                     const data = await response.json();
                 
                     if(!data.success) {
-                        showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع.");
-                        await syncData(); // جلب البيانات فقط في حال حدوث خطأ بالسيرفر
-                    } else {
-                        document.getElementById('dialog-container').innerHTML = '';
-                        
-                        // 🌟 التحديث السحري اللحظي: نحدث الذاكرة محلياً بدلاً من تحميل القاعدة كلها 🌟
-                        if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
-                        
-                        // إزالة الكابتن أو المغناطيس القديم فوراً إن تم نقلهم
-                        if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) {
-                            predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
-                        }
-                        if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) {
-                            predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
-                        }
-                        
-                        // حفظ التوقع الجديد بالذاكرة
-                        predictions[currentUser.username][reqMatchId] = {
-                            home: h,
-                            away: a,
-                            isCaptain: isCap,
-                            isTripleCaptain: isTC,
-                            isMagnet: isMag
-                        };
-                        
-                        globalStandingsCache = {}; // تفريغ كاش الترتيب ليتحدث فوراً دون ريفريش
+                        // فشل الحفظ في السيرفر -> التراجع وتنبيه اللاعب
+                        if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
+                        else delete predictions[currentUser.username][reqMatchId];
+                        showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع. يرجى المحاولة مجدداً.");
+                        await syncData(); render();
                     }
-                    
-                    render(); // رسم الشاشة بلمح البصر
                 } catch(e) {
-                    showCustomDialog("حدث خطأ أثناء الحفظ بالسيرفر.");
-                    await syncData(); 
-                    render();
+                    // انقطاع النت -> التراجع وتنبيه اللاعب
+                    if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
+                    else delete predictions[currentUser.username][reqMatchId];
+                    showCustomDialog("حدث خطأ في الاتصال بالسيرفر أثناء الحفظ.");
+                    await syncData(); render();
                 }
-            }, 50); 
+            }, 10); 
         }
         
         async function createMiniLeague() {
@@ -4870,22 +4851,25 @@ async function deleteLeagueByAdmin() {
         window.onload = async function() {
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
             fetchMarquee(); // جلب الإعلان عند فتح التطبيق
+            
+            // 🚀 السر هنا: رسم الشاشة فوراً للمستخدم من الذاكرة المحلية (بدون شاشة تحميل)
+            render(); 
+
             if (currentUser) {
-                document.getElementById('app').innerHTML = `
-                    <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                        <i class="fa-solid fa-satellite-dish fa-spin text-4xl text-blue-500"></i>
-                        <span class="font-bold text-lg text-white">Goal Sniper</span>
-                        <span class="font-bold text-sm">جاري الدخول إلى عالم التوقعات الممتع...</span>
-                    </div>`;
+                // مزامنة البيانات في الخلفية بصمت تام دون إزعاج المستخدم
                 await syncData(); 
-           requestNotificationPermission();
+                requestNotificationPermission();
+                
+                // إعادة رسم خفيفة لتحديث الأرقام والنتائج إن تغيرت في السيرفر
+                render(); 
             }
-            render();
             
             // 🌟 السحر هنا: استدعاء الرسالة الترحيبية بلمسة تأخير أنيقة 🌟
             setTimeout(() => {
-                showWelcomeMessage();
-            }, 800); // تأخير 0.8 ثانية لتعطي فرصة للواجهة لتظهر بشكل جميل أولاً
+                if (typeof showWelcomeMessage === 'function') {
+                    showWelcomeMessage();
+                }
+            }, 800); 
         };
         
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw, isBought = false) {
