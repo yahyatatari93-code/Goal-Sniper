@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
 const compression = require('compression');
+const NOTIFICATION_ICON_URL = 'https://i.ibb.co/23nmL2fs/goal-sniper.png';
 
 const app = express();       // 👈 تعريف app لمرة واحدة فقط هنا
 app.use(compression());      // 👈 تفعيل الضغط
