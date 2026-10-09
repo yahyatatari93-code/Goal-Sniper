@@ -3571,7 +3571,9 @@ function renderPrizesTab() {
                 }
             });
 
-            const pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
+            const displayH = hVal === '' ? '-' : hVal;
+            const displayA = aVal === '' ? '-' : aVal;
+            const pts = (hVal === '' || aVal === '') ? 0 : calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
             const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain && !pred.isMagnet);
 
             container.innerHTML = `
@@ -3582,15 +3584,33 @@ function renderPrizesTab() {
                             <h2 class="text-base font-black text-white">${getTeamName(activeMatchModal.home)} <span class="text-slate-400 text-xs">ضد</span> ${getTeamName(activeMatchModal.away)}</h2>
                         </div>
                         
-                        <div class="flex items-center justify-center gap-4 py-2">
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-h" value="${hVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
+                        <div class="flex items-center justify-center gap-4 py-3">
+                            <!-- الفريق المضيف -->
+                            <div class="text-center flex flex-col items-center">
+                                <span class="text-[11px] text-slate-300 block mb-2 font-bold">${getTeamName(activeMatchModal.home)}</span>
+                                <div class="flex items-center bg-slate-900/80 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+                                    <button type="button" onclick="changeScore('h', -1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-rose-500 text-rose-400 hover:text-white font-black flex items-center justify-center transition-all active:scale-95 text-lg shadow-md"><i class="fa-solid fa-minus"></i></button>
+                                    
+                                    <input type="hidden" id="modal-pred-h" value="${hVal}">
+                                    <div id="display-pred-h" class="w-12 text-center text-2xl font-black text-white">${displayH}</div>
+                                    
+                                    <button type="button" onclick="changeScore('h', 1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-blue-500 text-blue-400 hover:text-white font-black flex items-center justify-center transition-all active:scale-95 text-lg shadow-md"><i class="fa-solid fa-plus"></i></button>
+                                </div>
                             </div>
-                            <span class="text-xl font-bold text-slate-500 mt-5">:</span>
-                            <div class="text-center">
-                                <span class="text-[10px] text-slate-400 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
-                                <input type="text" inputmode="numeric" id="modal-pred-a" value="${aVal}" oninput="this.value = this.value.replace(/[^0-9]/g, ''); updateModalCalc()" class="score-input shadow-inner text-center" placeholder="0" dir="ltr" />
+                            
+                            <span class="text-xl font-black text-slate-600 mt-6 mx-1">:</span>
+                            
+                            <!-- الفريق الضيف -->
+                            <div class="text-center flex flex-col items-center">
+                                <span class="text-[11px] text-slate-300 block mb-2 font-bold">${getTeamName(activeMatchModal.away)}</span>
+                                <div class="flex items-center bg-slate-900/80 p-1.5 rounded-2xl border border-white/10 shadow-inner">
+                                    <button type="button" onclick="changeScore('a', -1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-rose-500 text-rose-400 hover:text-white font-black flex items-center justify-center transition-all active:scale-95 text-lg shadow-md"><i class="fa-solid fa-minus"></i></button>
+                                    
+                                    <input type="hidden" id="modal-pred-a" value="${aVal}">
+                                    <div id="display-pred-a" class="w-12 text-center text-2xl font-black text-white">${displayA}</div>
+                                    
+                                    <button type="button" onclick="changeScore('a', 1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-blue-500 text-blue-400 hover:text-white font-black flex items-center justify-center transition-all active:scale-95 text-lg shadow-md"><i class="fa-solid fa-plus"></i></button>
+                                </div>
                             </div>
                         </div>
                         
@@ -3651,6 +3671,32 @@ function renderPrizesTab() {
             document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
         }
 
+        window.changeScore = function(team, amount) {
+            const input = document.getElementById('modal-pred-' + team);
+            const display = document.getElementById('display-pred-' + team);
+            if (!input || !display) return;
+            
+            let currentVal = input.value;
+            let current;
+            
+            // إذا كانت الخانة فارغة وضغط اللاعب على أي زر، نجعلها تبدأ من الصفر
+            if (currentVal === '') {
+                current = 0;
+            } else {
+                current = parseInt(currentVal);
+                current += amount;
+            }
+            
+            // القيود: لا أقل من 0 ولا أكثر من 9
+            if (current < 0) current = 0; 
+            if (current > 9) current = 9; 
+            
+            input.value = current;
+            display.innerText = current;
+            
+            updateModalCalc();
+        };
+        
         async function saveModalPrediction() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const powerup = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
