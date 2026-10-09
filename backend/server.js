@@ -4,16 +4,10 @@ const mysql = require('mysql2/promise');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 require('dotenv').config();
-const admin = require("firebase-admin");
-const serviceAccount = require("./firebase-key.json");
 const compression = require('compression');
 
 const app = express();       // 👈 تعريف app لمرة واحدة فقط هنا
 app.use(compression());      // 👈 تفعيل الضغط
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
 
 const googleClient = new OAuth2Client("59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com");
 
@@ -136,22 +130,6 @@ app.post('/api/auth/register', async (req, res) => {
         res.json({ success: true, user: { username, pin }, token: token });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-app.post('/api/auth/save-fcm', authenticateToken, async (req, res) => {
-    const { username, fcmToken } = req.body;
-
-    if (req.user.username !== username) {
-        return res.status(403).json({ success: false, message: 'غير مصرح لك بهذا الإجراء' });
-    }
-
-    try {
-        await pool.query('UPDATE users SET fcm_token = ? WHERE username = ?', [fcmToken, username]);
-        res.json({ success: true, message: 'تم حفظ رمز الإشعارات بنجاح' });
-    } catch (error) {
-        console.error("FCM Token Save Error:", error);
-        res.status(500).json({ success: false, message: 'خطأ في السيرفر أثناء حفظ الرمز' });
     }
 });
 
