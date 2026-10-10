@@ -289,8 +289,8 @@ app.post('/api/store/purchase', authenticateToken, async (req, res) => {
 
     // 🛡️ تحديد السعر بشكل صارم من داخل السيرفر 
     let cost = 0;
-    if (item === 'shield') cost = 30; // استبدل الرقم بسعرك الفعلي
-    else if (item === 'sniper') cost = 50; // استبدل الرقم بسعرك الفعلي
+    if (item === 'shield') cost = 70; // استبدل الرقم بسعرك الفعلي
+    else if (item === 'sniper') cost = 120; // استبدل الرقم بسعرك الفعلي
     else if (item === 'tshirt') cost = 500; // استبدل الرقم بسعرك الفعلي
     else return res.status(400).json({ success: false, message: 'عنصر غير معروف.' });
 
