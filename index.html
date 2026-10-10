@@ -5021,6 +5021,13 @@ async function deleteLeagueByAdmin() {
         };
 
         window.simulatePurchase = async function(item, cost) {
+            // 🚀 1. الجدار الأمني الأول (فحص الرصيد محلياً قبل أي شيء)
+            const currentBalance = currentUser.tokens || 0;
+            if (currentBalance < cost) {
+                showCustomDialog(`⚠️ رصيدك غير كافٍ!<br>تحتاج إلى <strong class="text-amber-400">${cost}</strong> توكن لإتمام الشراء، بينما رصيدك الحالي هو <strong class="text-rose-400">${currentBalance}</strong>.`);
+                return; // إيقاف العملية فوراً وعدم إرسال أي طلب للسيرفر
+            }
+
             toggleStoreModal(); 
             showCustomDialog('جاري معالجة عملية الشراء...', 'alert');
 
@@ -5029,25 +5036,26 @@ async function deleteLeagueByAdmin() {
                 const res = await fetch(`${API_BASE_URL}/store/purchase`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ username: currentUser.username, item: item, cost: cost })
+                    // نرسل اسم العنصر فقط للسيرفر (السيرفر يجب أن يعرف السعر بنفسه لضمان الأمان)
+                    body: JSON.stringify({ username: currentUser.username, item: item })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    // تحديث الرصيد والعتاد محلياً في التطبيق
+                    // 🚀 2. التحديث الفوري للرصيد والعتاد في الهاتف لضمان عدم وجود خلل في العرض
                     currentUser.tokens = data.newTokens;
                     if (item === 'shield') currentUser.shields = (currentUser.shields || 0) + 1;
                     if (item === 'sniper') currentUser.extra_snipers = (currentUser.extra_snipers || 0) + 1;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     
                     showCustomDialog(`🎉 ${data.message}<br>رصيدك المتبقي: <strong class="text-amber-400">${data.newTokens}</strong> توكن`);
-                    await syncData(); 
+                    await syncData(); // المزامنة في الخلفية للتأكيد
                     render(); 
                 } else {
                     showCustomDialog(`⚠️ ${data.message}`);
                 }
             } catch(e) {
-                showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء.');
+                showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء. لم يتم خصم شيء من رصيدك.');
             }
         };
     </script>
