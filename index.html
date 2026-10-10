@@ -4832,8 +4832,11 @@ async function deleteLeagueByAdmin() {
             renderModal();
             updateTheme();
             
-            // 🌟 إظهار المتجر لحساب الإدارة 🌟
-            document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore());
+            // 🌟 تحديث المتجر لمنع تكرار الواجهة وظهور أرقام قديمة 🌟
+            const oldStore = document.getElementById('store-modal');
+            if (oldStore) oldStore.remove(); // مسح النسخة القديمة من المتجر
+            
+            document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore()); // رسم نسخة جديدة بالرصيد المحدث
         }
 
         window.onload = function() {
