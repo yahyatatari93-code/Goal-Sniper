@@ -1466,23 +1466,26 @@ function isMatchLocked(match) {
 }
         
         function shareApp() {
-    // ضغ رابط تطبيقك الحقيقي على متجر غوغل بلاي هنا
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper';
-    const shareTitle = 'Goal Sniper 🎯';
-    const shareText = currentLang === 'ar' 
-        ? 'حمل تطبيق Goal Sniper الأقوى لتوقعات كرة القدم ونافسني على الصدارة! 🔥' 
-        : 'Download Goal Sniper, predict matches, and compete with me! 🔥';
+            const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper';
+            const shareText = currentLang === 'ar' 
+                ? 'حمل تطبيق Goal Sniper الأقوى لتوقعات كرة القدم ونافسني على الصدارة! 🔥\n' + playStoreUrl
+                : 'Download Goal Sniper, predict matches, and compete with me! 🔥\n' + playStoreUrl;
 
-    if (navigator.share) {
-        navigator.share({
-            title: shareTitle,
-            text: shareText,
-            url: playStoreUrl
-        }).catch(err => console.log('تم إلغاء المشاركة'));
-    } else {
-        window.open(playStoreUrl, '_blank');
-    }
-}
+            try {
+                // الطريقة الأدق لالتقاط إشارة فلاتر
+                if (typeof ShareChannel !== 'undefined') {
+                    ShareChannel.postMessage(shareText);
+                } else if (window.ShareChannel) {
+                    window.ShareChannel.postMessage(shareText);
+                } else {
+                    // الخطة البديلة
+                    window.location.href = playStoreUrl;
+                }
+            } catch (error) {
+                window.location.href = playStoreUrl;
+            }
+        }
+        
         function copyReferralCode(code) {
             navigator.clipboard.writeText(code).then(() => {
                 showCustomDialog("📋 تم نسخ رمز الدعوة بنجاح!<br>شاركه مع أصدقائك لتحصل على مكافآتك.");
