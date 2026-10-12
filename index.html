@@ -1426,9 +1426,8 @@ function isMatchLocked(match) {
             return activeGwCache;
         }
 
-        // 🌟 دالة فتح الروابط الذكية (تكسر حظر جميع الهواتف)
+        // الدالة الأولى: لفتح حسابات التواصل
         function openSocial(platform) {
-            const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || window.opera);
             let url = '';
             
             if (platform === 'fb') url = 'https://www.facebook.com/profile.php?id=61593211584610';
@@ -1437,38 +1436,15 @@ function isMatchLocked(match) {
             else if (platform === 'yt') url = 'https://www.youtube.com/@GoalSniper-r8p';
             else if (platform === 'wa') url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36';  
             
-            if (isAndroid) {
-                // إجبار الأندرويد على فتح التطبيق الأصلي
-                window.location.href = url.replace('https://', 'intent://') + '#Intent;scheme=https;end';
-            } else {
-                // الآيفون والكمبيوتر: فتح نافذة آمنة
-                const win = window.open(url, '_blank');
-                // إذا كان الآيفون يمنع النوافذ المنبثقة، نفتح الرابط في نفس النافذة كخطة بديلة
-                if (!win || win.closed || typeof win.closed === 'undefined') {
-                    window.location.href = url;
-                }
-            }
+            // فتح الرابط بشكل مباشر وآمن للـ WebView
+            window.location.href = url;
         }
 
+        // الدالة الثانية: لفتح قناة الواتساب من الهيدر (أو زر الدعم)
         function openWaChannel() {
-    // استبدل هذا الرابط بالرابط الحقيقي لقناتك الذي نسخته من الواتساب
-    const channelUrl = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; 
-    
-    const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || window.opera);
-    
-    if (isAndroid) {
-        // نظام أندرويد: محاولة فتح تطبيق واتساب مباشرة
-        window.location.href = channelUrl.replace('https://', 'intent://') + '#Intent;scheme=https;package=com.whatsapp;end';
-        
-        // خطة بديلة إذا فشل فتح التطبيق
-        setTimeout(() => {
+            const channelUrl = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; 
             window.location.href = channelUrl;
-        }, 1500);
-    } else {
-        // آيفون والكمبيوتر
-        window.open(channelUrl, '_blank');
-    }
-}
+        }
         
         function shareApp() {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper';
