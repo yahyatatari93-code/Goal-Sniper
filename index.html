@@ -744,20 +744,25 @@ function updateTheme() {
             return ENABLE_MAGNET_GLOBALLY || (currentUser && currentUser.username.toLowerCase() === 'red army');
         }              
         async function fetchMarquee() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/announcement`);
-        const data = await res.json();
-        if (data.success && data.text) {
             try {
-                // نحاول قراءة النص كصندوق لغات (JSON)
-                marqueeTexts = JSON.parse(data.text);
-            } catch(e) {
-                // في حال كان النص قديماً وغير مقسم، نضعه لكل اللغات كاحتياط
-                marqueeTexts = { ar: data.text, en: data.text, tr: data.text };
-            }
+                // 1. إضافة طابع زمني لمنع متصفح الهاتف من قراءة نص قديم (Cache)
+                const res = await fetch(`${API_BASE_URL}/announcement?t=${new Date().getTime()}`);
+                const data = await res.json();
+                if (data.success && data.text) {
+                    try {
+                        marqueeTexts = JSON.parse(data.text);
+                    } catch(e) {
+                        marqueeTexts = { ar: data.text, en: data.text, tr: data.text };
+                    }
+                    
+                    // 🚀 2. التحديث الفوري المباشر للعنصر في الشاشة دون الحاجة لتسجيل الخروج
+                    const marqueeElement = document.querySelector('.marquee-content');
+                    if (marqueeElement) {
+                        marqueeElement.innerHTML = marqueeTexts[currentLang];
+                    }
+                }
+            } catch(e) {}
         }
-    } catch(e) {}
-}
         
         async function syncData() {
             // 🌟 تفريغ الذاكرة عند جلب بيانات جديدة لضمان دقة الحسابات 🌟
@@ -5061,27 +5066,7 @@ async function deleteLeagueByAdmin() {
                 showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء. لم يتم خصم شيء من رصيدك.');
             }
         };
-
-        // 🚀 تحديث الشريط المتحرك فوراً عند فتح التطبيق 🚀
-        async function forceUpdateMarquee() {
-            try {
-                const res = await fetch(`${API_BASE_URL}/announcement`);
-                const data = await res.json();
-                if (data.success && data.text) {
-                    // ابحث عن عنصر الشريط المتحرك وحدث نصه (تأكد من أن الكلاس أو الـ id يطابق ما لديك)
-                    const marqueeElement = document.querySelector('marquee') || document.getElementById('marquee-text');
-                    if (marqueeElement) {
-                        marqueeElement.innerText = data.text;
-                    }
-                }
-            } catch(e) {
-                console.log("Marquee sync skipped");
-            }
-        }
-        
-        // تشغيل الدالة فور تحميل الصفحة
-        window.addEventListener('DOMContentLoaded', forceUpdateMarquee);
-        
+                
     </script>
 </body>
 </html>
