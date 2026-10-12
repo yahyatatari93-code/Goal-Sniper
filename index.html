@@ -1426,33 +1426,47 @@ function isMatchLocked(match) {
             return activeGwCache;
         }
 
-        // 🌟 الدالة الأولى: لفتح حسابات التواصل بأمان
+        // 🌟 الدالة الأولى: لفتح حسابات التواصل (اختراق حظر الشاشة السوداء عبر Vercel)
         function openSocial(platform) {
-            let url = '';
-            if (platform === 'fb') url = 'https://www.facebook.com/profile.php?id=61593211584610';
-            else if (platform === 'ig') url = 'https://www.instagram.com/goal.sniper02?igsh=Z2cyMXBpNjMxMm9j';
-            else if (platform === 'tiktok') url = 'https://www.tiktok.com/@goal.sniper2';
-            else if (platform === 'yt') url = 'https://www.youtube.com/@GoalSniper-r8p';
-            else if (platform === 'wa') url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36';
+            let url = '', name = '';
             
-            // محاكاة ضغطة مستخدم لفتح المتصفح الخارجي وتجنب الشاشة السوداء
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // يوتيوب يعمل بشكل طبيعي لأنه لا يفرض بروتوكولات مخفية
+            if (platform === 'yt') { 
+                window.location.href = 'https://www.youtube.com/@GoalSniper-r8p'; 
+                return; 
+            }
+            else if (platform === 'fb') { url = 'https://www.facebook.com/profile.php?id=61593211584610'; name = 'فيسبوك'; }
+            else if (platform === 'ig') { url = 'https://www.instagram.com/goal.sniper02?igsh=Z2cyMXBpNjMxMm9j'; name = 'إنستغرام'; }
+            else if (platform === 'tiktok') { url = 'https://www.tiktok.com/@goal.sniper2'; name = 'تيك توك'; }
+            else if (platform === 'wa') { url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; name = 'واتساب'; }
+
+            // 1. نسخ الرابط كإجراء أمان إضافي للاعب
+            navigator.clipboard.writeText(url).catch(e => {});
+
+            // 2. إظهار نافذتك المنبثقة الأنيقة لإشعار اللاعب
+            showCustomDialog(
+                `<div class="space-y-2">
+                    <span class="text-blue-400 text-2xl"><i class="fa-solid fa-link"></i></span>
+                    <br><b class="text-lg">الانتقال إلى ${name}</b><br>
+                    <span class="text-xs text-slate-300">تم تجهيز الرابط بأمان لمنع تعليق الشاشة. اختر التطبيق من القائمة التي ستظهر لك.</span>
+                </div>`
+            );
+
+            // 3. الضربة القاضية: استدعاء قائمة الهاتف الأصلية لفتح الرابط بأمان
+            setTimeout(() => {
+                try {
+                    if (typeof ShareChannel !== 'undefined') {
+                        ShareChannel.postMessage(url);
+                    } else if (window.ShareChannel) {
+                        window.ShareChannel.postMessage(url);
+                    }
+                } catch (error) {}
+            }, 800);
         }
 
         // 🌟 الدالة الثانية: لفتح قناة الواتساب من الهيدر
         function openWaChannel() {
-            const channelUrl = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; 
-            const link = document.createElement('a');
-            link.href = channelUrl;
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            openSocial('wa');
         }
         
         function shareApp() {
