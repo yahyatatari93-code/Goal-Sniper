@@ -1426,42 +1426,57 @@ function isMatchLocked(match) {
             return activeGwCache;
         }
 
-        // 🌟 الدالة الأولى: لفتح حسابات التواصل (اختراق حظر الشاشة السوداء عبر Vercel)
+        // 🌟 الدالة الأولى: لفتح حسابات التواصل (الفتح المباشر للتطبيقات الأصلية)
         function openSocial(platform) {
-            let url = '', name = '';
-            
-            // يوتيوب يعمل بشكل طبيعي لأنه لا يفرض بروتوكولات مخفية
-            if (platform === 'yt') { 
-                window.location.href = 'https://www.youtube.com/@GoalSniper-r8p'; 
-                return; 
+            const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || window.opera);
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            let webUrl = '';
+            let intentUrl = '';
+            let iosUrl = '';
+
+            if (platform === 'fb') {
+                webUrl = 'https://www.facebook.com/profile.php?id=61593211584610';
+                // إجبار فتح تطبيق فيسبوك عبر الحزمة com.facebook.katana
+                intentUrl = 'intent://www.facebook.com/profile.php?id=61593211584610#Intent;scheme=https;package=com.facebook.katana;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+                iosUrl = 'fb://profile/61593211584610';
             }
-            else if (platform === 'fb') { url = 'https://www.facebook.com/profile.php?id=61593211584610'; name = 'فيسبوك'; }
-            else if (platform === 'ig') { url = 'https://www.instagram.com/goal.sniper02?igsh=Z2cyMXBpNjMxMm9j'; name = 'إنستغرام'; }
-            else if (platform === 'tiktok') { url = 'https://www.tiktok.com/@goal.sniper2'; name = 'تيك توك'; }
-            else if (platform === 'wa') { url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36'; name = 'واتساب'; }
+            else if (platform === 'ig') {
+                webUrl = 'https://www.instagram.com/goal.sniper02';
+                // إجبار فتح تطبيق إنستغرام
+                intentUrl = 'intent://instagram.com/goal.sniper02#Intent;scheme=https;package=com.instagram.android;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+                iosUrl = 'instagram://user?username=goal.sniper02';
+            }
+            else if (platform === 'tiktok') {
+                webUrl = 'https://www.tiktok.com/@goal.sniper2';
+                // إجبار فتح تطبيق تيك توك
+                intentUrl = 'intent://www.tiktok.com/@goal.sniper2#Intent;scheme=https;package=com.zhiliaoapp.musically;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+                iosUrl = 'snssdk1233://user/profile/goal.sniper2';
+            }
+            else if (platform === 'yt') {
+                webUrl = 'https://www.youtube.com/@GoalSniper-r8p';
+                // إجبار فتح تطبيق يوتيوب
+                intentUrl = 'intent://www.youtube.com/@GoalSniper-r8p#Intent;scheme=https;package=com.google.android.youtube;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+                iosUrl = 'youtube://www.youtube.com/@GoalSniper-r8p';
+            }
+            else if (platform === 'wa') {
+                webUrl = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36';
+                // إجبار فتح تطبيق واتساب
+                intentUrl = 'intent://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36#Intent;scheme=https;package=com.whatsapp;S.browser_fallback_url=' + encodeURIComponent(webUrl) + ';end';
+                iosUrl = 'whatsapp://channel/0029VbDnnDj2P59mS16arX36';
+            }
 
-            // 1. نسخ الرابط كإجراء أمان إضافي للاعب
-            navigator.clipboard.writeText(url).catch(e => {});
-
-            // 2. إظهار نافذتك المنبثقة الأنيقة لإشعار اللاعب
-            showCustomDialog(
-                `<div class="space-y-2">
-                    <span class="text-blue-400 text-2xl"><i class="fa-solid fa-link"></i></span>
-                    <br><b class="text-lg">الانتقال إلى ${name}</b><br>
-                    <span class="text-xs text-slate-300">تم تجهيز الرابط بأمان لمنع تعليق الشاشة. اختر التطبيق من القائمة التي ستظهر لك.</span>
-                </div>`
-            );
-
-            // 3. الضربة القاضية: استدعاء قائمة الهاتف الأصلية لفتح الرابط بأمان
-            setTimeout(() => {
-                try {
-                    if (typeof ShareChannel !== 'undefined') {
-                        ShareChannel.postMessage(url);
-                    } else if (window.ShareChannel) {
-                        window.ShareChannel.postMessage(url);
-                    }
-                } catch (error) {}
-            }, 800);
+            if (isAndroid) {
+                // التنفيذ المباشر والسريع للأندرويد
+                window.location.href = intentUrl;
+            } else if (isIOS) {
+                // التنفيذ المباشر للآيفون
+                window.location.href = iosUrl;
+                setTimeout(() => { window.location.href = webUrl; }, 1500);
+            } else {
+                // متصفح الكمبيوتر
+                window.open(webUrl, '_blank');
+            }
         }
 
         // 🌟 الدالة الثانية: لفتح قناة الواتساب من الهيدر
