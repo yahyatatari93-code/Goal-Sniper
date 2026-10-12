@@ -5061,6 +5061,27 @@ async function deleteLeagueByAdmin() {
                 showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء. لم يتم خصم شيء من رصيدك.');
             }
         };
+
+        // 🚀 تحديث الشريط المتحرك فوراً عند فتح التطبيق 🚀
+        async function forceUpdateMarquee() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/announcement`);
+                const data = await res.json();
+                if (data.success && data.text) {
+                    // ابحث عن عنصر الشريط المتحرك وحدث نصه (تأكد من أن الكلاس أو الـ id يطابق ما لديك)
+                    const marqueeElement = document.querySelector('marquee') || document.getElementById('marquee-text');
+                    if (marqueeElement) {
+                        marqueeElement.innerText = data.text;
+                    }
+                }
+            } catch(e) {
+                console.log("Marquee sync skipped");
+            }
+        }
+        
+        // تشغيل الدالة فور تحميل الصفحة
+        window.addEventListener('DOMContentLoaded', forceUpdateMarquee);
+        
     </script>
 </body>
 </html>
