@@ -557,15 +557,19 @@ const notifiedDays = new Set(); // ذاكرة مؤقتة لمنع تكرار ا�
 
 function parseMatchDateTime(dateStr, timeStr) {
     try {
-        let [d, m, y] = dateStr.split('/');
+        // دعم ذكي للفواصل (سواء كتبت التاريخ 12/10/2026 أو 12-10-2026)
+        let parts = (dateStr || '').split(/[\/\-]/);
+        let d = parts[0], m = parts[1], y = parts[2];
+        if(y && y.length === 2) y = '20' + y; // معالجة إذا تمت كتابة السنة 26 بدلاً من 2026
+
         let [time, period] = (timeStr || '').trim().split(/\s+/);
         let [hours, minutes] = (time || '0:0').split(':');
         hours = parseInt(hours, 10);
         minutes = parseInt(minutes, 10);
         
-        if (period === 'م' || period === 'PM') {
+        if (period === 'م' || period === 'PM' || period === 'pm') {
             if (hours !== 12) hours += 12;
-        } else if (period === 'ص' || period === 'AM') {
+        } else if (period === 'ص' || period === 'AM' || period === 'am') {
             if (hours === 12) hours = 0;
         }
         
@@ -584,14 +588,11 @@ async function checkUpcomingMatches() {
 
         const firstMatchesPerDay = {};
 
-        // 1. تجميع المباريات لمعرفة "المباراة الافتتاحية" في *كل يوم*
         matches.forEach(m => {
-            // 🌟 التعديل الجذري: دمج التاريخ في المفتاح ليكون الفحص يومياً 🌟
             const dayKey = `${m.league || 'EPL'}_${m.gw}_${m.date}`; 
             const matchTime = parseMatchDateTime(m.date, m.time);
             if (matchTime === 0) return;
 
-            // حفظ المباراة صاحبة الوقت الأبكر في هذا اليوم بالتحديد
             if (!firstMatchesPerDay[dayKey] || matchTime < firstMatchesPerDay[dayKey].time) {
                 firstMatchesPerDay[dayKey] = { gw: m.gw, league: m.league, time: matchTime, date: m.date };
             }
@@ -599,22 +600,20 @@ async function checkUpcomingMatches() {
 
         const now = Date.now();
         
-        // 2. فحص كل مباراة افتتاحية يومية
         Object.keys(firstMatchesPerDay).forEach(async (dayKey) => {
             const firstMatch = firstMatchesPerDay[dayKey];
             const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
 
-            // 3. إذا كان الوقت المتبقي هو ساعتين ولم نرسل الإشعار بعد لهذا اليوم
-            if (timeDiffMinutes > 118 && timeDiffMinutes <= 120) {
+            // 🚀 التعديل الأهم: توسيع نافذة الفحص لتكون 15 دقيقة (بين 105 و 120 دقيقة) لضمان عدم تفويت الإشعار أبداً
+            if (timeDiffMinutes > 105 && timeDiffMinutes <= 120) {
                 if (!notifiedDays.has(dayKey)) {
-                    notifiedDays.add(dayKey); // قفل الإرسال لهذا اليوم لكي لا يتكرر
+                    notifiedDays.add(dayKey); 
 
                     const leagueName = firstMatch.league === 'UCL' ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
                     const gwLabel = firstMatch.league === 'UCL' ? `الجولة ${firstMatch.gw - 100}` : `الجولة ${firstMatch.gw}`;
                     
-                    // 🌟 تعديل نص الإشعار ليناسب اليوم 🌟
                     const title = `🚨 مباريات اليوم من ${gwLabel} تقترب!`;
-                    const body = `باقي ساعة واحدة فقط على إغلاق التوقعات لأولى مباريات اليوم في ${leagueName}. ادخل واقنص نقاطك الآن قبل فوات الأوان! ⏱️`;
+                    const body = `باقي أقل من ساعتين على إغلاق التوقعات لأولى مباريات اليوم في ${leagueName}. ادخل واقنص نقاطك الآن! ⏱️`;
 
                     await sendFCMToAll(title, body);
                     console.log(`[Auto-Reminder] Sent for ${dayKey}`);
