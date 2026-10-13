@@ -1425,9 +1425,8 @@ function isMatchLocked(match) {
             return activeGwCache;
         }
 
-        // 🌟 الدالة الأولى: الفتح المباشر للتطبيقات (كودك الأصلي مع حماية الشاشة)
+        // 🌟 الدالة الأولى: الفتح المباشر للتطبيقات (بدون شاشة سوداء بفضل التحديث الجديد)
         function openSocial(platform) {
-            const isAndroid = /android/i.test(navigator.userAgent || navigator.vendor || window.opera);
             let url = '';
             
             if (platform === 'fb') url = 'https://www.facebook.com/profile.php?id=61593211584610';
@@ -1436,35 +1435,49 @@ function isMatchLocked(match) {
             else if (platform === 'yt') url = 'https://www.youtube.com/@GoalSniper-r8p';
             else if (platform === 'wa') url = 'https://whatsapp.com/channel/0029VbDnnDj2P59mS16arX36';  
             
-            if (isAndroid) {
-                // كودك القديم الذي يفتح التطبيقات مباشرة 
-                const intentUrl = url.replace('https://', 'intent://') + '#Intent;scheme=https;end';
-                
-                // السر هنا: وضع الرابط في إطار مخفي. 
-                // الهاتف سيفتح التطبيق الخارجي فوراً، بينما شاشتك ستبقى محمية ولن تسوَد أبداً.
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = intentUrl;
-                document.body.appendChild(iframe);
-                
-                // تنظيف الإطار بعد ثانية لعدم استهلاك الذاكرة
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                }, 1000);
-                
-            } else {
-                // الآيفون والكمبيوتر (كودك القديم تماماً)
-                const win = window.open(url, '_blank');
-                if (!win || win.closed || typeof win.closed === 'undefined') {
-                    window.location.href = url;
-                }
-            }
+            // سيقوم فلاتر المحدث بالتقاط هذا الرابط وفتحه بالتطبيق الخارجي بسلاسة
+            window.location.href = url;
         }
 
         // 🌟 الدالة الثانية: لفتح قناة الواتساب من الهيدر
         function openWaChannel() {
             openSocial('wa');
         }
+
+        // 🌟 نظام التنبيه الذكي للتحديثات 🌟
+        function checkAppUpdate() {
+            // الإصدار الأحدث الذي رفعناه للتو
+            const LATEST_VERSION = "1.1.4";
+            
+            // محاولة التقاط رقم الإصدار الذي يرسله التطبيق
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentVer = urlParams.get('ver');
+
+            // إذا كان اللاعب لا يستخدم النسخة الأحدث (النسخة القديمة لا ترسل رقم إصدار)
+            if (currentVer !== LATEST_VERSION) {
+                showCustomDialog(
+                    "🚀 <b>تحديث هام متاح!</b><br><br>أطلقنا تحديثاً جديداً يحل جميع مشاكل التطبيق ويحسن التجربة بشكل ملحوظ.<br>هل ترغب بتحديثه الآن؟",
+                    "confirm",
+                    () => {
+                        // توجيهه للمتجر إذا وافق
+                        window.location.href = "https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper";
+                    }
+                );
+                
+                // تعديل نصوص أزرار النافذة لتناسب التحديث (تحديث أو تجاهل)
+                setTimeout(() => {
+                    const btnClose = document.getElementById('diag-close');
+                    const btnYes = document.getElementById('diag-yes');
+                    if(btnClose) btnClose.innerText = "تجاهل حالياً";
+                    if(btnYes) btnYes.innerText = "تحديث الآن";
+                }, 50);
+            }
+        }
+        
+        // تشغيل الفحص التلقائي بعد تحميل الصفحة
+        window.addEventListener('load', () => {
+            setTimeout(checkAppUpdate, 1500); // ننتظر ثانية ونصف لضمان تحميل النافذة
+        });
         
         function shareApp() {
             const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper';
