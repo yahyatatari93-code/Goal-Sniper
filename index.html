@@ -2830,7 +2830,8 @@ function renderMiniLeaguesTab() {
             updateTheme(); // 🌟 تغيير الخلفية فوراً
         }
 
-const prizesTranslations = {
+function renderPrizesTab() {
+            const prizesTranslations = {
                 ar: {
                     title: "قاعة الجوائز الكبرى",
                     subtitle: "تنافس بشراسة، وتوج بطلاً لتحصد الجوائز!",
@@ -2878,18 +2879,18 @@ const prizesTranslations = {
                         <p class="text-xs text-slate-300 mt-2 font-bold">${pt.subtitle}</p>
                     </div>
 
-                    <!-- 🎁 الجوائز الشهرية -->
+                    <!-- 🎁 الجوائز الأسبوعية -->
                     <div class="glass p-4 rounded-3xl relative overflow-hidden border border-blue-500/30 bg-slate-900/60 shadow-lg">
                         <div class="flex items-center gap-3 border-b border-white/10 pb-3 mb-3">
                             <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl border border-blue-500/30"><i class="fa-solid fa-medal"></i></div>
-                            <h3 class="text-lg font-black text-white">${pt.monthlyTitle}</h3>
+                            <h3 class="text-lg font-black text-white">${pt.weeklyTitle}</h3>
                         </div>
                         
                         <div class="flex items-center gap-2.5 bg-blue-950/30 p-3 rounded-2xl border border-blue-500/20">
                             <div class="text-3xl text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)] shrink-0"><i class="fa-solid fa-shirt"></i></div>
                             <div class="flex-1 overflow-hidden">
-                                <h4 class="font-bold text-[13px] text-blue-300 mb-0.5">${pt.monthlyItem}</h4>
-                                <p class="text-[10px] sm:text-xs text-slate-300 font-semibold whitespace-nowrap w-full">${pt.monthlyDesc}</p>
+                                <h4 class="font-bold text-[13px] text-blue-300 mb-0.5">${pt.weeklyItem}</h4>
+                                <p class="text-[10px] sm:text-xs text-slate-300 font-semibold whitespace-nowrap w-full">${pt.weeklyDesc}</p>
                             </div>
                         </div>
                     </div>
