@@ -1445,10 +1445,13 @@ function isMatchLocked(match) {
         }
 
         // 🌟 نظام التنبيه الذكي للتحديثات (معدل لمنع الشاشة السوداء في النسخة القديمة) 🌟
+        // 🌟 نظام التنبيه الذكي للتحديثات (معدل لقراءة النسخة المخبأة) 🌟
         function checkAppUpdate() {
             const LATEST_VERSION = "1.1.4";
+            
+            // نحاول قراءة الإصدار من الرابط، أو من الذاكرة المخفية التي حفظناها قبل الذهاب لغوغل
             const urlParams = new URLSearchParams(window.location.search);
-            const currentVer = urlParams.get('ver');
+            let currentVer = urlParams.get('ver') || sessionStorage.getItem('temp_app_version');
 
             // إذا كان اللاعب لا يستخدم النسخة الأحدث
             if (currentVer !== LATEST_VERSION) {
@@ -1456,7 +1459,6 @@ function isMatchLocked(match) {
                     "🚀 <b>تحديث هام متاح!</b><br><br>لحل مشكلة الشاشة السوداء نهائياً، أطلقنا تحديثاً جديداً.<br><br><span class='text-xs text-amber-400 bg-amber-900/20 px-2 py-1 rounded block mt-2 border border-amber-500/30'>بسبب خلل نسختك الحالية، لا يمكننا توجيهك للمتجر مباشرة. <b>يرجى فتح متجر غوغل بلاي والبحث عن Goal Sniper لتحديثه</b>، أو انسخ الرابط أدناه:</span>",
                     "confirm",
                     () => {
-                        // بدلاً من التوجيه المباشر الذي يسبب الشاشة السوداء، نقوم بنسخ الرابط
                         const playUrl = "https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper";
                         navigator.clipboard.writeText(playUrl).then(() => {
                             showCustomDialog("✅ <b>تم نسخ الرابط!</b><br><br>اذهب إلى متصفح جوجل كروم، الصق الرابط هناك، وقم بتحديث التطبيق لتنتهي المشكلة للأبد.", "alert");
@@ -1466,7 +1468,6 @@ function isMatchLocked(match) {
                     }
                 );
                 
-                // تعديل نصوص الأزرار
                 setTimeout(() => {
                     const btnClose = document.getElementById('diag-close');
                     const btnYes = document.getElementById('diag-yes');
@@ -4337,12 +4338,20 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
-        // 3. دالة الانتقال الآمن لغوغل (مع إجبار اختيار الحساب وحفظ المعرف)
+        // 3. دالة الانتقال الآمن لغوغل (الحل الجذري لمنع خطأ 400 ولمنع رسالة التحديث)
         function startGoogleRedirect() {
             const clientId = "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com";
             
-            // 🌟 الإصلاح السحري: إضافة مُعرّف التحديث لرابط العودة لكي لا تظهر رسالة التحديث خطأً
-            const redirectUri = encodeURIComponent("https://goal-sniper.vercel.app/?ver=1.1.4"); 
+            // 🌟 إعادة الرابط النظيف الذي تعرفه منصة غوغل تماماً لمنع خطأ 400
+            const redirectUri = "https://goal-sniper.vercel.app"; 
+            
+            // 🌟 الخدعة الذكية: تخزين مُعرّف التحديث مؤقتاً في الهاتف قبل الذهاب لغوغل
+            // لكي نتذكره عند العودة ونمنع رسالة التحديث الخاطئة من الظهور!
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentVer = urlParams.get('ver');
+            if (currentVer) {
+                sessionStorage.setItem('temp_app_version', currentVer);
+            }
             
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=id_token&scope=openid email profile&nonce=sniper123&prompt=select_account`;
             
@@ -4354,7 +4363,7 @@ async function deleteLeagueByAdmin() {
                 
             window.location.href = authUrl;
         }
-
+        
         // 🌟 دالة تجهيز التسجيل قبل الذهاب لغوغل 🌟
         function prepareGoogleRegistration() {
             const username = document.getElementById('reg-username').value.trim();
