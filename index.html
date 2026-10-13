@@ -1444,32 +1444,34 @@ function isMatchLocked(match) {
             openSocial('wa');
         }
 
-        // 🌟 نظام التنبيه الذكي للتحديثات 🌟
+        // 🌟 نظام التنبيه الذكي للتحديثات (معدل لمنع الشاشة السوداء في النسخة القديمة) 🌟
         function checkAppUpdate() {
-            // الإصدار الأحدث الذي رفعناه للتو
             const LATEST_VERSION = "1.1.4";
-            
-            // محاولة التقاط رقم الإصدار الذي يرسله التطبيق
             const urlParams = new URLSearchParams(window.location.search);
             const currentVer = urlParams.get('ver');
 
-            // إذا كان اللاعب لا يستخدم النسخة الأحدث (النسخة القديمة لا ترسل رقم إصدار)
+            // إذا كان اللاعب لا يستخدم النسخة الأحدث
             if (currentVer !== LATEST_VERSION) {
                 showCustomDialog(
-                    "🚀 <b>تحديث هام متاح!</b><br><br>أطلقنا تحديثاً جديداً يحل جميع مشاكل التطبيق ويحسن التجربة بشكل ملحوظ.<br>هل ترغب بتحديثه الآن؟",
+                    "🚀 <b>تحديث هام متاح!</b><br><br>لحل مشكلة الشاشة السوداء نهائياً، أطلقنا تحديثاً جديداً.<br><br><span class='text-xs text-amber-400 bg-amber-900/20 px-2 py-1 rounded block mt-2 border border-amber-500/30'>بسبب خلل نسختك الحالية، لا يمكننا توجيهك للمتجر مباشرة. <b>يرجى فتح متجر غوغل بلاي والبحث عن Goal Sniper لتحديثه</b>، أو انسخ الرابط أدناه:</span>",
                     "confirm",
                     () => {
-                        // توجيهه للمتجر إذا وافق
-                        window.location.href = "https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper";
+                        // بدلاً من التوجيه المباشر الذي يسبب الشاشة السوداء، نقوم بنسخ الرابط
+                        const playUrl = "https://play.google.com/store/apps/details?id=com.yahyatatari.goalsniper";
+                        navigator.clipboard.writeText(playUrl).then(() => {
+                            showCustomDialog("✅ <b>تم نسخ الرابط!</b><br><br>اذهب إلى متصفح جوجل كروم، الصق الرابط هناك، وقم بتحديث التطبيق لتنتهي المشكلة للأبد.", "alert");
+                        }).catch(() => {
+                            showCustomDialog("يرجى البحث يدوياً في متجر غوغل بلاي عن:<br><b class='text-blue-400 text-lg'>Goal Sniper</b>", "alert");
+                        });
                     }
                 );
                 
-                // تعديل نصوص أزرار النافذة لتناسب التحديث (تحديث أو تجاهل)
+                // تعديل نصوص الأزرار
                 setTimeout(() => {
                     const btnClose = document.getElementById('diag-close');
                     const btnYes = document.getElementById('diag-yes');
                     if(btnClose) btnClose.innerText = "تجاهل حالياً";
-                    if(btnYes) btnYes.innerText = "تحديث الآن";
+                    if(btnYes) btnYes.innerText = "نسخ رابط التحديث";
                 }, 50);
             }
         }
