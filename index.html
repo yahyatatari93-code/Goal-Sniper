@@ -2143,14 +2143,18 @@ function changeGw(gw) {
                             </span>
                         </div>
                         
-                        <!-- ✅ التعديل الثالث: إضافة الزر الثالث (ترتيب الجولة) بأناقة -->
+                        <!-- ✅ أزرار الترتيب (يظهر زر الشهر فقط للإدارة) -->
                         <div class="flex gap-1.5 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner">
                             <button onclick="toggleStandingsMode('global')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${!isMonthly && !isGw ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-[0_0_10px_rgba(245,158,11,0.3)]' : 'text-slate-400 hover:text-white'}">
                                 ${isAr ? 'الترتيب العام' : 'Overall'}
                             </button>
+                            
+                            ${currentUser.username === 'Red Army' ? `
                             <button onclick="toggleStandingsMode('monthly')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${isMonthly ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
                                 ${isAr ? 'ترتيب الشهر' : 'Monthly'}
                             </button>
+                            ` : ''}
+
                             <button onclick="toggleStandingsMode('gw')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${isGw ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'text-slate-400 hover:text-white'}">
                                 ${isAr ? 'ترتيب الجولة' : 'Gameweek'}
                             </button>
@@ -2826,14 +2830,13 @@ function renderMiniLeaguesTab() {
             updateTheme(); // 🌟 تغيير الخلفية فوراً
         }
 
-function renderPrizesTab() {
-            const prizesTranslations = {
+const prizesTranslations = {
                 ar: {
                     title: "قاعة الجوائز الكبرى",
                     subtitle: "تنافس بشراسة، وتوج بطلاً لتحصد الجوائز!",
-                    monthlyTitle: "الجوائز الشهرية",
-                    monthlyItem: "3 تيشيرتات رياضية",
-                    monthlyDesc: 'تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black">ترتيب الشهر</span>',
+                    weeklyTitle: "الجوائز الأسبوعية",
+                    weeklyItem: "3 تيشيرتات رياضية",
+                    weeklyDesc: 'تُقدم لأصحاب المراكز الثلاثة الأولى في <span class="text-amber-400 font-black">ترتيب الجولة</span>',
                     seasonTitle: "الجوائز الكبرى (نهاية الموسم)",
                     p1: "المركز الأول", p2: "المركز الثاني", p3: "المركز الثالث",
                     p4: "المركز الرابع", p5: "المركز الخامس", p6_10: "من المركز 6 إلى 10"
@@ -2841,9 +2844,9 @@ function renderPrizesTab() {
                 en: {
                     title: "Grand Prizes Hall",
                     subtitle: "Compete fiercely and be the champion to claim prizes!",
-                    monthlyTitle: "Monthly Prizes",
-                    monthlyItem: "3 Sports Jerseys",
-                    monthlyDesc: 'Awarded to the top 3 in the <span class="text-amber-400 font-black">Monthly Standings</span>',
+                    weeklyTitle: "Weekly Prizes",
+                    weeklyItem: "3 Sports Jerseys",
+                    weeklyDesc: 'Awarded to the top 3 in the <span class="text-amber-400 font-black">GW Standings</span>',
                     seasonTitle: "Grand Prizes (End of Season)",
                     p1: "1st Place", p2: "2nd Place", p3: "3rd Place",
                     p4: "4th Place", p5: "5th Place", p6_10: "6th to 10th Place"
@@ -2851,9 +2854,9 @@ function renderPrizesTab() {
                 tr: {
                     title: "Büyük Ödüller Salonu",
                     subtitle: "Şiddetle yarış ve ödülleri kazanmak için şampiyon ol!",
-                    monthlyTitle: "Aylık Ödüller",
-                    monthlyItem: "3 Spor Forması",
-                    monthlyDesc: '<span class="text-amber-400 font-black">Aylık Sıralamada</span> ilk 3\'e verilir',
+                    weeklyTitle: "Haftalık Ödüller",
+                    weeklyItem: "3 Spor Forması",
+                    weeklyDesc: '<span class="text-amber-400 font-black">Haftalık Sıralamada</span> ilk 3\'e verilir',
                     seasonTitle: "Büyük Ödüller (Sezon Sonu)",
                     p1: "1. Sıra", p2: "2. Sıra", p3: "3. Sıra",
                     p4: "4. Sıra", p5: "5. Sıra", p6_10: "6. - 10. Sıralar"
