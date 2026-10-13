@@ -3257,7 +3257,38 @@ function renderPrizesTab() {
                         <div class="space-y-3 max-h-[500px] overflow-y-auto pr-1 animate-fade-up">
                             ${adminMatches.length === 0 ? `<div class="text-center text-slate-400 text-sm py-6">لا توجد مباريات في الجولة ${activeAdminGw}</div>` : ''}
                             
-                            ${adminMatches.map(m => `
+                            ${adminMatches.map(m => {
+                                // 🌟 1. حساب النسبة المئوية للمطابقة التامة 🌟
+                                let exactCount = 0, totalPreds = 0;
+                                const isPlayed = m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '';
+                                
+                                if (isPlayed) {
+                                    Object.keys(predictions).forEach(u => {
+                                        const p = (predictions[u] || {})[m.id];
+                                        if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                                            totalPreds++;
+                                            if (Number(p.home) === Number(m.actualH) && Number(p.away) === Number(m.actualA)) {
+                                                exactCount++;
+                                            }
+                                        }
+                                    });
+                                }
+                                
+                                const exactPct = totalPreds > 0 ? Math.round((exactCount / totalPreds) * 100) : 0;
+                                
+                                // 🌟 2. بناء مربع النسبة الذكي 🌟
+                                let pctBadge = '';
+                                if (isPlayed) {
+                                    if (exactPct <= 5 && exactCount > 0) {
+                                        // قابل للضغط باللون البنفسجي المميز (للنسب النادرة)
+                                        pctBadge = `<button onclick="showExactGuessers('${m.id}')" class="bg-fuchsia-600/20 hover:bg-fuchsia-600/40 text-fuchsia-400 px-2 py-1 rounded text-[10px] font-bold border border-fuchsia-500/30 transition-all cursor-pointer shadow-lg shadow-fuchsia-500/20" title="اضغط لكشف أسماء القناصين!"><i class="fa-solid fa-user-secret ml-1"></i>${exactPct}%</button>`;
+                                    } else {
+                                        // مربع عادي غير قابل للضغط
+                                        pctBadge = `<span class="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-[10px] font-bold border border-blue-500/30"><i class="fa-solid fa-crosshairs ml-1"></i>${exactPct}%</span>`;
+                                    }
+                                }
+
+                                return `
                                 <div class="bg-slate-900/60 p-3 rounded-xl flex items-center justify-between border border-white/5 gap-2 flex-wrap relative">
                                     <div class="flex items-center gap-2 w-full md:w-auto mb-2 md:mb-0">
                                         <div class="text-[10px] font-bold text-slate-400 w-12 text-center bg-slate-800 rounded px-1 py-1">GW ${m.gw}</div>
@@ -3274,10 +3305,14 @@ function renderPrizesTab() {
                                             ${getTeamName(m.home)}
                                         </div>
                                         
-                                        <div class="flex items-center gap-1.5">
-                                            <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
-                                            <span class="text-slate-500">:</span>
-                                            <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
+                                        <div class="flex items-center gap-1.5 flex-col md:flex-row">
+                                            <div class="flex items-center gap-1.5">
+                                                <input type="text" inputmode="numeric" id="actual-h-${m.id}" value="${m.actualH !== null ? m.actualH : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
+                                                <span class="text-slate-500">:</span>
+                                                <input type="text" inputmode="numeric" id="actual-a-${m.id}" value="${m.actualA !== null ? m.actualA : ''}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="-" class="w-10 h-8 text-center bg-slate-950 border border-white/20 rounded-lg text-xs text-white focus:border-blue-500 outline-none" />
+                                            </div>
+                                            <!-- 🌟 عرض زر النسبة هنا 🌟 -->
+                                            ${pctBadge}
                                         </div>
                                         
                                         <div class="flex-1 text-left font-bold text-xs text-slate-200 truncate flex justify-end items-center gap-2 flex-row-reverse">
@@ -3291,7 +3326,8 @@ function renderPrizesTab() {
                                         <button onclick="clearActual('${m.id}')" class="px-3 py-1.5 bg-slate-700/50 text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-700 transition-all"><i class="fa-solid fa-xmark mr-1"></i> إلغاء</button>
                                     </div>
                                 </div>
-                            `).join('')}
+                            `;
+                            }).join('')}
                         </div>
                     </div>
                 </div>
@@ -4219,6 +4255,39 @@ async function deleteLeagueByAdmin() {
             `;
             document.getElementById('diag-close').onclick = () => { container.innerHTML = ''; };
             if (type === 'confirm' && onConfirm) { document.getElementById('diag-yes').onclick = () => { container.innerHTML = ''; onConfirm(); }; }
+        }
+
+        // 🌟 دالة كشف العباقرة (للإدارة فقط) 🌟
+        function showExactGuessers(matchId) {
+            const m = matches.find(x => x.id === matchId);
+            if (!m || m.actualH === null || m.actualA === null) return;
+
+            const exactNames = [];
+            Object.keys(predictions).forEach(u => {
+                const p = (predictions[u] || {})[matchId];
+                if (p && p.home !== '' && p.away !== '') {
+                    if (Number(p.home) === Number(m.actualH) && Number(p.away) === Number(m.actualA)) {
+                        exactNames.push(u);
+                    }
+                }
+            });
+
+            if (exactNames.length === 0) {
+                showCustomDialog("لا يوجد أحد توقع هذه النتيجة بدقة!", "alert");
+                return;
+            }
+
+            // عرض الأسماء في نافذة منبثقة
+            let namesHtml = exactNames.map(name => `<div class="bg-blue-900/30 border border-blue-500/20 text-blue-300 font-bold py-2 px-3 rounded-lg text-sm">${name}</div>`).join('');
+            
+            showCustomDialog(
+                `<div class="text-emerald-400 text-3xl mb-3"><i class="fa-solid fa-user-secret"></i></div>
+                 <b class="text-white text-lg block mb-4">قائمة العباقرة (التطابق التام)</b>
+                 <div class="max-h-48 overflow-y-auto space-y-2 mb-2 pr-1 hide-scrollbar">
+                    ${namesHtml}
+                 </div>`,
+                "alert"
+            );
         }
 
         // 🌟 دالة الرسالة الترحيبية للمستخدمين الجدد (آمنة 100%) 🌟
