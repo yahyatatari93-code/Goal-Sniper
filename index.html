@@ -3110,6 +3110,15 @@ function renderPrizesTab() {
                             <textarea id="admin-broadcast-body" placeholder="اكتب رسالتك للقناصين هنا..." rows="2" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-emerald-500 text-right resize-none"></textarea>
                             <button onclick="sendBroadcastNotification()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-emerald-600/20">🚀 إرسال الإشعار الآن</button>
                         </div>
+
+                        <!-- بطاقة إشعار مخصص للاعب -->
+                        <div class="bg-slate-900/80 border border-fuchsia-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(192,38,211,0.1)]">
+                            <h3 class="text-fuchsia-400 font-bold text-sm mb-3"><i class="fa-solid fa-user-tag ml-1"></i> إرسال إشعار خاص للاعب</h3>
+                            <input type="text" id="admin-single-username" placeholder="اسم اللاعب (مثال: Ahmed99)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-fuchsia-500 text-right">
+                            <input type="text" id="admin-single-title" placeholder="عنوان الإشعار (مثال: تحذير للإدارة)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-2 outline-none focus:border-fuchsia-500 text-right">
+                            <textarea id="admin-single-body" placeholder="نص رسالتك الخاصة للاعب..." rows="2" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-fuchsia-500 text-right resize-none"></textarea>
+                            <button onclick="sendSingleNotification()" class="w-full py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-fuchsia-600/20">🎯 إرسال الإشعار للاعب فقط</button>
+                        </div>
                         
                         <!-- بطاقة الشريط المتحرك -->
                         <div class="bg-slate-900/80 border border-blue-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
@@ -4118,6 +4127,41 @@ async function deleteLeagueByAdmin() {
             } catch (error) {
                 console.error(error);
                 alert("حدث خطأ في الاتصال بالسيرفر.");
+            }
+        }
+
+        // 🌟 دالة إرسال الإشعار المخصص للاعب محدد 🌟
+        async function sendSingleNotification() {
+            const username = document.getElementById('admin-single-username').value.trim();
+            const title = document.getElementById('admin-single-title').value.trim();
+            const body = document.getElementById('admin-single-body').value.trim();
+
+            if (!username || !title || !body) {
+                showCustomDialog("يرجى ملء اسم اللاعب، عنوان الإشعار، ونص الرسالة أولاً.");
+                return;
+            }
+
+            // لم نطلب كلمة مرور هنا لأن زر الإرسال محمي أساساً بنظام الدخول (Token) وصلاحيات الإدارة (isAdmin)
+            try {
+                const token = localStorage.getItem('oracle_token_v8');
+                const response = await fetch(`${API_BASE_URL}/admin/notify-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ targetUsername: username, title: title, body: body })
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    showCustomDialog("✅ " + data.message, "alert");
+                    // تفريغ الحقول بعد النجاح
+                    document.getElementById('admin-single-username').value = '';
+                    document.getElementById('admin-single-title').value = '';
+                    document.getElementById('admin-single-body').value = '';
+                } else {
+                    showCustomDialog("❌ فشل الإرسال: " + data.message);
+                }
+            } catch (error) {
+                showCustomDialog("حدث خطأ في الاتصال بالسيرفر.");
             }
         }
         
