@@ -596,7 +596,7 @@ app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) 
         if (users.length === 0) return res.status(404).json({ success: false, message: 'اللاعب غير موجود.' });
 
         // استدعاء الدالة الجاهزة لإرسال الإشعار
-        await sendFCMToUser(targetUsername, title, body);
+        await sendFCMToUser(users[0].username, title, body);
         res.json({ success: true, message: `تم إرسال الإشعار بنجاح إلى ${targetUsername} 🎯` });
     } catch (error) { 
         res.status(500).json({ success: false, message: error.message }); 
