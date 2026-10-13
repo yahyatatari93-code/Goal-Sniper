@@ -548,6 +548,23 @@ app.post('/api/admin/broadcast', async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
+// 🌟 مسار إرسال إشعار مخصص للاعب محدد 🌟
+app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) => {
+    const { targetUsername, title, body } = req.body;
+
+    try {
+        // التأكد من أن اللاعب موجود في قاعدة البيانات أولاً
+        const [users] = await pool.query('SELECT username FROM users WHERE username = ?', [targetUsername]);
+        if (users.length === 0) return res.status(404).json({ success: false, message: 'اللاعب غير موجود.' });
+
+        // استدعاء الدالة الجاهزة لإرسال الإشعار
+        await sendFCMToUser(targetUsername, title, body);
+        res.json({ success: true, message: `تم إرسال الإشعار بنجاح إلى ${targetUsername} 🎯` });
+    } catch (error) { 
+        res.status(500).json({ success: false, message: error.message }); 
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 // ==========================================
