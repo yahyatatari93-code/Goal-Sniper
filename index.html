@@ -4257,52 +4257,68 @@ async function deleteLeagueByAdmin() {
             if (type === 'confirm' && onConfirm) { document.getElementById('diag-yes').onclick = () => { container.innerHTML = ''; onConfirm(); }; }
         }
 
-        // 🌟 دالة كشف العباقرة (للإدارة فقط - محدثة لتشمل أسماء الفرق للقطات الشاشة) 🌟
+        // 🌟 دالة كشف العباقرة (للإدارة فقط - محدثة لدعم الأسماء الطويلة والنسبة المئوية) 🌟
         function showExactGuessers(matchId) {
             const m = matches.find(x => x.id === matchId);
             if (!m || m.actualH === null || m.actualA === null) return;
 
             const exactNames = [];
+            let totalPreds = 0; // لحساب النسبة المئوية بدقة
+
             Object.keys(predictions).forEach(u => {
                 const p = (predictions[u] || {})[matchId];
-                if (p && p.home !== '' && p.away !== '') {
+                if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                    totalPreds++;
                     if (Number(p.home) === Number(m.actualH) && Number(p.away) === Number(m.actualA)) {
                         exactNames.push(u);
                     }
                 }
             });
 
+            // حساب النسبة المئوية
+            const exactPct = totalPreds > 0 ? Math.round((exactNames.length / totalPreds) * 100) : 0;
+
             if (exactNames.length === 0) {
                 showCustomDialog("لا يوجد أحد توقع هذه النتيجة بدقة!", "alert");
                 return;
             }
 
-            // تجهيز أسماء الفرق والنتيجة
+            // تجهيز البيانات
             const homeName = getTeamName(m.home);
             const awayName = getTeamName(m.away);
             const homeLogo = getTeamLogo(m.home);
             const awayLogo = getTeamLogo(m.away);
-            // ترتيب النتيجة ليناسب اللغة العربية (من اليمين لليسار)
             const scoreDisplay = `${m.actualA} - ${m.actualH}`; 
 
-            // عرض الأسماء في نافذة منبثقة بتصميم أنيق ومناسب للقطات الشاشة
             let namesHtml = exactNames.map(name => `<div class="bg-blue-900/30 border border-blue-500/20 text-blue-300 font-bold py-2 px-3 rounded-lg text-sm">${name}</div>`).join('');
             
             showCustomDialog(
                 `
                  <!-- معلومات المباراة في أعلى النافذة -->
-                 <div class="bg-slate-900/80 border border-white/5 rounded-2xl p-3 mb-4 shadow-inner flex items-center justify-between">
-                     <div class="flex items-center gap-2 flex-1 justify-end">
-                         <span class="text-xs font-bold text-slate-200 truncate">${homeName}</span>
-                         <img src="${homeLogo}" class="w-6 h-6 object-contain drop-shadow-md">
+                 <div class="bg-slate-900/80 border border-white/5 rounded-2xl p-3 mb-4 shadow-inner flex items-start justify-between">
+                     
+                     <!-- الفريق المضيف -->
+                     <div class="flex flex-col items-center flex-1 px-1">
+                         <img src="${homeLogo}" class="w-8 h-8 object-contain drop-shadow-md mb-2">
+                         <span class="text-[11px] leading-tight font-bold text-slate-200 text-center whitespace-normal">${homeName}</span>
                      </div>
-                     <div class="bg-slate-950 px-3 py-1 rounded-lg border border-white/10 text-base font-black text-white shrink-0 mx-2 tracking-widest shadow-inner" dir="ltr">
-                         ${scoreDisplay}
+                     
+                     <!-- النتيجة والنسبة المئوية (في المنتصف) -->
+                     <div class="flex flex-col items-center justify-center shrink-0 mt-1 px-2">
+                         <div class="bg-slate-950 px-3 py-1.5 rounded-lg border border-white/10 text-lg font-black text-white tracking-widest shadow-inner mb-2" dir="ltr">
+                             ${scoreDisplay}
+                         </div>
+                         <div class="bg-fuchsia-600/20 text-fuchsia-400 px-2.5 py-1 rounded-md text-[10px] font-bold border border-fuchsia-500/30 shadow-lg shadow-fuchsia-500/20 flex items-center gap-1" title="نسبة المطابقة التامة">
+                             <i class="fa-solid fa-crosshairs"></i> دقة ${exactPct}%
+                         </div>
                      </div>
-                     <div class="flex items-center gap-2 flex-1 justify-start">
-                         <img src="${awayLogo}" class="w-6 h-6 object-contain drop-shadow-md">
-                         <span class="text-xs font-bold text-slate-200 truncate">${awayName}</span>
+                     
+                     <!-- الفريق الضيف -->
+                     <div class="flex flex-col items-center flex-1 px-1">
+                         <img src="${awayLogo}" class="w-8 h-8 object-contain drop-shadow-md mb-2">
+                         <span class="text-[11px] leading-tight font-bold text-slate-200 text-center whitespace-normal">${awayName}</span>
                      </div>
+                     
                  </div>
                  
                  <!-- قسم العباقرة -->
