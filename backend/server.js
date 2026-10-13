@@ -234,6 +234,44 @@ app.post('/api/auth/google/link', async (req, res) => {
     }
 });
 
+// 🌟 4. مسار استعادة/تغيير الرمز السري عبر غوغل 🌟
+app.post('/api/auth/google/reset-pin', async (req, res) => {
+    const { token, newPin } = req.body;
+    
+    if (!newPin || newPin.length < 4) {
+        return res.status(400).json({ success: false, message: 'الرمز السري يجب أن يكون 4 رموز على الأقل.' });
+    }
+
+    try {
+        // التحقق من صحة توكن غوغل المرفق
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com",
+        });
+        const payload = ticket.getPayload();
+        const googleId = payload['sub'];
+        const email = payload['email'];
+
+        // البحث عن المستخدم باستخدام إيميل غوغل أو المُعرّف
+        const [users] = await pool.query('SELECT * FROM users WHERE email = ? OR google_id = ?', [email, googleId]);
+
+        if (users.length === 0) {
+            return res.status(404).json({ success: false, message: 'لا يوجد حساب قناص مرتبط بحساب غوغل هذا.' });
+        }
+
+        // تحديث الرمز السري في قاعدة البيانات
+        await pool.query('UPDATE users SET pin = ? WHERE id = ?', [newPin, users[0].id]);
+
+        // إصدار توكن الدخول وتمرير بيانات المستخدم ليدخل التطبيق فوراً بعد التغيير
+        const jwtToken = jwt.sign({ username: users[0].username }, process.env.JWT_SECRET || 'sniper_secret_key_123', { expiresIn: '365d' });
+        res.json({ success: true, message: 'تم تغيير الرمز السري بنجاح!', user: { username: users[0].username, email: users[0].email, tokens: users[0].tokens || 0 }, token: jwtToken });
+
+    } catch (error) {
+        console.error("Google Reset PIN Error:", error);
+        res.status(500).json({ success: false, message: 'فشل التحقق من هوية حساب غوغل.' });
+    }
+});
+
 // ==========================================
 // 3. المزامنة والعمليات الأخرى
 // ==========================================
