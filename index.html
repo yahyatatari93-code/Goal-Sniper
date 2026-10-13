@@ -4337,10 +4337,13 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
-        // 3. دالة الانتقال الآمن لغوغل (مع إجبار اختيار الحساب)
+        // 3. دالة الانتقال الآمن لغوغل (مع إجبار اختيار الحساب وحفظ المعرف)
         function startGoogleRedirect() {
             const clientId = "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com";
-            const redirectUri = "https://goal-sniper.vercel.app"; 
+            
+            // 🌟 الإصلاح السحري: إضافة مُعرّف التحديث لرابط العودة لكي لا تظهر رسالة التحديث خطأً
+            const redirectUri = encodeURIComponent("https://goal-sniper.vercel.app/?ver=1.1.4"); 
+            
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=id_token&scope=openid email profile&nonce=sniper123&prompt=select_account`;
             
             document.getElementById('app').innerHTML = `
