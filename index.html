@@ -4374,19 +4374,39 @@ async function deleteLeagueByAdmin() {
             document.getElementById('app').innerHTML = `
                 <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
                     <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري إدخالك للمنصة...</span>
+                    <span class="font-bold text-lg text-white">جاري المعالجة...</span>
                 </div>`;
 
             // سحب البيانات المخبأة في الذاكرة
             const pendingUser = sessionStorage.getItem('pending_reg_username');
             const pendingPin = sessionStorage.getItem('pending_reg_pin');
             const pendingRef = sessionStorage.getItem('pending_reg_referral');
+            const pendingResetPin = sessionStorage.getItem('pending_reset_pin'); // 👈 السطر المضاف لالتقاط طلب الاستعادة
 
             try {
                 let res, data;
                 
-                if (pendingUser && pendingPin) {
-                    // 🌟 مسار تسجيل حساب جديد 🌟
+                // 🌟 مسار استعادة وتغيير الرمز السري الجديد 🌟
+                if (pendingResetPin) {
+                    res = await fetch(`${API_BASE_URL}/auth/google/reset-pin`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: googleToken, newPin: pendingResetPin })
+                    });
+                    data = await res.json();
+                    
+                    sessionStorage.removeItem('pending_reset_pin'); // مسح الذاكرة
+                    
+                    // إذا كان حساب غوغل غير مرتبط بأي لاعب نعطيه رسالة توضيحية ونوقف الدخول
+                    if (!data.success) {
+                        window.isHandlingGoogleCallback = false;
+                        showCustomDialog(data.message);
+                        render();
+                        return; 
+                    }
+                } 
+                // 🌟 مسار تسجيل حساب جديد 🌟
+                else if (pendingUser && pendingPin) {
                     res = await fetch(`${API_BASE_URL}/auth/google/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -4394,12 +4414,12 @@ async function deleteLeagueByAdmin() {
                     });
                     data = await res.json();
                     
-                    // مسح الذاكرة لتنظيف الهاتف
                     sessionStorage.removeItem('pending_reg_username');
                     sessionStorage.removeItem('pending_reg_pin');
                     sessionStorage.removeItem('pending_reg_referral');
-                } else {
-                    // 🌟 مسار تسجيل الدخول العادي 🌟
+                } 
+                // 🌟 مسار تسجيل الدخول العادي 🌟
+                else {
                     res = await fetch(`${API_BASE_URL}/auth/google`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -4408,7 +4428,7 @@ async function deleteLeagueByAdmin() {
                     data = await res.json();
                     
                     if (data.requireUsername) {
-                        showGoogleUsernamePrompt(googleToken); // للاحتياط إذا دخل مستخدم جديد من زر الدخول بالخطأ
+                        showGoogleUsernamePrompt(googleToken);
                         return;
                     }
                 }
@@ -4419,6 +4439,11 @@ async function deleteLeagueByAdmin() {
                     localStorage.setItem('oracle_token_v8', data.token);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     window.isHandlingGoogleCallback = false;
+                    
+                    // إذا كانت عملية استعادة رمز، نظهر له رسالة نجاح قبل الإكمال
+                    if (pendingResetPin) {
+                        showCustomDialog('✅ ' + data.message, 'alert');
+                    }
                     
                     await syncData(); 
                     render();    
@@ -4431,7 +4456,7 @@ async function deleteLeagueByAdmin() {
                 }
             } catch (error) {
                 window.isHandlingGoogleCallback = false;
-                showCustomDialog('تعذر الاتصال بالسيرفر للتوثيق.');
+                showCustomDialog('تعذر الاتصال بالسيرفر.');
                 render();
             }
         }
@@ -4704,9 +4729,14 @@ async function deleteLeagueByAdmin() {
                                 <label class="block text-[10px] font-bold text-slate-400 mb-1">${text('passwordLabel', 'كلمة المرور (الرمز السري)')}</label>
                                 <input type="password" id="auth-pin" placeholder="${text('passwordPh', '4 أرقام أو حروف على الأقل')}" class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                             </div>
-                            <button type="submit" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
+                           <button type="submit" class="w-full py-4 flex items-center justify-center bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl shadow-lg mt-4 transition-all active:scale-95 text-sm tracking-wide">
                                 ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
                             </button>
+                            
+                            <!-- زر استعادة الرمز السري يوضع هنا في الخارج تحته مباشرة -->
+                            <div class="mt-4 text-center">
+                                <button type="button" onclick="showResetPinDialog()" class="text-xs text-slate-400 hover:text-blue-400 font-bold transition-all underline-offset-4 hover:underline"><i class="fa-solid fa-unlock-keyhole ml-1"></i> نسيت الرمز السري؟</button>
+                            </div>
                         </form>
                     </div>
                 ` : `
@@ -5121,6 +5151,35 @@ async function deleteLeagueByAdmin() {
                 showCustomDialog('خطأ في الاتصال بالسيرفر أثناء الشراء. لم يتم خصم شيء من رصيدك.');
             }
         };
+
+        // 🌟 عرض نافذة استعادة الرمز السري 🌟
+        function showResetPinDialog() {
+            showCustomDialog(
+                `🛡️ <b>استعادة الرمز السري</b><br><br>
+                 <span class="text-[11px] text-slate-400 leading-relaxed block text-center mb-4 border border-white/5 bg-slate-900/50 p-2 rounded-lg">إذا كان حسابك مرتبطاً بغوغل، اكتب رمزك الجديد هنا وسنقوم بتأكيد هويتك وتحديثه فوراً:</span>
+                 <input type="password" id="new-reset-pin" placeholder="الرمز السري الجديد (4 أرقام أو حروف)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white mb-4 outline-none focus:border-blue-500 text-center font-black tracking-widest">
+                 <button onclick="prepareGooglePinReset()" class="w-full py-3 flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-slate-800 font-bold rounded-xl shadow-lg transition-all text-sm">
+                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 48 48">
+                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                         <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                         <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                     </svg> المتابعة للتحقق وتغيير الرمز
+                 </button>`,
+                 'alert'
+            );
+        }
+
+        // 🌟 تجهيز التخزين المؤقت قبل التوجه لغوغل 🌟
+        function prepareGooglePinReset() {
+            const newPin = document.getElementById('new-reset-pin').value.trim();
+            if (newPin.length < 4) {
+                showCustomDialog('الرمز الجديد يجب أن يكون 4 رموز على الأقل.');
+                return;
+            }
+            sessionStorage.setItem('pending_reset_pin', newPin);
+            startGoogleRedirect();
+        }
                 
     </script>
 </body>
