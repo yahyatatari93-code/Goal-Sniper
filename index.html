@@ -356,7 +356,7 @@ cat3_2: "التوقع الصحيح لفوز أحد الفريقين (بنتيج�
 cat3_3: "التوقع الرقمي الدقيق لنتيجة التعادل",
 cat3_4: "توقع التعادل (بنتيجة مختلفة)",
 cat3_5: "التوقع الدقيق لتعادل سلبي (0-0) أو لنتيجة مجموع أهدافها 5 فأكثر",
-        appDesc: "منصة التوقعات الأقوى للدوري الإنجليزي الممتاز",
+        appDesc: "منصة التوقعات الأقوى",
 loginBtn: "تسجيل الدخول",
 registerBtn: "حساب جديد",
 usernameLabel: "اسم المستخدم",
@@ -448,7 +448,7 @@ cat3_2: "Correct winner prediction (different score)",
 cat3_3: "Exact score prediction for a draw",
 cat3_4: "Correct draw prediction (different score)",
 cat3_5: "Exact prediction of a (0-0) draw or any score with 5+ total goals",
-        appDesc: "The Ultimate Premier League Prediction Platform",
+        appDesc: "The Ultimate Prediction Platform",
 loginBtn: "Login",
 registerBtn: "New Account",
 usernameLabel: "Username",
@@ -540,7 +540,7 @@ cat3_2: "Doğru kazanan tahmini (farklı skor)",
 cat3_3: "Beraberlik için tam skor tahmini",
 cat3_4: "Doğru beraberlik tahmini (farklı skor)",
 cat3_5: "(0-0) Beraberlik veya toplam 5+ gollü maçın tam tahmini",
-        appDesc: "En İyi Premier Lig Tahmin Platformu",
+        appDesc: "En İyi Tahmin Platformu",
 loginBtn: "Giriş Yap",
 registerBtn: "Yeni Hesap",
 usernameLabel: "Kullanıcı Adı",
@@ -4745,9 +4745,11 @@ async function deleteLeagueByAdmin() {
                                 ${text('loginSubmit', 'دخول إلى المنصة')} <i class="fa-solid ${arrowIcon}"></i>
                             </button>
                             
-                            <!-- زر استعادة الرمز السري يوضع هنا في الخارج تحته مباشرة -->
-                            <div class="mt-4 text-center">
-                                <button type="button" onclick="showResetPinDialog()" class="text-xs text-slate-400 hover:text-blue-400 font-bold transition-all underline-offset-4 hover:underline"><i class="fa-solid fa-unlock-keyhole ml-1"></i> نسيت الرمز السري؟</button>
+                            <!-- زر استعادة الرمز السري بتصميم بارز وواضح -->
+                            <div class="mt-5 text-center flex justify-center">
+                                <button type="button" onclick="showResetPinDialog()" class="px-4 py-2 rounded-xl text-xs font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                                    <i class="fa-solid fa-unlock-keyhole ml-1"></i> نسيت الرمز السري؟
+                                </button>
                             </div>
                         </form>
                     </div>
