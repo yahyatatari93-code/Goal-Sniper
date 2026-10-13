@@ -829,32 +829,35 @@ function updateTheme() {
                                 const dates = [...new Set(gwMatches.map(m => formatMatchDate(m.date)))];
                                 dates.forEach(date => {
                                     const dateMatches = gwMatches.filter(m => formatMatchDate(m.date) === date);
-                                    // 1. الكابتن التلقائي
+                                    
+                                    // 1. الكابتن التلقائي الثابت (المباراة الأخيرة في اليوم دائماً)
                                     if (!dateMatches.some(m => userP[m.id] && userP[m.id].isCaptain)) {
-                                        const capId = isPastGw ? dateMatches[0].id : dateMatches[dateMatches.length - 1].id;
+                                        const capId = dateMatches[dateMatches.length - 1].id;
                                         if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                         userP[capId].isCaptain = true;
                                     }
-                                    // 2. المغناطيس التلقائي (لكل يوم بشكل منفصل، بدءاً من الجولة الثانية)
-                                if (gw >= 102) {
-                                    if (!dateMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
-                                        const magId = dateMatches.length > 1 ? (isPastGw ? dateMatches[1].id : dateMatches[dateMatches.length - 2].id) : dateMatches[0].id;
-                                        if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
-                                        userP[magId].isMagnet = true;
+                                    
+                                    // 2. المغناطيس التلقائي الثابت (يبدأ من الجولة الثانية 102، المباراة ما قبل الأخيرة في اليوم)
+                                    if (gw >= 102) {
+                                        if (!dateMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
+                                            const magId = dateMatches.length > 1 ? dateMatches[dateMatches.length - 2].id : dateMatches[0].id;
+                                            if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                                            userP[magId].isMagnet = true;
+                                        }
                                     }
-                                }
                                 });
                             } else {
-                                // 1. الكابتن التلقائي
+                                // 1. الكابتن التلقائي الثابت (المباراة الأخيرة في الجولة دائماً)
                                 if (!gwMatches.some(m => userP[m.id] && userP[m.id].isCaptain)) {
-                                    const capId = isPastGw ? gwMatches[0].id : gwMatches[gwMatches.length - 1].id;
+                                    const capId = gwMatches[gwMatches.length - 1].id;
                                     if (!userP[capId]) userP[capId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                     userP[capId].isCaptain = true;
                                 }
-                                // 2. المغناطيس التلقائي (يبدأ حصراً من الجولة السادسة فصاعداً)
+                                
+                                // 2. المغناطيس التلقائي الثابت (يبدأ من الجولة 6، المباراة ما قبل الأخيرة في الجولة)
                                 if (gw >= 6) {
                                     if (!gwMatches.some(m => userP[m.id] && userP[m.id].isMagnet)) {
-                                        const magId = gwMatches.length > 1 ? (isPastGw ? gwMatches[1].id : gwMatches[gwMatches.length - 2].id) : gwMatches[0].id;
+                                        const magId = gwMatches.length > 1 ? gwMatches[gwMatches.length - 2].id : gwMatches[0].id;
                                         if (!userP[magId]) userP[magId] = { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
                                         userP[magId].isMagnet = true;
                                     }
@@ -953,17 +956,13 @@ function changeLanguage(langCode) {
             return pts;
         };
 
-        // 🌟 دالة الكابتن الذكية المحدثة (تحافظ على النقاط التاريخية)
+        // 🌟 دالة الكابتن الذكية المحدثة (تثبيت الكابتن التلقائي)
         function getActiveCaptains(username, gw) {
             const gwMatches = matches.filter(m => Number(m.gw) === Number(gw)).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
             if (gwMatches.length === 0) return [];
             
             const userP = predictions[username] || {};
             const isUCL = Number(gw) >= 101;
-            
-            // 🌟 السر هنا: معرفة ما إذا كانت الجولة المطلوبة قديمة أم حالية
-            const currentActiveGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-            const isPastGw = Number(gw) < currentActiveGw;
 
             if (isUCL) {
                 const captains = [];
@@ -973,8 +972,8 @@ function changeLanguage(langCode) {
                     const explicitCap = dateMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
                     if (explicitCap) captains.push(explicitCap.id);
                     else if (dateMatches.length > 0) {
-                        // في الماضي كان الافتراضي هو الأولى (نحافظ عليه)، في الحاضر هو الأخيرة
-                        captains.push(isPastGw ? dateMatches[0].id : dateMatches[dateMatches.length - 1].id);
+                        // الاختيار التلقائي للمباراة الأخيرة في اليوم (UCL)
+                        captains.push(dateMatches[dateMatches.length - 1].id);
                     }
                 });
                 return captains;
@@ -982,8 +981,8 @@ function changeLanguage(langCode) {
                 const explicitCap = gwMatches.find(m => userP[m.id] && userP[m.id].isCaptain);
                 if (explicitCap) return [explicitCap.id];
 
-                // في الماضي كان الافتراضي هو الأولى (نحافظ عليه)، في الحاضر هو الأخيرة
-                return [isPastGw ? gwMatches[0].id : gwMatches[gwMatches.length - 1].id];
+                // الاختيار التلقائي للمباراة الأخيرة في الجولة (EPL)
+                return [gwMatches[gwMatches.length - 1].id];
             }
         }
 
