@@ -1471,16 +1471,21 @@ function isMatchLocked(match) {
             openSocial('wa');
         }
 
-        // 🌟 نظام التنبيه الذكي للتحديثات (معدل لمنع الشاشة السوداء في النسخة القديمة) 🌟
-        // 🌟 نظام التنبيه الذكي للتحديثات (معدل لقراءة النسخة المخبأة) 🌟
+        // 🌟 نظام التنبيه الذكي للتحديثات (معدل لاستثناء الآيفون والكمبيوتر) 🌟
         function checkAppUpdate() {
             const LATEST_VERSION = "1.1.4";
             
+            // 🚀 التعديل: فحص نوع الجهاز، إذا لم يكن أندرويد نخرج من الدالة فوراً ولا نظهر شيئاً
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            if (!/android/i.test(userAgent)) {
+                return; // إيقاف التنفيذ (لا رسالة تحديث للآيفون أو الكمبيوتر)
+            }
+
             // نحاول قراءة الإصدار من الرابط، أو من الذاكرة المخفية التي حفظناها قبل الذهاب لغوغل
             const urlParams = new URLSearchParams(window.location.search);
             let currentVer = urlParams.get('ver') || sessionStorage.getItem('temp_app_version');
 
-            // إذا كان اللاعب لا يستخدم النسخة الأحدث
+            // إذا كان اللاعب لا يستخدم النسخة الأحدث (وهو على جهاز أندرويد)
             if (currentVer !== LATEST_VERSION) {
                 showCustomDialog(
                     "🚀 <b>تحديث هام متاح!</b><br><br>لحل مشكلة الشاشة السوداء نهائياً، أطلقنا تحديثاً جديداً.<br><br><span class='text-xs text-amber-400 bg-amber-900/20 px-2 py-1 rounded block mt-2 border border-amber-500/30'>بسبب خلل نسختك الحالية، لا يمكننا توجيهك للمتجر مباشرة. <b>يرجى فتح متجر غوغل بلاي والبحث عن Goal Sniper لتحديثه</b>، أو انسخ الرابط أدناه:</span>",
