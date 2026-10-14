@@ -620,55 +620,6 @@ app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) 
     }
 });
 
-// 🌟 مسار تعويضي لإصلاح توكن دوري الأبطال (يُستخدم مرة واحدة فقط ومحمي بكلمة مرور) 🌟
-app.get('/api/admin/compensate', async (req, res) => {
-    // 🛡️ حماية صارمة: لن يعمل المسار إلا إذا كان الرابط يحتوي على ?pass=101383
-    if (req.query.pass !== '101383') {
-        return res.status(403).json({ success: false, message: 'غير مصرح!' });
-    }
-
-    try {
-        // جلب كل المباريات التي تم تثبيت نتيجتها في الجولة 102
-        const [matches] = await pool.query('SELECT id, actual_h, actual_a FROM matches WHERE gw = 102 AND actual_h IS NOT NULL');
-        
-        let totalCompensated = 0;
-
-        for (let m of matches) {
-            const [preds] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [m.id]);
-            
-            const exactGuessers = [];
-            preds.forEach(p => {
-                if (p.pred_h === '' || p.pred_h === null) return;
-                const ph = Number(p.pred_h), pa = Number(p.pred_a);
-                const ah = Number(m.actual_h), aa = Number(m.actual_a);
-                const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
-                
-                let isExact = (ph === ah && pa === aa);
-                if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) {
-                    isExact = true; 
-                }
-                if (isExact) exactGuessers.push(p.username);
-            });
-
-            if (exactGuessers.length > 0) {
-                const placeholders = exactGuessers.map(() => '?').join(',');
-                // منح 10 توكن للمستحقين
-                await pool.query(`UPDATE users SET tokens = COALESCE(tokens, 0) + 10 WHERE username IN (${placeholders})`, exactGuessers);
-                totalCompensated += exactGuessers.length;
-                
-                // إرسال إشعار اعتذار وتعويض احترافي للاعب
-                exactGuessers.forEach(winner => {
-                    sendFCMToUser(winner, '🎁 تعويض من الإدارة!', `تم إصلاح خلل المتجر وإضافة 10 توكن لمحفظتك عن توقعك الدقيق في دوري الأبطال. شكراً لتفهمك!`);
-                });
-            }
-        }
-
-        res.json({ success: true, message: `✅ تمت العملية بنجاح! تم توزيع التوكن على ${totalCompensated} توقعاً صحيحاً في الجولة 102 وإرسال الإشعارات لهم.` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
 const PORT = process.env.PORT || 5000;
 
 // ==========================================
