@@ -1406,12 +1406,25 @@ function isMatchLocked(match) {
             
             const uniqueGws = getAvailableGws();
             
-            // ترتيب الجولات زمنياً بناءً على تاريخ أول مباراة في الجولة
+            // ترتيب الجولات زمنياً بناءً على تاريخ ووقت أول مباراة في الجولة بشكل دقيق جداً
             uniqueGws.sort((gwA, gwB) => {
-                const matchesA = matches.filter(m => Number(m.gw) === gwA).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-                const matchesB = matches.filter(m => Number(m.gw) === gwB).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
-                const timeA = matchesA.length > 0 ? parseMatchDate(matchesA[0].date, matchesA[0].time) : 0;
-                const timeB = matchesB.length > 0 ? parseMatchDate(matchesB[0].date, matchesB[0].time) : 0;
+                const matchesA = matches.filter(m => Number(m.gw) === gwA);
+                const matchesB = matches.filter(m => Number(m.gw) === gwB);
+                
+                // البحث عن أول وقت متاح في كل جولة
+                let timeA = Number.MAX_SAFE_INTEGER;
+                matchesA.forEach(m => {
+                    const t = parseMatchDate(m.date, m.time);
+                    if (t > 0 && t < timeA) timeA = t;
+                });
+                
+                let timeB = Number.MAX_SAFE_INTEGER;
+                matchesB.forEach(m => {
+                    const t = parseMatchDate(m.date, m.time);
+                    if (t > 0 && t < timeB) timeB = t;
+                });
+                
+                // ترتيب تصاعدي (الأقدم أولاً)
                 return timeA - timeB;
             });
 
@@ -1419,11 +1432,22 @@ function isMatchLocked(match) {
             for (const gw of uniqueGws) {
                 const gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) continue;
-                if (!gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
+                
+                // الجولة تُعتبر "غير مكتملة" إذا كان هناك مباراة واحدة على الأقل لم تُسجل نتيجتها (الفعلية)
+                // النتيجة الفعلية تعتبر غير مسجلة إذا كانت null أو سلسلة فارغة
+                const isCompleted = gwMatches.every(m => 
+                    m.actualH !== null && m.actualA !== null && 
+                    m.actualH !== '' && m.actualA !== '' &&
+                    m.actualH !== undefined && m.actualA !== undefined
+                );
+                
+                if (!isCompleted) {
                     activeGwCache = gw;
                     return gw;
                 }
             }
+            
+            // إذا اكتملت كل الجولات المتاحة، نعرض آخر جولة
             activeGwCache = uniqueGws.length > 0 ? uniqueGws[uniqueGws.length - 1] : 1;
             return activeGwCache;
         }
