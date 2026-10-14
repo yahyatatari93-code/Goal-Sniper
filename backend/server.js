@@ -612,10 +612,22 @@ const notifiedDays = new Set(); // ذاكرة مؤقتة لمنع تكرار ا�
 
 function parseMatchDateTime(dateStr, timeStr) {
     try {
-        // دعم ذكي للفواصل (سواء كتبت التاريخ 12/10/2026 أو 12-10-2026)
         let parts = (dateStr || '').split(/[\/\-]/);
-        let d = parts[0], m = parts[1], y = parts[2];
-        if(y && y.length === 2) y = '20' + y; // معالجة إذا تمت كتابة السنة 26 بدلاً من 2026
+        let y, m, d;
+        
+        // 🌟 الحل السحري لمعرفة هل الترتيب (سنة/شهر/يوم) أم (يوم/شهر/سنة)
+        if (parts[0].length === 4) {
+            // إذا كان الجزء الأول 4 أرقام فهو السنة (YYYY/MM/DD)
+            y = parts[0];
+            m = parts[1];
+            d = parts[2];
+        } else {
+            // وإلا فهو (DD/MM/YYYY)
+            d = parts[0];
+            m = parts[1];
+            y = parts[2];
+            if (y && y.length === 2) y = '20' + y;
+        }
 
         let [time, period] = (timeStr || '').trim().split(/\s+/);
         let [hours, minutes] = (time || '0:0').split(':');
