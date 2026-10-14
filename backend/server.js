@@ -442,30 +442,34 @@ app.delete('/api/admin/match/:id', authenticateToken, isAdmin, async (req, res) 
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// 🌟 مسار حفظ النتيجة وتوزيع أو خصم مكافآت التوكن (مع دعم الحذف والإلغاء) 🌟
+// 🌟 مسار حفظ النتيجة وتوزيع مكافآت التوكن (مع دعم الجولات الاستثنائية وحماية التكرار) 🌟
 app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
-        // 1. جلب النتيجة القديمة للمباراة قبل التعديل (لنكتشف هل كان هناك نتيجة مثبتة مسبقاً)
         const [oldMatchData] = await pool.query('SELECT actual_h, actual_a, gw FROM matches WHERE id = ?', [matchId]);
         const matchGw = oldMatchData.length > 0 ? Number(oldMatchData[0].gw) : 1;
         const oldH = oldMatchData.length > 0 ? oldMatchData[0].actual_h : null;
         const oldA = oldMatchData.length > 0 ? oldMatchData[0].actual_a : null;
 
+        // 🌟 الشرط الخاص بك: لا توكن قبل الجولة 6 في الإنجليزي، ولا توكن في الجولة الأولى (101) للأبطال
         const isEligibleForTokens = (matchGw >= 6 && matchGw !== 101);
 
-        // 2. إذا كانت الإدارة تريد "إلغاء النتيجة" (حذفها)
+        // 1. إذا كانت الإدارة تريد "إلغاء النتيجة" (حذفها)
         if (actualH === null || actualA === null) {
-            // إذا كانت النتيجة القديمة موجودة وتم منح توكن سابقاً، يجب خصمه من الفائزين السابقين لكي لا يسرقوا التوكن!
+            // سحب التوكن فقط إذا كانت النتيجة مسجلة سابقاً والجولة من الجولات التي توزع توكن
             if (oldH !== null && oldA !== null && isEligibleForTokens) {
                 const [oldPredictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
                 const oldExactGuessers = [];
 
                 oldPredictions.forEach(p => {
+                    // حماية: تجاهل من لم يتوقع
+                    if (p.pred_h === '' || p.pred_h === null || p.pred_a === '' || p.pred_a === null) return;
+                    
                     const ph = Number(p.pred_h);
                     const pa = Number(p.pred_a);
                     const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
                     let isExact = (ph === Number(oldH) && pa === Number(oldA));
+                    
                     if (isMagnet && !isExact && (Math.abs(ph - Number(oldH)) + Math.abs(pa - Number(oldA)) === 1)) {
                         isExact = true; 
                     }
@@ -474,55 +478,68 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
 
                 if (oldExactGuessers.length > 0) {
                     const placeholders = oldExactGuessers.map(() => '?').join(',');
-                    // خصم الـ 10 توكن التي مُحت بالخطأ أو أُلغيت نتيجتها
-                    await pool.query(`UPDATE users SET tokens = GREATEST(0, tokens - 10) WHERE username IN (${placeholders})`, oldExactGuessers);
+                    // استخدام COALESCE لحل مشكلة الحسابات القديمة عند الخصم
+                    await pool.query(`UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - 10) WHERE username IN (${placeholders})`, oldExactGuessers);
                 }
             }
 
             await pool.query('UPDATE matches SET actual_h = NULL, actual_a = NULL WHERE id = ?', [matchId]);
-            return res.json({ success: true, message: 'تم إلغاء النتيجة وخصم التوكن المرتبط بها بنجاح.' });
+            return res.json({ success: true, message: 'تم إلغاء النتيجة بنجاح' + (isEligibleForTokens ? ' وتم سحب التوكن المرتبط بها.' : '.') });
         }
 
-        // 3. حالة التثبيت العادية
+        // 2. حالة التثبيت (إضافة النتيجة)
+        const isFirstTimeSaving = (oldH === null || oldA === null);
+
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [actualH, actualA, matchId]);
-        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
         
-        const exactGuessers = [];
+        // توزيع التوكن فقط إذا كانت هذه أول مرة لحفظ النتيجة (لمنع التكرار) + الجولة مؤهلة (حسب شرطك)
+        if (isFirstTimeSaving && isEligibleForTokens) {
+            const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
+            const exactGuessers = [];
 
-        predictions.forEach(p => {
-            const ph = Number(p.pred_h);
-            const pa = Number(p.pred_a);
-            const ah = Number(actualH);
-            const aa = Number(actualA);
-            
-            const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
-            let isExact = (ph === ah && pa === aa);
-            if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) {
-                isExact = true; 
-            }
+            predictions.forEach(p => {
+                // 🛑 حماية: تجاهل من لم يتوقع نهائياً (حتى لا يأخذ توكن في تعادل 0-0)
+                if (p.pred_h === '' || p.pred_h === null || p.pred_a === '' || p.pred_a === null) return;
 
-            if (isExact) exactGuessers.push(p.username);
-        });
+                const ph = Number(p.pred_h);
+                const pa = Number(p.pred_a);
+                const ah = Number(actualH);
+                const aa = Number(actualA);
+                
+                const isMagnet = (p.is_magnet === 1 || p.is_magnet === 'true');
+                let isExact = (ph === ah && pa === aa);
+                if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) {
+                    isExact = true; 
+                }
 
-        if (isEligibleForTokens && exactGuessers.length > 0) {
-            const placeholders = exactGuessers.map(() => '?').join(',');
-            await pool.query(`UPDATE users SET tokens = tokens + 10 WHERE username IN (${placeholders})`, exactGuessers);
-            
-            exactGuessers.forEach(winner => {
-                sendFCMToUser(winner, '🎯 قناص محترف!', `توقعك للمباراة كان دقيقاً. تمت إضافة 10 توكن لمحفظتك في المتجر!`);
+                if (isExact) exactGuessers.push(p.username);
             });
+
+            if (exactGuessers.length > 0) {
+                const placeholders = exactGuessers.map(() => '?').join(',');
+                // 🌟 الحل الجذري (COALESCE): يضمن إضافة 10 حتى لو كان رصيد اللاعب القديم NULL 
+                await pool.query(`UPDATE users SET tokens = COALESCE(tokens, 0) + 10 WHERE username IN (${placeholders})`, exactGuessers);
+                
+                exactGuessers.forEach(winner => {
+                    sendFCMToUser(winner, '🎯 قناص محترف!', `توقعك للمباراة كان دقيقاً. تمت إضافة 10 توكن لمحفظتك في المتجر!`);
+                });
+            }
         }
 
         sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة حصدت!');
 
-        const adminMsg = isEligibleForTokens 
-            ? 'تم تثبيت النتيجة وتوزيع التوكن للقناصين بنجاح!' 
-            : 'تم تثبيت النتيجة فقط (بدون توكن لأنها جولة سابقة)';
+        let adminMsg = 'تم تثبيت النتيجة بنجاح!';
+        if (isFirstTimeSaving) {
+            if (isEligibleForTokens) adminMsg = 'تم تثبيت النتيجة وتوزيع التوكن للقناصين بنجاح!';
+            else adminMsg = 'تم تثبيت النتيجة (بدون توزيع توكن لأنها جولة استثنائية).';
+        } else {
+            adminMsg = 'تم تحديث النتيجة (بدون توزيع توكن لمنع التكرار).';
+        }
 
         res.json({ success: true, message: adminMsg });
     } catch (error) { 
         console.error(error);
-        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة وتوزيع التوكن.' }); 
+        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); 
     }
 });
 
