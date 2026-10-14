@@ -3813,12 +3813,21 @@ function renderPrizesTab() {
             const userPreds = predictions[currentUser.username] || {};
             const activeCaps = getActiveCaptains(currentUser.username, currentGw);
 
+            // 🌟 التعديل السحري: دعم التوزيع اليومي لدوري الأبطال عند فحص القفل 🌟
             if (isMag) {
                 let isMagLocked = false;
                 Object.entries(userPreds).forEach(([mId, p]) => {
                     if (mId !== activeMatchModal.id && p.isMagnet) {
                         const m = matches.find(x => x.id === mId);
-                        if (m && Number(m.gw) === currentGw && isMatchLocked(m)) isMagLocked = true;
+                        if (m && Number(m.gw) === currentGw) {
+                            if (isUCL) {
+                                // في الأبطال: نفحص فقط مباريات اليوم نفسه!
+                                if (formatMatchDate(m.date) === matchDate && isMatchLocked(m)) isMagLocked = true;
+                            } else {
+                                // في الدوري العادي: نفحص كل الجولة
+                                if (isMatchLocked(m)) isMagLocked = true;
+                            }
+                        }
                     }
                 });
                 if (isMagLocked) { showCustomDialog("لا يمكنك سحب المغناطيس لأنه مرتبط بمباراة مقفلة حالياً!"); closeModal(); render(); return; }
@@ -3826,7 +3835,7 @@ function renderPrizesTab() {
 
             if (isCap || isTC || isMag) playSound('captain'); else playSound('success'); 
 
-            // 🚀 1. التحديث الفوري للواجهة (سرعة البرق للاعب)
+            // 🚀 1. التحديث الفوري للواجهة
             let oldExplicitCapId = null;
             let oldExplicitMagId = null;
             const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
@@ -3845,13 +3854,10 @@ function renderPrizesTab() {
             });
 
             const reqMatchId = activeMatchModal.id;
-            
-            // الاحتفاظ بالنسخة القديمة للتراجع في حال انقطع الإنترنت
             const oldPrediction = userPreds[reqMatchId] ? {...userPreds[reqMatchId]} : null;
 
-            closeModal(); // إغلاق النافذة فوراً
+            closeModal(); 
             
-            // تحديث الذاكرة ورسم الشاشة فوراً
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
             if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
@@ -3860,7 +3866,7 @@ function renderPrizesTab() {
             globalStandingsCache = {};
             render(); 
 
-            // 🚀 2. إرسال الطلب للسيرفر في الخلفية بصمت
+            // 🚀 2. إرسال الطلب للسيرفر
             setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
@@ -3890,14 +3896,12 @@ function renderPrizesTab() {
                     const data = await response.json();
                 
                     if(!data.success) {
-                        // فشل الحفظ في السيرفر -> التراجع وتنبيه اللاعب
                         if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
                         else delete predictions[currentUser.username][reqMatchId];
                         showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع. يرجى المحاولة مجدداً.");
                         await syncData(); render();
                     }
                 } catch(e) {
-                    // انقطاع النت -> التراجع وتنبيه اللاعب
                     if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
                     else delete predictions[currentUser.username][reqMatchId];
                     showCustomDialog("حدث خطأ في الاتصال بالسيرفر أثناء الحفظ.");
