@@ -1343,34 +1343,37 @@ function formatMatchDate(dateStr) {
     return str;
 }
 
-        // 2. دالة حساب الوقت (تدعم الآن نظام AM و PM بشكل مثالي)
-function parseMatchDate(dateStr, timeStr) {
-    try {
-        let dStr = formatMatchDate(dateStr);
-        let [time, period] = (timeStr || '').trim().split(/\s+/);
-        let [hours, minutes] = (time || '0:0').split(':');
-        hours = parseInt(hours, 10) || 0;
-        minutes = parseInt(minutes, 10) || 0;
-        
-        // دعم اللغتين (ص/م) و (AM/PM)
-        if (period) {
-            period = period.toUpperCase();
-            if ((period === 'م' || period === 'PM') && hours !== 12) hours += 12;
-            if ((period === 'ص' || period === 'AM') && hours === 12) hours = 0;
-        }
-        
-        let parts = dStr.match(/\d+/g);
-        let y = new Date().getFullYear(), m = 0, d = 1;
-        if (parts) {
-            if (parts.length >= 3 && parts[0].length === 4) { 
-                y = parseInt(parts[0]); m = parseInt(parts[1]) - 1; d = parseInt(parts[2]); 
-            } else if (parts.length >= 2) { 
-                d = parseInt(parts[0]); m = parseInt(parts[1]) - 1; if (parts[2]) y = parseInt(parts[2]); 
+// 2. دالة حساب الوقت (النسخة الذكية المعالجة لمشكلة القفل الخاطئ والمغناطيس)
+        function parseMatchDate(dateStr, timeStr) {
+            try {
+                let parts = (dateStr || '').split(/[\/\-]/);
+                let y, m, d;
+                
+                // تحديد صيغة التاريخ (سنة/شهر/يوم) أو (يوم/شهر/سنة)
+                if (parts[0].length === 4) {
+                    y = parts[0]; m = parts[1]; d = parts[2];
+                } else {
+                    d = parts[0]; m = parts[1]; y = parts[2];
+                    if (y && y.length === 2) y = '20' + y;
+                }
+
+                let [time, period] = (timeStr || '').trim().split(/\s+/);
+                let [hours, minutes] = (time || '0:0').split(':');
+                hours = parseInt(hours, 10);
+                minutes = parseInt(minutes, 10);
+                
+                if (period === 'م' || period === 'PM' || period === 'pm') {
+                    if (hours !== 12) hours += 12;
+                } else if (period === 'ص' || period === 'AM' || period === 'am') {
+                    if (hours === 12) hours = 0;
+                }
+                
+                // دمج الوقت والتاريخ لإنشاء كائن Date محلي دقيق
+                return new Date(y, m - 1, d, hours, minutes).getTime();
+            } catch (e) {
+                return 0; // في حال الفشل نرجع 0
             }
         }
-        return new Date(y, m, d, hours, minutes).getTime();
-    } catch(e) { return 0; }
-}
 
         // 3. دالة قفل المباراة (تم سد ثغرة القفل الخاطئ)
 function isMatchLocked(match) {
