@@ -1343,35 +1343,37 @@ function formatMatchDate(dateStr) {
     return str;
 }
 
-// 2. دالة حساب الوقت (النسخة الذكية المعالجة لمشكلة القفل الخاطئ والمغناطيس)
+// 2. دالة حساب الوقت (النسخة المدرعة للترتيب الصحيح 100%)
         function parseMatchDate(dateStr, timeStr) {
             try {
-                let parts = (dateStr || '').split(/[\/\-]/);
-                let y, m, d;
-                
-                // تحديد صيغة التاريخ (سنة/شهر/يوم) أو (يوم/شهر/سنة)
-                if (parts[0].length === 4) {
-                    y = parts[0]; m = parts[1]; d = parts[2];
-                } else {
-                    d = parts[0]; m = parts[1]; y = parts[2];
-                    if (y && y.length === 2) y = '20' + y;
-                }
+                // 1. استخدام دالة formatMatchDate لتوحيد وتنظيف أي تاريخ (مهما كان التنسيق)
+                let dStr = formatMatchDate(dateStr);
+                if (!dStr) return 0;
 
-                let [time, period] = (timeStr || '').trim().split(/\s+/);
-                let [hours, minutes] = (time || '0:0').split(':');
-                hours = parseInt(hours, 10);
-                minutes = parseInt(minutes, 10);
+                let parts = dStr.split('/');
+                if (parts.length < 3) return 0;
                 
-                if (period === 'م' || period === 'PM' || period === 'pm') {
+                let d = parseInt(parts[0], 10);
+                let m = parseInt(parts[1], 10);
+                let y = parseInt(parts[2], 10);
+
+                // 2. تنظيف وتوحيد الوقت (يدعم نظام 12 و 24 ساعة بدقة)
+                let [time, period] = (timeStr || '00:00').trim().split(/\s+/);
+                let [hours, minutes] = time.split(':');
+                hours = parseInt(hours, 10) || 0;
+                minutes = parseInt(minutes, 10) || 0;
+                
+                period = period ? period.toLowerCase() : '';
+                if (period === 'م' || period === 'pm') {
                     if (hours !== 12) hours += 12;
-                } else if (period === 'ص' || period === 'AM' || period === 'am') {
+                } else if (period === 'ص' || period === 'am') {
                     if (hours === 12) hours = 0;
                 }
                 
-                // دمج الوقت والتاريخ لإنشاء كائن Date محلي دقيق
+                // 3. إرجاع الطابع الزمني الدقيق للترتيب والمقارنة
                 return new Date(y, m - 1, d, hours, minutes).getTime();
             } catch (e) {
-                return 0; // في حال الفشل نرجع 0
+                return 0;
             }
         }
 
@@ -2990,14 +2992,9 @@ function renderPrizesTab() {
             }
             const activeAdminGw = selectedAdminGw;
 
-            // فلترة المباريات لجلب جولة الإدارة المحددة فقط
+            // فلترة المباريات لجلب جولة الإدارة المحددة فقط وترتيبها زمنياً بدقة
             const adminMatches = matches.filter(m => Number(m.gw) === activeAdminGw).sort((a, b) => {
-                const dateA = String(a.date || "");
-                const dateB = String(b.date || "");
-                if (dateA !== dateB) return dateA.localeCompare(dateB);
-                const timeA = String(a.time || "");
-                const timeB = String(b.time || "");
-                return timeA.localeCompare(timeB);
+                return parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time);
             });
 
             // 🌟 حساب الإحصائيات التحليلية (خاصة بالجولة المحددة فقط) 🌟
