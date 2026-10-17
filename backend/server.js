@@ -629,33 +629,32 @@ const notifiedDays = new Set(); // ذاكرة مؤقتة لمنع تكرار ا�
 
 function parseMatchDateTime(dateStr, timeStr) {
     try {
-        let parts = (dateStr || '').split(/[\/\-]/);
-        let y, m, d;
+        if (!dateStr) return 0;
+        // توحيد الفواصل لتجنب أي خطأ في الكتابة
+        let parts = dateStr.replace(/\//g, '-').split('-');
+        if (parts.length < 3) return 0;
         
-        // 🌟 الحل السحري لمعرفة هل الترتيب (سنة/شهر/يوم) أم (يوم/شهر/سنة)
+        let y, m, d;
         if (parts[0].length === 4) {
-            // إذا كان الجزء الأول 4 أرقام فهو السنة (YYYY/MM/DD)
-            y = parts[0];
-            m = parts[1];
-            d = parts[2];
+            y = parts[0]; m = parts[1]; d = parts[2];
         } else {
-            // وإلا فهو (DD/MM/YYYY)
-            d = parts[0];
-            m = parts[1];
-            y = parts[2];
-            if (y && y.length === 2) y = '20' + y;
+            d = parts[0]; m = parts[1]; y = parts[2];
+            if (y.length === 2) y = '20' + y;
         }
 
-        let [time, period] = (timeStr || '').trim().split(/\s+/);
-        let [hours, minutes] = (time || '0:0').split(':');
-        hours = parseInt(hours, 10);
-        minutes = parseInt(minutes, 10);
+        // 🌟 استخراج الوقت بذكاء مطلق (حتى لو كُتب 10:00م بدون مسافة)
+        let tStr = (timeStr || '00:00').trim().toLowerCase();
+        let isPM = tStr.includes('م') || tStr.includes('pm');
+        let isAM = tStr.includes('ص') || tStr.includes('am');
         
-        if (period === 'م' || period === 'PM' || period === 'pm') {
-            if (hours !== 12) hours += 12;
-        } else if (period === 'ص' || period === 'AM' || period === 'am') {
-            if (hours === 12) hours = 0;
-        }
+        // عزل الأرقام فقط عن الحروف
+        let timeNumbers = tStr.replace(/[^\d:]/g, ''); 
+        let [hours, minutes] = timeNumbers.split(':');
+        hours = parseInt(hours, 10) || 0;
+        minutes = parseInt(minutes, 10) || 0;
+        
+        if (isPM && hours !== 12) hours += 12;
+        if (isAM && hours === 12) hours = 0;
         
         // دمج الوقت مع (توقيت تركيا وسوريا +03:00)
         const isoString = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00+03:00`;
@@ -673,7 +672,9 @@ async function checkUpcomingMatches() {
         const firstMatchesPerDay = {};
 
         matches.forEach(m => {
-            const dayKey = `${m.league || 'EPL'}_${m.gw}_${m.date}`; 
+            // توحيد شكل التاريخ في المفتاح لمنع التشتت إذا تم إدخال التواريخ بصيغ مختلفة
+            const cleanDate = (m.date || '').replace(/\//g, '-');
+            const dayKey = `${m.league || 'EPL'}_${m.gw}_${cleanDate}`; 
             const matchTime = parseMatchDateTime(m.date, m.time);
             if (matchTime === 0) return;
 
@@ -688,8 +689,8 @@ async function checkUpcomingMatches() {
             const firstMatch = firstMatchesPerDay[dayKey];
             const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
 
-            // 🚀 التعديل الأهم: توسيع نافذة الفحص لتكون 15 دقيقة (بين 105 و 120 دقيقة) لضمان عدم تفويت الإشعار أبداً
-            if (timeDiffMinutes > 105 && timeDiffMinutes <= 120) {
+            // 🚀 فحص الوقت ليكون بين 105 و 130 دقيقة (لإرسال الإشعار قبل الديدلاين بساعة)
+            if (timeDiffMinutes > 105 && timeDiffMinutes <= 130) {
                 if (!notifiedDays.has(dayKey)) {
                     notifiedDays.add(dayKey); 
 
@@ -697,10 +698,10 @@ async function checkUpcomingMatches() {
                     const gwLabel = firstMatch.league === 'UCL' ? `الجولة ${firstMatch.gw - 100}` : `الجولة ${firstMatch.gw}`;
                     
                     const title = `🚨 مباريات اليوم من ${gwLabel} تقترب!`;
-                    const body = `باقي أقل من ساعتين على إغلاق التوقعات لأولى مباريات اليوم في ${leagueName}. ادخل واقنص نقاطك الآن! ⏱️`;
+                    const body = `باقي ساعتين على أولى مباريات اليوم في ${leagueName}.. أي أنه متبقي "ساعة واحدة فقط" لإغلاق التوقعات! ادخل الآن ⏱️`;
 
                     await sendFCMToAll(title, body);
-                    console.log(`[Auto-Reminder] Sent for ${dayKey}`);
+                    console.log(`[Auto-Reminder] Sent for ${dayKey} (Time diff: ${Math.round(timeDiffMinutes)} mins)`);
                 }
             }
         });
@@ -711,6 +712,7 @@ async function checkUpcomingMatches() {
 
 // ⏱️ تشغيل المراقب كل 60 ثانية (دقيقة واحدة)
 setInterval(checkUpcomingMatches, 60 * 1000);
+
 app.listen(PORT, () => {
     console.log(`Server running securely on port ${PORT}`);
 });
