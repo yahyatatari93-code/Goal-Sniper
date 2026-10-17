@@ -3858,15 +3858,24 @@ function renderPrizesTab() {
             const reqMatchId = activeMatchModal.id;
             const oldPrediction = userPreds[reqMatchId] ? {...userPreds[reqMatchId]} : null;
 
-            closeModal(); 
+            closeModal(); // إغلاق النافذة ليبدأ الأنيميشن فوراً
             
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
             if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
             if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
             
             predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
-            globalStandingsCache = {};
-            render(); 
+            
+            // 🌟 تم حذف (globalStandingsCache = {}) لإنقاذ المعالج من الحسابات المعقدة
+
+            // 🚀 التعديل السحري للسرعة: جدولة الرسم لكي لا تختنق الشاشة
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    render(); // يتم الرسم بعد أن تنغلق النافذة بنعومة تامة
+                }, 120); 
+            });
+
+            // 🚀 2. إرسال الطلب للسيرفر
 
             // 🚀 2. إرسال الطلب للسيرفر
             setTimeout(async () => {
