@@ -3683,7 +3683,10 @@ function renderPrizesTab() {
             
             const currentGw = Number(activeMatchModal.gw);
             const isUCL = currentGw >= 101; 
-            const isSpecialClasico = (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA'); // 🌟 تم إضافة هذا السطر
+            
+            // 🌟 استثناء الكلاسيكو 🌟
+            const isSpecialClasico = (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA');
+            
             const matchDate = formatMatchDate(activeMatchModal.date);
             const userPreds = predictions[currentUser.username] || {};
             
@@ -3737,11 +3740,21 @@ function renderPrizesTab() {
 
             const displayH = hVal === '' ? '-' : hVal;
             const displayA = aVal === '' ? '-' : aVal;
-            const pts = (hVal === '' || aVal === '') ? 0 : calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
+            
+            // 🌟 حساب النقاط المبدئي المعروض في النافذة 🌟
+            let pts = 0;
+            if (hVal !== '' && aVal !== '') {
+                if (isSpecialClasico) {
+                    pts = 10;
+                } else {
+                    pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
+                }
+            }
+            
             const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain && !pred.isMagnet);
 
             container.innerHTML = `
-                <div class="fixed inset-0 z-50 bg-[#060b19] flex items-center justify-center p-4" dir="${direction}">
+                <div class="fixed inset-0 z-50 bg-[#060b19]/90 flex items-center justify-center p-4 backdrop-blur-sm" dir="${direction}">
                     <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
                         <div class="text-center border-b border-white/5 pb-3">
                             <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
@@ -3778,9 +3791,7 @@ function renderPrizesTab() {
                             </div>
                         </div>
                         
-                        </div>
-                        
-                        <!-- 🌟 تم إضافة شرط الإخفاء هنا إذا كان الكلاسيكو 🌟 -->
+                        <!-- 🌟 قسم المضاعفات (يختفي في الكلاسيكو) 🌟 -->
                         <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5 ${isSpecialClasico ? 'hidden' : ''}">
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
@@ -3835,8 +3846,6 @@ function renderPrizesTab() {
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             
             let possiblePts;
-            
-            // 🌟 استثناء الكلاسيكو: إظهار 10 نقاط للمستخدم عند الإدخال 🌟
             if (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA') {
                  possiblePts = 10;
             } else {
@@ -3844,7 +3853,6 @@ function renderPrizesTab() {
             }
 
             if (h === '' || a === '') possiblePts = 0;
-            
             const ptText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'نقطة' : 'pt';
             document.getElementById('modal-pts-display').innerText = possiblePts + ' ' + ptText;
         }
@@ -3857,7 +3865,6 @@ function renderPrizesTab() {
             let currentVal = input.value;
             let current;
             
-            // إذا كانت الخانة فارغة وضغط اللاعب على أي زر، نجعلها تبدأ من الصفر
             if (currentVal === '') {
                 current = 0;
             } else {
@@ -3865,7 +3872,6 @@ function renderPrizesTab() {
                 current += amount;
             }
             
-            // القيود: لا أقل من 0 ولا أكثر من 9
             if (current < 0) current = 0; 
             if (current > 9) current = 9; 
             
@@ -3895,7 +3901,6 @@ function renderPrizesTab() {
             const userPreds = predictions[currentUser.username] || {};
             const activeCaps = getActiveCaptains(currentUser.username, currentGw);
 
-            // 🌟 التعديل السحري: دعم التوزيع اليومي لدوري الأبطال عند فحص القفل 🌟
             if (isMag) {
                 let isMagLocked = false;
                 Object.entries(userPreds).forEach(([mId, p]) => {
@@ -3903,10 +3908,8 @@ function renderPrizesTab() {
                         const m = matches.find(x => x.id === mId);
                         if (m && Number(m.gw) === currentGw) {
                             if (isUCL) {
-                                // في الأبطال: نفحص فقط مباريات اليوم نفسه!
                                 if (formatMatchDate(m.date) === matchDate && isMatchLocked(m)) isMagLocked = true;
                             } else {
-                                // في الدوري العادي: نفحص كل الجولة
                                 if (isMatchLocked(m)) isMagLocked = true;
                             }
                         }
@@ -3917,7 +3920,6 @@ function renderPrizesTab() {
 
             if (isCap || isTC || isMag) playSound('captain'); else playSound('success'); 
 
-            // 🚀 1. التحديث الفوري للواجهة
             let oldExplicitCapId = null;
             let oldExplicitMagId = null;
             const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
@@ -3946,8 +3948,6 @@ function renderPrizesTab() {
             
             predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
             
-            // 🌟 تم حذف (globalStandingsCache = {}) لإنقاذ المعالج من الحسابات المعقدة
-
             // 🚀 التعديل السحري للسرعة: جدولة الرسم لكي لا تختنق الشاشة
             requestAnimationFrame(() => {
                 setTimeout(() => {
@@ -3955,9 +3955,6 @@ function renderPrizesTab() {
                 }, 120); 
             });
 
-            // 🚀 2. إرسال الطلب للسيرفر
-
-            // 🚀 2. إرسال الطلب للسيرفر
             setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
