@@ -887,6 +887,14 @@ function changeLanguage(langCode) {
             let aa = actualA !== null ? Number(actualA) : pa;
 
             let isExact = (ph === ah && pa === aa);
+
+            // 🌟 السحر هنا: استثناء الكلاسيكو بنظام النقاط (10 / 5) 🌟
+            if (homeCode === 'BAR' && awayCode === 'RMA') {
+                let isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
+                if (isExact) return 10;
+                if (isOutcomeCorrect) return 5;
+                return 0; 
+            }
             
             // 🧲 تفعيل المغناطيس لسحب النتيجة إذا كان الفارق الإجمالي هدف واحد فقط
             if (isMagnet && !isExact && actualH !== null && actualA !== null) {
@@ -3618,6 +3626,7 @@ function renderPrizesTab() {
             
             const currentGw = Number(activeMatchModal.gw);
             const isUCL = currentGw >= 101; 
+            const isSpecialClasico = (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA');
             const matchDate = formatMatchDate(activeMatchModal.date);
             const userPreds = predictions[currentUser.username] || {};
             
@@ -3712,7 +3721,7 @@ function renderPrizesTab() {
                             </div>
                         </div>
                         
-                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
+                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5 ${isSpecialClasico ? 'hidden' : ''}">
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${isCaptainLockedByAnotherMatch ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
@@ -3764,9 +3773,17 @@ function renderPrizesTab() {
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+            
+            let possiblePts;
+            if (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA') {
+                 possiblePts = 10;
+            } else {
+                 possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+            }
+
             if (h === '' || a === '') possiblePts = 0;
-            document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
+            const ptText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'نقطة' : 'pt';
+            document.getElementById('modal-pts-display').innerText = possiblePts + ' ' + ptText;
         }
 
         window.changeScore = function(team, amount) {
