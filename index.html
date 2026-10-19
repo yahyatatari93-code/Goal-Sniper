@@ -1622,11 +1622,18 @@ function isMatchLocked(match) {
     const direction = currentLang === 'ar' ? 'rtl' : 'ltr';
             const isAr = currentLang === 'ar';
 
-            // 🌟 تعريف الكلاسيكو المفقود 🌟
-            const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
+            // 🌟 كشف الكلاسيكو 🌟
+            let clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
+            
+            // 🚀 كود إجباري: نزرع مباراة وهمية لكي يظهر المربع للعين فوراً حتى لو لم تضفها من الإدارة
+            if (!clasicoMatch) {
+                clasicoMatch = { id: 'mock_clasico_123', home: 'BAR', away: 'RMA', date: '25/10/2026', time: '11:00 م', gw: 99 };
+            }
+
             let clasicoHtml = '';
             
-            if (clasicoMatch && currentUser.username.toLowerCase() === 'red army') {
+            // 🚀 ألغينا شرط (red army) مؤقتاً ليظهر لك المربع مهما كان الحساب الذي تستخدمه
+            if (clasicoMatch) {
                 const pred = userPreds[clasicoMatch.id] || { home: '', away: '' };
                 const isPredicted = pred.home !== '' && pred.away !== '';
                 
