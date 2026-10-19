@@ -887,6 +887,14 @@ function changeLanguage(langCode) {
             let aa = actualA !== null ? Number(actualA) : pa;
 
             let isExact = (ph === ah && pa === aa);
+
+            // 🌟 السحر هنا: استثناء الكلاسيكو بنظام النقاط (10 / 5) 🌟
+            if (homeCode === 'BAR' && awayCode === 'RMA') {
+                let isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
+                if (isExact) return 10;
+                if (isOutcomeCorrect) return 5;
+                return 0; 
+            }
             
             // 🧲 تفعيل المغناطيس لسحب النتيجة إذا كان الفارق الإجمالي هدف واحد فقط
             if (isMagnet && !isExact && actualH !== null && actualA !== null) {
@@ -1716,6 +1724,63 @@ function isMatchLocked(match) {
                 </div>
             </div>
            
+            ${(() => {
+                const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
+                if (clasicoMatch && currentUser.username.toLowerCase() === 'red army') {
+                    const pred = userPreds[clasicoMatch.id] || { home: '', away: '' };
+                    const isPredicted = pred.home !== '' && pred.away !== '';
+                    const btnText = isPredicted ? `<span class="tracking-widest" dir="ltr">${currentLang === 'ar' ? `${pred.away} -${pred.home}` : `${pred.home} -${pred.away}`}</span>` : 'توقع الكلاسيكو 🔥';
+                    const btnClass = isPredicted ? 'bg-amber-600/20 text-amber-300 border border-amber-500/30' : 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-600/30 hover:scale-105';
+
+                    return `
+                    <div class="mt-4 mb-6 relative animate-fade-up">
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-rose-600/20 to-amber-600/20 blur-xl rounded-3xl"></div>
+                        <div class="glass p-5 rounded-3xl relative overflow-hidden border-2 border-amber-500/50 bg-[#0a0f1c]">
+                            <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-900/40 to-transparent pointer-events-none"></div>
+                            <div class="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-slate-100/10 to-transparent pointer-events-none"></div>
+                            
+                            <div class="flex justify-between items-center mb-3 relative z-10">
+                                <span class="bg-amber-500 text-black text-[10px] font-black px-3 py-1 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse">حدث استثنائي</span>
+                                <span class="text-amber-400 font-bold text-[10px]"><i class="far fa-clock"></i> ${formatMatchDate(clasicoMatch.date)} - ${clasicoMatch.time}</span>
+                            </div>
+                            
+                            <h3 class="text-center font-black text-xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600 mb-4 drop-shadow-md">EL CLÁSICO</h3>
+
+                            <div class="flex items-center justify-between relative z-10 mb-5">
+                                <div class="flex-1 flex flex-col items-center gap-2">
+                                    <img src="${getTeamLogo('BAR')}" class="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(29,78,216,0.6)]">
+                                    <span class="font-bold text-xs text-white">برشلونة</span>
+                                </div>
+                                <div class="text-2xl font-black text-slate-600">VS</div>
+                                <div class="flex-1 flex flex-col items-center gap-2">
+                                    <img src="${getTeamLogo('RMA')}" class="w-12 h-12 object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]">
+                                    <span class="font-bold text-xs text-white">ريال مدريد</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center mb-4 relative z-10">
+                                <div class="bg-black/50 border border-amber-500/20 rounded-xl px-4 py-2 flex gap-4 text-center divide-x divide-amber-500/20 divide-x-reverse">
+                                    <div class="px-2">
+                                        <span class="block text-amber-400 font-black text-lg">10 <span class="text-[10px]">نقاط</span></span>
+                                        <span class="text-[9px] text-slate-300">للتطابق التام</span>
+                                    </div>
+                                    <div class="px-2">
+                                        <span class="block text-emerald-400 font-black text-lg">5 <span class="text-[10px]">نقاط</span></span>
+                                        <span class="text-[9px] text-slate-300">لتوقع الفائز/التعادل</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative z-10 px-4">
+                                <button onclick="openModal('${clasicoMatch.id}')" class="w-full py-3 rounded-xl font-bold text-sm transition-all ${btnClass}">${btnText}</button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+                return '';
+            })()}
+
             <div class="mt-2">
                 <div class="flex items-center justify-between mb-4 px-1 gap-2">
                     <h3 class="font-bold text-[13px] md:text-base flex items-center gap-1.5 flex-wrap">
@@ -3618,6 +3683,10 @@ function renderPrizesTab() {
             
             const currentGw = Number(activeMatchModal.gw);
             const isUCL = currentGw >= 101; 
+            
+            // 🌟 استثناء الكلاسيكو 🌟
+            const isSpecialClasico = (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA');
+            
             const matchDate = formatMatchDate(activeMatchModal.date);
             const userPreds = predictions[currentUser.username] || {};
             
@@ -3671,11 +3740,21 @@ function renderPrizesTab() {
 
             const displayH = hVal === '' ? '-' : hVal;
             const displayA = aVal === '' ? '-' : aVal;
-            const pts = (hVal === '' || aVal === '') ? 0 : calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
+            
+            // 🌟 حساب النقاط المبدئي المعروض في النافذة 🌟
+            let pts = 0;
+            if (hVal !== '' && aVal !== '') {
+                if (isSpecialClasico) {
+                    pts = 10;
+                } else {
+                    pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
+                }
+            }
+            
             const isCapChecked = (isEffectiveCaptain && !pred.isTripleCaptain && !pred.isMagnet);
 
             container.innerHTML = `
-                <div class="fixed inset-0 z-50 bg-[#060b19] flex items-center justify-center p-4" dir="${direction}">
+                <div class="fixed inset-0 z-50 bg-[#060b19]/90 flex items-center justify-center p-4 backdrop-blur-sm" dir="${direction}">
                     <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 space-y-5 animate-fade-up">
                         <div class="text-center border-b border-white/5 pb-3">
                             <h3 class="text-sm font-bold text-blue-400 mb-1">توقع نتيجة المباراة</h3>
@@ -3712,7 +3791,8 @@ function renderPrizesTab() {
                             </div>
                         </div>
                         
-                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
+                        <!-- 🌟 قسم المضاعفات (يختفي في الكلاسيكو) 🌟 -->
+                        <div class="space-y-2 bg-slate-900/50 p-2 rounded-2xl border border-white/5 ${isSpecialClasico ? 'hidden' : ''}">
                             
                             <label class="flex items-center gap-3 p-2.5 rounded-xl transition-all border ${isCaptainLockedByAnotherMatch ? 'border-white/5 opacity-50 cursor-not-allowed bg-slate-800' : 'border-transparent cursor-pointer hover:border-amber-500/30 hover:bg-slate-800/80'}">
                                 <input type="radio" name="powerup" value="captain" onclick="playSound('captain')" onchange="updateModalCalc()" ${isCapChecked ? 'checked' : ''} ${isCaptainLockedByAnotherMatch ? 'disabled' : ''} class="w-4 h-4 accent-amber-500" />
@@ -3764,9 +3844,17 @@ function renderPrizesTab() {
         function updateModalCalc() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
-            let possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+            
+            let possiblePts;
+            if (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA') {
+                 possiblePts = 10;
+            } else {
+                 possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+            }
+
             if (h === '' || a === '') possiblePts = 0;
-            document.getElementById('modal-pts-display').innerText = possiblePts + ' نقطة';
+            const ptText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'نقطة' : 'pt';
+            document.getElementById('modal-pts-display').innerText = possiblePts + ' ' + ptText;
         }
 
         window.changeScore = function(team, amount) {
@@ -3777,7 +3865,6 @@ function renderPrizesTab() {
             let currentVal = input.value;
             let current;
             
-            // إذا كانت الخانة فارغة وضغط اللاعب على أي زر، نجعلها تبدأ من الصفر
             if (currentVal === '') {
                 current = 0;
             } else {
@@ -3785,7 +3872,6 @@ function renderPrizesTab() {
                 current += amount;
             }
             
-            // القيود: لا أقل من 0 ولا أكثر من 9
             if (current < 0) current = 0; 
             if (current > 9) current = 9; 
             
@@ -3815,7 +3901,6 @@ function renderPrizesTab() {
             const userPreds = predictions[currentUser.username] || {};
             const activeCaps = getActiveCaptains(currentUser.username, currentGw);
 
-            // 🌟 التعديل السحري: دعم التوزيع اليومي لدوري الأبطال عند فحص القفل 🌟
             if (isMag) {
                 let isMagLocked = false;
                 Object.entries(userPreds).forEach(([mId, p]) => {
@@ -3823,10 +3908,8 @@ function renderPrizesTab() {
                         const m = matches.find(x => x.id === mId);
                         if (m && Number(m.gw) === currentGw) {
                             if (isUCL) {
-                                // في الأبطال: نفحص فقط مباريات اليوم نفسه!
                                 if (formatMatchDate(m.date) === matchDate && isMatchLocked(m)) isMagLocked = true;
                             } else {
-                                // في الدوري العادي: نفحص كل الجولة
                                 if (isMatchLocked(m)) isMagLocked = true;
                             }
                         }
@@ -3837,7 +3920,6 @@ function renderPrizesTab() {
 
             if (isCap || isTC || isMag) playSound('captain'); else playSound('success'); 
 
-            // 🚀 1. التحديث الفوري للواجهة
             let oldExplicitCapId = null;
             let oldExplicitMagId = null;
             const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
@@ -3866,8 +3948,6 @@ function renderPrizesTab() {
             
             predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
             
-            // 🌟 تم حذف (globalStandingsCache = {}) لإنقاذ المعالج من الحسابات المعقدة
-
             // 🚀 التعديل السحري للسرعة: جدولة الرسم لكي لا تختنق الشاشة
             requestAnimationFrame(() => {
                 setTimeout(() => {
@@ -3875,9 +3955,6 @@ function renderPrizesTab() {
                 }, 120); 
             });
 
-            // 🚀 2. إرسال الطلب للسيرفر
-
-            // 🚀 2. إرسال الطلب للسيرفر
             setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
