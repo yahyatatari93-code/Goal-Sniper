@@ -881,6 +881,9 @@ function changeLanguage(langCode) {
 
         
         const calcPoints = (homeCode, awayCode, predH, predA, actualH = null, actualA = null, isCaptain = false, isTripleCaptain = false, matchLeague = 'EPL', isMagnet = false) => {
+            // 🌟 عزل الكلاسيكو: صفر نقاط في الترتيب العام، فالمكافأة توكن في السيرفر 🌟
+            if (homeCode === 'BAR' && awayCode === 'RMA') return 0;
+
             if (predH === '' || predA === '' || predH === null || predA === null) return 0;
             const ph = Number(predH), pa = Number(predA);
             let ah = actualH !== null ? Number(actualH) : ph;
@@ -1440,6 +1443,7 @@ function isMatchLocked(match) {
 
             // البحث عن أول جولة في التقويم الزمني لم تكتمل مبارياتها بعد
             for (const gw of uniqueGws) {
+                if (gw === 99) continue; // 🌟 إخفاء تام لجولة الكلاسيكو لتبقى منعزلة 🌟
                 const gwMatches = matches.filter(m => Number(m.gw) === gw);
                 if (gwMatches.length === 0) continue;
                 
@@ -1774,14 +1778,14 @@ function isMatchLocked(match) {
 
                             <div class="flex justify-center mb-6 relative z-10">
                                 <div class="bg-[#060b19]/80 border border-amber-500/20 rounded-2xl p-1 flex w-full max-w-[280px] shadow-inner divide-x divide-amber-500/10 divide-x-reverse">
-                                    <div class="flex-1 py-2 flex flex-col items-center justify-center">
-                                        <span class="text-[9px] text-slate-400 mb-1 font-bold">للتطابق التام</span>
-                                        <span class="block text-amber-400 font-black text-xl">10 <span class="text-[10px]">نقاط</span></span>
-                                    </div>
-                                    <div class="flex-1 py-2 flex flex-col items-center justify-center">
-                                        <span class="text-[9px] text-slate-400 mb-1 font-bold">توقع الفائز/التعادل</span>
-                                        <span class="block text-emerald-400 font-black text-xl">5 <span class="text-[10px]">نقاط</span></span>
-                                    </div>
+                                <div class="flex-1 py-2 flex flex-col items-center justify-center">
+                                    <span class="text-[9px] text-slate-400 mb-1 font-bold">المكافأة (تطابق تام)</span>
+                                    <span class="block text-amber-400 font-black text-xl">100 <i class="fa-solid fa-coins text-[12px]"></i></span>
+                                </div>
+                                <div class="flex-1 py-2 flex flex-col items-center justify-center">
+                                    <span class="text-[9px] text-slate-400 mb-1 font-bold">المكافأة (فائز/تعادل)</span>
+                                    <span class="block text-emerald-400 font-black text-xl">50 <i class="fa-solid fa-coins text-[12px] text-amber-400"></i></span>
+                                </div>
                                 </div>
                             </div>
 
@@ -3296,7 +3300,9 @@ function renderPrizesTab() {
                                 <div class="md:col-span-1">
                                     <label class="block text-xs font-bold text-slate-400 mb-1.5">الجولة / الدور</label>
                                     <!-- قائمة جولات الدوري الإنجليزي -->
+                                    <!-- قائمة جولات الدوري الإنجليزي -->
                                     <select id="adm-gw-epl" class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white">
+                                        <option value="99" class="font-black text-amber-400">🌟 حدث استثنائي (كلاسيكو)</option>
                                         ${Array.from({ length: 38 }, (_, i) => `<option value="${i+1}">الجولة ${i+1}</option>`).join('')}
                                     </select>
                                     <!-- قائمة جولات دوري الأبطال (تظهر عند اختيار البطولة) -->
@@ -3328,9 +3334,10 @@ function renderPrizesTab() {
                     <div class="glass p-6 rounded-3xl space-y-4">
                         <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
                         
-                        <!-- 🌟 شريط التنقل المحرر 🌟 -->
+                        // 🌟 شريط التنقل المحرر 🌟
                         ${(() => {
                             const adminGwList = [
+                                99, // 🌟 الجولة المنعزلة للأحداث الاستثنائية
                                 ...Array.from({ length: 38 }, (_, i) => i + 1),
                                 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113
                             ];
@@ -3350,7 +3357,8 @@ function renderPrizesTab() {
                                     <select onchange="changeAdminGw(this.value)" class="bg-slate-950 border border-white/20 rounded-lg pl-3 pr-7 py-1.5 text-sm text-blue-400 font-bold outline-none focus:border-blue-500 appearance-none text-center cursor-pointer">
                                         ${adminGwList.map(g => {
                                             let label = '';
-                                            if (g <= 38) label = 'الجولة ' + g;
+                                            if (g === 99) label = '🌟 أحداث استثنائية';
+                                            else if (g <= 38) label = 'الجولة ' + g;
                                             else if (g >= 101 && g <= 108) label = 'أبطال ' + (g - 100);
                                             else if (g === 109) label = 'الملحق';
                                             else if (g === 110) label = 'دور الـ 16';
@@ -3758,11 +3766,11 @@ function renderPrizesTab() {
             const displayH = hVal === '' ? '-' : hVal;
             const displayA = aVal === '' ? '-' : aVal;
             
-            // 🌟 حساب النقاط المبدئي المعروض في النافذة 🌟
+            // 🌟 حساب المكافأة (نقاط أو توكن) المبدئي المعروض في النافذة 🌟
             let pts = 0;
             if (hVal !== '' && aVal !== '') {
                 if (isSpecialClasico) {
-                    pts = 10;
+                    pts = 100; // 100 توكن للمطابقة التامة
                 } else {
                     pts = calcPoints(activeMatchModal.home, activeMatchModal.away, hVal, aVal, hVal, aVal, isEffectiveCaptain, pred.isTripleCaptain, activeMatchModal.league || 'EPL', pred.isMagnet);
                 }
@@ -3845,8 +3853,10 @@ function renderPrizesTab() {
                         </div>
 
                         <div class="bg-blue-900/20 p-3.5 rounded-2xl border border-blue-500/30 text-center flex flex-col items-center justify-center">
-                            <span class="text-[10px] text-blue-300 font-bold mb-1">النقاط المحتملة (تطابق تام)</span>
-                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">${pts} ${isAr ? 'نقطة' : 'pt'}</span>
+                            <span class="text-[10px] text-blue-300 font-bold mb-1">${isSpecialClasico ? 'المكافأة المحتملة (تطابق تام)' : 'النقاط المحتملة (تطابق تام)'}</span>
+                            <span id="modal-pts-display" class="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">
+                                ${pts} ${isSpecialClasico ? '<i class="fa-solid fa-coins text-[14px] text-amber-400"></i>' : (isAr ? 'نقطة' : 'pt')}
+                            </span>
                         </div>
                         
                         <div class="flex gap-2">
@@ -3862,16 +3872,26 @@ function renderPrizesTab() {
             const h = document.getElementById('modal-pred-h').value, a = document.getElementById('modal-pred-a').value;
             const p = document.querySelector('input[name="powerup"]:checked')?.value || 'none';
             
-            let possiblePts;
-            if (activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA') {
-                 possiblePts = 10;
-            } else {
-                 possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+            let possiblePts = 0;
+            const isSpecialClasico = activeMatchModal.home === 'BAR' && activeMatchModal.away === 'RMA';
+            
+            if (h !== '' && a !== '') {
+                if (isSpecialClasico) {
+                     possiblePts = 100; // 100 توكن للمطابقة التامة في الكلاسيكو
+                } else {
+                     possiblePts = calcPoints(activeMatchModal.home, activeMatchModal.away, h, a, h, a, p==='captain', p==='triple', activeMatchModal.league || 'EPL', p==='magnet');
+                }
             }
 
-            if (h === '' || a === '') possiblePts = 0;
-            const ptText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'نقطة' : 'pt';
-            document.getElementById('modal-pts-display').innerText = possiblePts + ' ' + ptText;
+            const displayEl = document.getElementById('modal-pts-display');
+            if (isSpecialClasico) {
+                // عرض التوكن مع الأيقونة للكلاسيكو
+                displayEl.innerHTML = possiblePts + ' <i class="fa-solid fa-coins text-[14px] text-amber-400"></i>';
+            } else {
+                // العرض الطبيعي للنقاط لباقي المباريات
+                const ptText = (typeof currentLang !== 'undefined' && currentLang === 'ar') ? 'نقطة' : 'pt';
+                displayEl.innerText = possiblePts + ' ' + ptText;
+            }
         }
 
         window.changeScore = function(team, amount) {
