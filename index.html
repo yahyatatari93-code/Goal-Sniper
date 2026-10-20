@@ -1656,6 +1656,78 @@ function isMatchLocked(match) {
                 </button>
             </div>
 
+            ${(() => {
+                const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
+                if (clasicoMatch && currentUser.username.toLowerCase() === 'red army') {
+                    const pred = userPreds[clasicoMatch.id] || { home: '', away: '' };
+                    const isPredicted = pred.home !== '' && pred.away !== '';
+                    
+                    const homeScore = currentLang === 'ar' ? pred.away : pred.home;
+                    const awayScore = currentLang === 'ar' ? pred.home : pred.away;
+                    const btnText = isPredicted ? '<div class="flex items-center justify-center w-full font-black text-2xl drop-shadow-md" dir="ltr"><span class="w-8 text-center">' + homeScore + '</span><span class="mx-2 text-slate-500">-</span><span class="w-8 text-center">' + awayScore + '</span></div>' : 'توقع الكلاسيكو 🔥';
+                    
+                    const btnClass = isPredicted ? 'bg-[#060b19]/90 text-amber-400 border border-amber-500/40 shadow-inner' : 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-600/30 hover:scale-105';
+
+                    return `
+                    <div class="mt-4 mb-8 relative animate-fade-up">
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-rose-600/20 to-amber-600/20 blur-xl rounded-3xl"></div>
+                        
+                        <div class="glass p-5 rounded-3xl relative overflow-hidden border-2 border-amber-500/50 bg-[#0a0f1c]">
+                            
+                            <!-- الشعارات المائية في الخلفية (توازن دقيق مع شفافية 10%) -->
+                            <img src="${getTeamLogo('BAR')}" class="absolute -right-12 top-1/2 -translate-y-1/2 w-64 h-64 opacity-10 pointer-events-none object-contain z-0">
+                            <img src="${getTeamLogo('RMA')}" class="absolute -left-12 top-1/2 -translate-y-1/2 w-64 h-64 opacity-10 pointer-events-none object-contain z-0 scale-110">
+                            
+                            <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-900/20 to-transparent pointer-events-none z-0"></div>
+                            <div class="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-slate-100/5 to-transparent pointer-events-none z-0"></div>
+                            
+                            <div class="flex justify-between items-center mb-5 relative z-10">
+                                <span class="bg-amber-500 text-black text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse">حدث استثنائي</span>
+                                <span class="bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-full text-amber-400 font-bold text-[10px]"><i class="far fa-clock"></i> ${formatMatchDate(clasicoMatch.date)} -${clasicoMatch.time}</span>
+                            </div>
+                            
+                            <h3 class="text-center font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600 mb-6 drop-shadow-md tracking-wider relative z-10">EL CLÁSICO</h3>
+
+                            <div class="flex items-center justify-between relative z-10 mb-6">
+                                <div class="w-1/3 flex flex-col items-center gap-3">
+                                    <img src="${getTeamLogo('BAR')}" class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(29,78,216,0.6)]">
+                                    <span class="font-bold text-sm text-white">برشلونة</span>
+                                </div>
+                                
+                                <div class="w-1/3 text-center text-3xl font-black text-slate-500/70">VS</div>
+                                
+                                <div class="w-1/3 flex flex-col items-center gap-3">
+                                    <img src="${getTeamLogo('RMA')}" class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] scale-110">
+                                    <span class="font-bold text-sm text-white">ريال مدريد</span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center mb-6 relative z-10">
+                                <div class="bg-[#060b19]/80 border border-amber-500/20 rounded-2xl p-1 flex w-full max-w-[280px] shadow-inner divide-x divide-amber-500/10 divide-x-reverse">
+                                    <div class="flex-1 py-2 flex flex-col items-center justify-center">
+                                        <span class="text-[9px] text-slate-400 mb-1 font-bold">للتطابق التام</span>
+                                        <span class="block text-amber-400 font-black text-xl">100 <i class="fa-solid fa-coins text-[12px] text-amber-400"></i></span>
+                                    </div>
+                                    <div class="flex-1 py-2 flex flex-col items-center justify-center">
+                                        <span class="text-[9px] text-slate-400 mb-1 font-bold">توقع الفائز/التعادل</span>
+                                        <span class="block text-emerald-400 font-black text-xl">50 <i class="fa-solid fa-coins text-[12px] text-amber-400"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative z-10 px-2 flex justify-center">
+                                <button onclick="openModal('${clasicoMatch.id}')" class="w-full max-w-[280px] py-3.5 rounded-xl transition-all flex items-center justify-center ${btnClass}">
+                                    ${btnText}
+                                </button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    `;
+                }
+                return '';
+            })()}
+
             ${motw ? `
                 <div class="glass p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-700/10 border border-amber-500/20 flex items-center justify-between shadow-lg">
                     <div class="flex items-center gap-3">
@@ -1722,86 +1794,12 @@ function isMatchLocked(match) {
                         <span class="text-xs md:text-sm font-black text-emerald-400 block">${combinedHitRate}%</span>
                     </div>
                     <div class="flex-1 text-center px-1">
-                        <span class="text-[9px] text-slate-400 block mb-1 font-bold">النقاط الكلية</span>
-                        <span class="text-xs md:text-sm font-black text-amber-400 block">${combinedTotalPts}</span>
-                    </div>
-                </div>
-            </div>
-           
-            ${(() => {
-                const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
-                if (clasicoMatch && currentUser.username.toLowerCase() === 'red army') {
-                    const pred = userPreds[clasicoMatch.id] || { home: '', away: '' };
-                    const isPredicted = pred.home !== '' && pred.away !== '';
-                    
-                    const homeScore = currentLang === 'ar' ? pred.away : pred.home;
-                    const awayScore = currentLang === 'ar' ? pred.home : pred.away;
-                    const btnText = isPredicted ? '<div class="flex items-center justify-center w-full font-black text-2xl drop-shadow-md" dir="ltr"><span class="w-8 text-center">' + homeScore + '</span><span class="mx-2 text-slate-500">-</span><span class="w-8 text-center">' + awayScore + '</span></div>' : 'توقع الكلاسيكو 🔥';
-                    
-                    const btnClass = isPredicted ? 'bg-[#060b19]/90 text-amber-400 border border-amber-500/40 shadow-inner' : 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-600/30 hover:scale-105';
-
-                    return `
-                    <div class="mt-4 mb-8 relative animate-fade-up">
-                        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-rose-600/20 to-amber-600/20 blur-xl rounded-3xl"></div>
-                        
-                        <div class="glass p-5 rounded-3xl relative overflow-hidden border-2 border-amber-500/50 bg-[#0a0f1c]">
-                            
-                            <!-- الشعارات المائية في الخلفية (توازن دقيق مع شفافية 10%) -->
-                            <img src="${getTeamLogo('BAR')}" class="absolute -right-12 top-1/2 -translate-y-1/2 w-64 h-64 opacity-10 pointer-events-none object-contain z-0">
-                            <img src="${getTeamLogo('RMA')}" class="absolute -left-12 top-1/2 -translate-y-1/2 w-64 h-64 opacity-10 pointer-events-none object-contain z-0 scale-110">
-                            
-                            <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-900/20 to-transparent pointer-events-none z-0"></div>
-                            <div class="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-slate-100/5 to-transparent pointer-events-none z-0"></div>
-                            
-                            <div class="flex justify-between items-center mb-5 relative z-10">
-                                <span class="bg-amber-500 text-black text-[10px] font-black px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] animate-pulse">حدث استثنائي</span>
-                                <span class="bg-slate-900/60 border border-white/10 px-3 py-1.5 rounded-full text-amber-400 font-bold text-[10px]"><i class="far fa-clock"></i> ${formatMatchDate(clasicoMatch.date)} - ${clasicoMatch.time}</span>
+                                <span class="text-[9px] text-slate-400 block mb-1 font-bold">النقاط الكلية</span>
+                                <span class="text-xs md:text-sm font-black text-amber-400 block">${combinedTotalPts}</span>
                             </div>
-                            
-                            <h3 class="text-center font-black text-2xl text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-600 mb-6 drop-shadow-md tracking-wider relative z-10">EL CLÁSICO</h3>
-
-                            <div class="flex items-center justify-between relative z-10 mb-6">
-                                <!-- برشلونة بحجمه الطبيعي -->
-                                <div class="w-1/3 flex flex-col items-center gap-3">
-                                    <img src="${getTeamLogo('BAR')}" class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(29,78,216,0.6)]">
-                                    <span class="font-bold text-sm text-white">برشلونة</span>
-                                </div>
-                                
-                                <div class="w-1/3 text-center text-3xl font-black text-slate-500/70">VS</div>
-                                
-                                <!-- ريال مدريد مكبر بنسبة 10% فقط لتعويض الفراغ في الصورة -->
-                                <div class="w-1/3 flex flex-col items-center gap-3">
-                                    <img src="${getTeamLogo('RMA')}" class="w-14 h-14 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] scale-110">
-                                    <span class="font-bold text-sm text-white">ريال مدريد</span>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-center mb-6 relative z-10">
-                                <div class="bg-[#060b19]/80 border border-amber-500/20 rounded-2xl p-1 flex w-full max-w-[280px] shadow-inner divide-x divide-amber-500/10 divide-x-reverse">
-                                <div class="flex-1 py-2 flex flex-col items-center justify-center">
-                                    <span class="text-[9px] text-slate-400 mb-1 font-bold">المكافأة (تطابق تام)</span>
-                                    <span class="block text-amber-400 font-black text-xl">100 <i class="fa-solid fa-coins text-[12px]"></i></span>
-                                </div>
-                                <div class="flex-1 py-2 flex flex-col items-center justify-center">
-                                    <span class="text-[9px] text-slate-400 mb-1 font-bold">المكافأة (فائز/تعادل)</span>
-                                    <span class="block text-emerald-400 font-black text-xl">50 <i class="fa-solid fa-coins text-[12px] text-amber-400"></i></span>
-                                </div>
-                                </div>
-                            </div>
-
-                            <div class="relative z-10 px-2 flex justify-center">
-                                <button onclick="openModal('${clasicoMatch.id}')" class="w-full max-w-[280px] py-3.5 rounded-xl transition-all flex items-center justify-center ${btnClass}">
-                                    ${btnText}
-                                </button>
-                            </div>
-                            
                         </div>
                     </div>
-                    `;
-                }
-                return '';
-            })()}
-            
+
             <div class="mt-2">
                 <div class="flex items-center justify-between mb-4 px-1 gap-2">
                     <h3 class="font-bold text-[13px] md:text-base flex items-center gap-1.5 flex-wrap">
