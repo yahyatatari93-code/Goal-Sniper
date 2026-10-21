@@ -4051,10 +4051,19 @@ function renderPrizesTab() {
 
                     changedMatches.forEach(mId => {
                         const p = predictions[currentUser.username][mId];
-                        if(p) {
+                        // 🌟 الحل الجذري: لا نرسل تحديثاً للسيرفر إلا إذا كانت المباراة تحتوي على أرقام توقع فعلية 🌟
+                        if(p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
                             fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                                 method: 'POST', headers, 
-                                body: JSON.stringify({ username: currentUser.username, matchId: mId, predH: p.home||'', predA: p.away||'', isCaptain: p.isCaptain||false, isTripleCaptain: p.isTripleCaptain||false, isMagnet: p.isMagnet||false })
+                                body: JSON.stringify({ 
+                                    username: currentUser.username, 
+                                    matchId: mId, 
+                                    predH: p.home, 
+                                    predA: p.away, 
+                                    isCaptain: p.isCaptain || false, 
+                                    isTripleCaptain: p.isTripleCaptain || false, 
+                                    isMagnet: p.isMagnet || false 
+                                })
                             }));
                         }
                     });
