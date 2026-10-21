@@ -714,8 +714,8 @@ function updateTheme() {
 
         function setMatchesLeague(league) { 
             activeMatchesLeague = league; 
-            // فصل الجولات: الأبطال يبدأ من 101، والإنجليزي يعود لجولته الطبيعية
-            selectedMatchesGw = (league === 'UCL') ? 101 : (typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1);
+            // 🌟 تفريغ الجولة لكي تقوم دالة رسم المباريات بالبحث الذكي عن أول جولة مفتوحة تلقائياً
+            selectedMatchesGw = null; 
             const mainContent = document.getElementById('main-content');
             if (mainContent) mainContent.innerHTML = `<div class="flex justify-center items-center py-32 animate-fade-up"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500/30"></i></div>`;
             setTimeout(() => { render(); }, 30); 
@@ -1978,13 +1978,35 @@ function changeGw(gw) {
         const isUCL = activeMatchesLeague === 'UCL';
         const gwList = isUCL ? [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113] : Array.from({ length: 38 }, (_, i) => i + 1);
 
-        // 🌟 ضبط الجولة تلقائياً لتناسب البطولة الحالية ومنع الصفحة الفارغة 🌟
+        // 🌟 ضبط الجولة تلقائياً لتكون أول جولة مفتوحة للتوقعات (غير مكتملة) 🌟
         if (!selectedMatchesGw || !gwList.includes(Number(selectedMatchesGw))) {
-            if (isUCL) {
-                selectedMatchesGw = 101; 
+            let activeFound = null;
+            
+            // البحث الديناميكي في الجولات بالترتيب
+            for (const gw of gwList) {
+                if (gw === 99) continue; // تخطي جولة الكلاسيكو الشبحية
+                const gwMatches = matches.filter(m => Number(m.gw) === gw && (m.league || 'EPL') === activeMatchesLeague);
+                
+                if (gwMatches.length > 0) {
+                    // إذا كان هناك مباراة واحدة على الأقل لم تُسجل نتيجتها الفعلية، فهذه هي الجولة المفتوحة
+                    const isCompleted = gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '' && m.actualH !== undefined && m.actualA !== undefined);
+                    if (!isCompleted) {
+                        activeFound = gw;
+                        break; // وجدنا الجولة المطلوبة، نتوقف عن البحث
+                    }
+                }
+            }
+            
+            // تحديد الجولة المفتوحة، وإذا انتهى الموسم كله نعرض آخر جولة لُعبت
+            if (activeFound !== null) {
+                selectedMatchesGw = activeFound;
             } else {
-                selectedMatchesGw = typeof getCurrentActiveGw === 'function' ? getCurrentActiveGw() : 1;
-                if (!gwList.includes(Number(selectedMatchesGw))) selectedMatchesGw = 1;
+                let lastPlayed = isUCL ? 101 : 1;
+                for (let i = gwList.length - 1; i >= 0; i--) {
+                    const gwMatches = matches.filter(m => Number(m.gw) === gwList[i] && (m.league || 'EPL') === activeMatchesLeague);
+                    if (gwMatches.length > 0) { lastPlayed = gwList[i]; break; }
+                }
+                selectedMatchesGw = lastPlayed;
             }
         }
         const activeGw = Number(selectedMatchesGw);
@@ -3983,18 +4005,35 @@ function renderPrizesTab() {
             const reqMatchId = activeMatchModal.id;
             const oldPrediction = userPreds[reqMatchId] ? {...userPreds[reqMatchId]} : null;
 
+            // 🌟 نظام التبديل الذكي للميزات المطرودة (Smart Swap) 🌟
+            let targetForDisplacedMagnet = null;
+            let targetForDisplacedCaptain = null;
+
+            if (isCap && oldPrediction && oldPrediction.isMagnet) {
+                if (oldExplicitCapId && oldExplicitCapId !== reqMatchId) targetForDisplacedMagnet = oldExplicitCapId;
+            } else if (isMag && oldPrediction && oldPrediction.isCaptain) {
+                if (oldExplicitMagId && oldExplicitMagId !== reqMatchId) targetForDisplacedCaptain = oldExplicitMagId;
+            }
+
             closeModal(); // إغلاق النافذة ليبدأ الأنيميشن فوراً
             
             if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+            
+            // 1. تفريغ الميزات من المباريات القديمة
             if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
             if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
             
+            // 2. تطبيق التبديل (إنقاذ الميزة التي تم طردها ووضعها مكان الميزة الجديدة)
+            if (targetForDisplacedMagnet && predictions[currentUser.username][targetForDisplacedMagnet]) predictions[currentUser.username][targetForDisplacedMagnet].isMagnet = true;
+            if (targetForDisplacedCaptain && predictions[currentUser.username][targetForDisplacedCaptain]) predictions[currentUser.username][targetForDisplacedCaptain].isCaptain = true;
+
+            // 3. حفظ التوقع للمباراة التي اختارها اللاعب الآن
             predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
             
             // 🚀 التعديل السحري للسرعة: جدولة الرسم لكي لا تختنق الشاشة
             requestAnimationFrame(() => {
                 setTimeout(() => {
-                    render(); // يتم الرسم بعد أن تنغلق النافذة بنعومة تامة
+                    render(); 
                 }, 120); 
             });
 
@@ -4004,23 +4043,21 @@ function renderPrizesTab() {
                     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
                     const fetchRequests = [];
 
-                    if (isCap && oldExplicitCapId) {
-                        const oldP = predictions[currentUser.username][oldExplicitCapId] || {};
-                        fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
-                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitCapId, predH: oldP.home||'', predA: oldP.away||'', isCaptain: false, isTripleCaptain: oldP.isTripleCaptain||false, isMagnet: oldP.isMagnet||false })
-                        }));
-                    }
-                    if (isMag && oldExplicitMagId) {
-                        const oldP = predictions[currentUser.username][oldExplicitMagId] || {};
-                        fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
-                            method: 'POST', headers, body: JSON.stringify({ username: currentUser.username, matchId: oldExplicitMagId, predH: oldP.home||'', predA: oldP.away||'', isCaptain: oldP.isCaptain||false, isTripleCaptain: oldP.isTripleCaptain||false, isMagnet: false })
-                        }));
-                    }
+                    // 🌟 نظام بناء الطلبات الذكي (يجمع كل المباريات التي تأثرت بالتبديل) 🌟
+                    const changedMatches = new Set();
+                    changedMatches.add(reqMatchId);
+                    if (isCap && oldExplicitCapId && oldExplicitCapId !== reqMatchId) changedMatches.add(oldExplicitCapId);
+                    if (isMag && oldExplicitMagId && oldExplicitMagId !== reqMatchId) changedMatches.add(oldExplicitMagId);
 
-                    fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
-                        method: 'POST', headers,
-                        body: JSON.stringify({ username: currentUser.username, matchId: reqMatchId, predH: h, predA: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag })
-                    }));
+                    changedMatches.forEach(mId => {
+                        const p = predictions[currentUser.username][mId];
+                        if(p) {
+                            fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
+                                method: 'POST', headers, 
+                                body: JSON.stringify({ username: currentUser.username, matchId: mId, predH: p.home||'', predA: p.away||'', isCaptain: p.isCaptain||false, isTripleCaptain: p.isTripleCaptain||false, isMagnet: p.isMagnet||false })
+                            }));
+                        }
+                    });
                     
                     const responses = await Promise.all(fetchRequests);
                     const response = responses[responses.length - 1]; 
