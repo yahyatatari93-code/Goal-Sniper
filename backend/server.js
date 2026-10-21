@@ -623,31 +623,40 @@ app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) 
 const PORT = process.env.PORT || 5000;
 
 // ==========================================
-// 🌟 نظام المراقب الآلي (Cron Job) للتذكير بالمباريات (يومياً) 🌟
+// 🌟 نظام المراقب الآلي للتذكير بالمباريات (النسخة المدرعة) 🌟
 // ==========================================
-const notifiedDays = new Set(); // ذاكرة مؤقتة لمنع تكرار الإشعار لنفس اليوم في نفس الجولة
 
+// ذاكرة ذكية تحتفظ بمعرّف الإشعار ليوم واحد فقط لمنع التكرار، وسيتم تنظيفها تلقائياً
+let notifiedDays = new Set(); 
+let lastCleanupTime = Date.now();
+
+// 1. دالة حساب الوقت المعيارية الدقيقة (تقرأ التاريخ مهما كان التنسيق)
 function parseMatchDateTime(dateStr, timeStr) {
     try {
-        if (!dateStr) return 0;
-        // توحيد الفواصل لتجنب أي خطأ في الكتابة
-        let parts = dateStr.replace(/\//g, '-').split('-');
-        if (parts.length < 3) return 0;
+        if (!dateStr || !timeStr) return 0;
         
-        let y, m, d;
+        let dStr = String(dateStr).trim();
+        // توحيد الفواصل إلى /
+        dStr = dStr.replace(/[\s\.-]+/g, '/').replace(/\/+/g, '/');
+        
+        let parts = dStr.match(/\d+/g);
+        if (!parts || parts.length < 3) return 0;
+
+        let d, m, y;
+        // التعرف الذكي: إذا كان الجزء الأول 4 أرقام فهو سنة (YYYY/MM/DD)
         if (parts[0].length === 4) {
             y = parts[0]; m = parts[1]; d = parts[2];
         } else {
+            // وإلا فهو (DD/MM/YYYY)
             d = parts[0]; m = parts[1]; y = parts[2];
             if (y.length === 2) y = '20' + y;
         }
 
-        // 🌟 استخراج الوقت بذكاء مطلق (حتى لو كُتب 10:00م بدون مسافة)
-        let tStr = (timeStr || '00:00').trim().toLowerCase();
+        // معالجة الوقت
+        let tStr = String(timeStr).trim().toLowerCase();
         let isPM = tStr.includes('م') || tStr.includes('pm');
         let isAM = tStr.includes('ص') || tStr.includes('am');
         
-        // عزل الأرقام فقط عن الحروف
         let timeNumbers = tStr.replace(/[^\d:]/g, ''); 
         let [hours, minutes] = timeNumbers.split(':');
         hours = parseInt(hours, 10) || 0;
@@ -656,57 +665,81 @@ function parseMatchDateTime(dateStr, timeStr) {
         if (isPM && hours !== 12) hours += 12;
         if (isAM && hours === 12) hours = 0;
         
-        // دمج الوقت مع (توقيت تركيا وسوريا +03:00)
+        // بناء التاريخ بتوقيت المنطقة القياسي لتركيا وسوريا (+03:00)
         const isoString = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00+03:00`;
         return new Date(isoString).getTime();
     } catch (e) {
+        console.error("Time Parse Error:", e.message);
         return 0;
     }
 }
 
+// 2. المحرك الأساسي للفحص
 async function checkUpcomingMatches() {
     try {
-        const [matches] = await pool.query('SELECT gw, league, date, time FROM matches WHERE actual_h IS NULL');
+        // تنظيف الذاكرة كل 24 ساعة لمنع تراكمها
+        if (Date.now() - lastCleanupTime > 24 * 60 * 60 * 1000) {
+            notifiedDays.clear();
+            lastCleanupTime = Date.now();
+            console.log("[System] Notified days memory cleared.");
+        }
+
+        const [matches] = await pool.query('SELECT id, gw, league, date, time FROM matches WHERE actual_h IS NULL');
         if (matches.length === 0) return;
 
         const firstMatchesPerDay = {};
 
+        // البحث عن المباراة الأبكر لكل بطولة ولكل جولة في اليوم الواحد
         matches.forEach(m => {
-            // توحيد شكل التاريخ في المفتاح لمنع التشتت إذا تم إدخال التواريخ بصيغ مختلفة
-            const cleanDate = (m.date || '').replace(/\//g, '-');
-            const dayKey = `${m.league || 'EPL'}_${m.gw}_${cleanDate}`; 
             const matchTime = parseMatchDateTime(m.date, m.time);
             if (matchTime === 0) return;
 
+            // توحيد التاريخ كـ YYYY-MM-DD لتجنب اختلافات الإدخال
+            const dDate = new Date(matchTime);
+            if (isNaN(dDate.getTime())) return;
+            
+            const cleanDate = `${dDate.getFullYear()}-${dDate.getMonth() + 1}-${dDate.getDate()}`;
+            const dayKey = `${m.league || 'EPL'}_gw${m.gw}_${cleanDate}`; 
+
             if (!firstMatchesPerDay[dayKey] || matchTime < firstMatchesPerDay[dayKey].time) {
-                firstMatchesPerDay[dayKey] = { gw: m.gw, league: m.league, time: matchTime, date: m.date };
+                firstMatchesPerDay[dayKey] = { gw: m.gw, league: m.league, time: matchTime };
             }
         });
 
         const now = Date.now();
         
-        Object.keys(firstMatchesPerDay).forEach(async (dayKey) => {
-            const firstMatch = firstMatchesPerDay[dayKey];
+        // فحص المباريات التي تقترب
+        for (const [dayKey, firstMatch] of Object.entries(firstMatchesPerDay)) {
             const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
 
-            // 🚀 فحص الوقت ليكون بين 105 و 130 دقيقة (لإرسال الإشعار قبل الديدلاين بساعة)
-            if (timeDiffMinutes > 105 && timeDiffMinutes <= 130) {
+            // 🚀 الشرط الذهبي: الإشعار يرسل فقط إذا كان الفارق بين 119 و 121 دقيقة (تقريباً ساعتين بالضبط)
+            // نأخذ نطاق 3 دقائق لضمان عدم تخطي الإشعار في حال تأخر السيرفر بضعة ثواني
+            if (timeDiffMinutes >= 118 && timeDiffMinutes <= 121) {
                 if (!notifiedDays.has(dayKey)) {
                     notifiedDays.add(dayKey); 
 
-                    const leagueName = firstMatch.league === 'UCL' ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
-                    const gwLabel = firstMatch.league === 'UCL' ? `الجولة ${firstMatch.gw - 100}` : `الجولة ${firstMatch.gw}`;
+                    const isUCL = firstMatch.league === 'UCL';
+                    const leagueName = isUCL ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
+                    
+                    let gwLabel = '';
+                    if (isUCL) {
+                        if (firstMatch.gw >= 101 && firstMatch.gw <= 108) gwLabel = `الجولة ${firstMatch.gw - 100}`;
+                        else gwLabel = 'الأدوار الإقصائية';
+                    } else {
+                        if (firstMatch.gw === 99) gwLabel = 'الحدث الاستثنائي الكلاسيكو';
+                        else gwLabel = `الجولة ${firstMatch.gw}`;
+                    }
                     
                     const title = `🚨 مباريات اليوم من ${gwLabel} تقترب!`;
                     const body = `باقي ساعتين على أولى مباريات اليوم في ${leagueName}.. أي أنه متبقي "ساعة واحدة فقط" لإغلاق التوقعات! ادخل الآن ⏱️`;
 
                     await sendFCMToAll(title, body);
-                    console.log(`[Auto-Reminder] Sent for ${dayKey} (Time diff: ${Math.round(timeDiffMinutes)} mins)`);
+                    console.log(`[Auto-Reminder] Sent for: ${dayKey} (Mins left: ${Math.round(timeDiffMinutes)})`);
                 }
             }
-        });
+        }
     } catch (error) {
-        console.error("Auto Reminder Error:", error.message);
+        console.error("[Auto-Reminder] Error:", error.message);
     }
 }
 
