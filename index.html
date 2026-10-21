@@ -3985,74 +3985,66 @@ function renderPrizesTab() {
 
             if (isCap || isTC || isMag) playSound('captain'); else playSound('success'); 
 
-            let oldExplicitCapId = null;
-            let oldExplicitMagId = null;
-            const gwMatches = matches.filter(m => Number(m.gw) === currentGw);
+            // 🌟 محرك الإدارة الذكية للميزات والتبديل (Smart Powerup Engine) 🌟
+            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
+            const userP = predictions[currentUser.username];
+            const oldPrediction = userP[activeMatchModal.id] ? {...userP[activeMatchModal.id]} : null;
+
+            // 1. البحث الدقيق عن الميزات الحالية في هذه الجولة
+            let currentCapId = null;
+            let currentMagId = null;
             
-            gwMatches.forEach(m => {
-                if (m.id !== activeMatchModal.id) {
-                    if (predictions[currentUser.username]?.[m.id]?.isCaptain) {
-                        if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitCapId = m.id; } 
-                        else { oldExplicitCapId = m.id; }
-                    }
-                    if (predictions[currentUser.username]?.[m.id]?.isMagnet) {
-                        if (isUCL) { if (formatMatchDate(m.date) === matchDate) oldExplicitMagId = m.id; } 
-                        else { oldExplicitMagId = m.id; }
+            matches.forEach(m => {
+                if (Number(m.gw) === currentGw && m.id !== activeMatchModal.id) {
+                    let inScope = !isUCL || formatMatchDate(m.date) === matchDate;
+                    if (inScope) {
+                        if (userP[m.id]?.isCaptain) currentCapId = m.id;
+                        if (userP[m.id]?.isMagnet) currentMagId = m.id;
                     }
                 }
             });
 
-            const reqMatchId = activeMatchModal.id;
-            const oldPrediction = userPreds[reqMatchId] ? {...userPreds[reqMatchId]} : null;
+            const changedMatches = new Set();
+            changedMatches.add(activeMatchModal.id);
 
-            // 🌟 نظام التبديل الذكي للميزات المطرودة (Smart Swap) 🌟
-            let targetForDisplacedMagnet = null;
-            let targetForDisplacedCaptain = null;
-
-            if (isCap && oldPrediction && oldPrediction.isMagnet) {
-                if (oldExplicitCapId && oldExplicitCapId !== reqMatchId) targetForDisplacedMagnet = oldExplicitCapId;
-            } else if (isMag && oldPrediction && oldPrediction.isCaptain) {
-                if (oldExplicitMagId && oldExplicitMagId !== reqMatchId) targetForDisplacedCaptain = oldExplicitMagId;
+            // 2. تطبيق التبديل الذكي وتفريغ القديم
+            if (isCap) {
+                if (oldPrediction?.isMagnet && currentCapId) {
+                    userP[currentCapId].isMagnet = true;
+                    userP[currentCapId].isCaptain = false;
+                    changedMatches.add(currentCapId);
+                } else if (currentCapId) {
+                    userP[currentCapId].isCaptain = false;
+                    changedMatches.add(currentCapId);
+                }
+            } else if (isMag) {
+                if (oldPrediction?.isCaptain && currentMagId) {
+                    userP[currentMagId].isCaptain = true;
+                    userP[currentMagId].isMagnet = false;
+                    changedMatches.add(currentMagId);
+                } else if (currentMagId) {
+                    userP[currentMagId].isMagnet = false;
+                    changedMatches.add(currentMagId);
+                }
             }
 
-            closeModal(); // إغلاق النافذة ليبدأ الأنيميشن فوراً
-            
-            if (!predictions[currentUser.username]) predictions[currentUser.username] = {};
-            
-            // 1. تفريغ الميزات من المباريات القديمة
-            if (isCap && oldExplicitCapId && predictions[currentUser.username][oldExplicitCapId]) predictions[currentUser.username][oldExplicitCapId].isCaptain = false;
-            if (isMag && oldExplicitMagId && predictions[currentUser.username][oldExplicitMagId]) predictions[currentUser.username][oldExplicitMagId].isMagnet = false;
-            
-            // 2. تطبيق التبديل (إنقاذ الميزة التي تم طردها ووضعها مكان الميزة الجديدة)
-            if (targetForDisplacedMagnet && predictions[currentUser.username][targetForDisplacedMagnet]) predictions[currentUser.username][targetForDisplacedMagnet].isMagnet = true;
-            if (targetForDisplacedCaptain && predictions[currentUser.username][targetForDisplacedCaptain]) predictions[currentUser.username][targetForDisplacedCaptain].isCaptain = true;
+            // 3. حفظ التوقع الجديد للمباراة المطلوبة
+            userP[activeMatchModal.id] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
 
-            // 3. حفظ التوقع للمباراة التي اختارها اللاعب الآن
-            predictions[currentUser.username][reqMatchId] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
-            
-            // 🚀 التعديل السحري للسرعة: جدولة الرسم لكي لا تختنق الشاشة
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    render(); 
-                }, 120); 
-            });
+            closeModal(); // إغلاق النافذة بنعومة
+            requestAnimationFrame(() => { setTimeout(() => { render(); }, 120); });
 
+            // 4. إرسال البيانات للسيرفر بأمان تام (بالتسلسل لمنع التضارب)
             setTimeout(async () => {
                 try {
                     const token = localStorage.getItem('oracle_token_v8');
                     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
                     const fetchRequests = [];
 
-                    // 🌟 نظام بناء الطلبات الذكي (يجمع كل المباريات التي تأثرت بالتبديل) 🌟
-                    const changedMatches = new Set();
-                    changedMatches.add(reqMatchId);
-                    if (isCap && oldExplicitCapId && oldExplicitCapId !== reqMatchId) changedMatches.add(oldExplicitCapId);
-                    if (isMag && oldExplicitMagId && oldExplicitMagId !== reqMatchId) changedMatches.add(oldExplicitMagId);
-
                     changedMatches.forEach(mId => {
-                        const p = predictions[currentUser.username][mId];
-                        // 🌟 الحل الجذري: لا نرسل تحديثاً للسيرفر إلا إذا كانت المباراة تحتوي على أرقام توقع فعلية 🌟
-                        if(p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                        const p = userP[mId];
+                        // الحماية القصوى: لا نرسل للسيرفر إلا المباريات التي تحتوي على أرقام فعلية
+                        if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
                             fetchRequests.push(fetch(`${API_BASE_URL}/predict`, {
                                 method: 'POST', headers, 
                                 body: JSON.stringify({ 
@@ -4067,25 +4059,23 @@ function renderPrizesTab() {
                             }));
                         }
                     });
-                    
-                    const responses = await Promise.all(fetchRequests);
-                    const response = responses[responses.length - 1]; 
-                    const data = await response.json();
-                
-                    if(!data.success) {
-                        if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
-                        else delete predictions[currentUser.username][reqMatchId];
-                        showCustomDialog(data.message || "حدث خطأ أثناء حفظ التوقع. يرجى المحاولة مجدداً.");
-                        await syncData(); render();
+
+                    // إرسال الطلبات بالدور (Sequentially) لمنع تضارب قاعدة البيانات
+                    for (let req of fetchRequests) {
+                        const res = await req;
+                        const data = await res.json();
+                        if (!data.success) throw new Error(data.message);
                     }
+                    
+                    // تأكيد نهائي لتزامن البيانات مع السيرفر
+                    await syncData(); 
+                    render();
+                    
                 } catch(e) {
-                    if (oldPrediction) predictions[currentUser.username][reqMatchId] = oldPrediction;
-                    else delete predictions[currentUser.username][reqMatchId];
-                    showCustomDialog("حدث خطأ في الاتصال بالسيرفر أثناء الحفظ.");
+                    showCustomDialog(e.message || "حدث خطأ في الاتصال بالسيرفر أثناء الحفظ.");
                     await syncData(); render();
                 }
-            }, 10); 
-        }
+            }, 10);
         
         async function createMiniLeague() {
             const name = document.getElementById('new-ml-name').value.trim();
