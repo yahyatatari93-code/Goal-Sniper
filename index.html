@@ -124,6 +124,14 @@ body.epl-theme {
             background: linear-gradient(90deg, rgba(11,12,42,0.95), rgba(88,28,135,0.7), rgba(11,12,42,0.95)) !important;
             border-bottom-color: rgba(168, 85, 247, 0.4) !important;
         }
+        
+        /* 🌟 أنيميشن دحرجة الكرة على شريط التحميل 🌟 */
+        @keyframes rollBall {
+            0% { left: -10px; transform: rotate(0deg); }
+            50% { left: calc(100% - 10px); transform: rotate(360deg); }
+            100% { left: -10px; transform: rotate(0deg); }
+        }
+        .animate-roll { animation: rollBall 1.5s ease-in-out infinite; }
     </style>
     </head>
 <body class="min-h-screen flex flex-col bottom-nav-pb">
@@ -4654,9 +4662,16 @@ async function deleteLeagueByAdmin() {
         
         async function processGoogleCallback(googleToken) {
             document.getElementById('app').innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                    <i class="fa-brands fa-google fa-bounce text-4xl text-blue-500"></i>
-                    <span class="font-bold text-lg text-white">جاري المعالجة...</span>
+                <div class="flex flex-col items-center justify-center min-h-screen bg-[#0a0f1c] z-50" dir="rtl">
+                    <i class="fa-brands fa-google text-5xl text-blue-500 mb-6 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"></i>
+                    <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 mb-8 tracking-wider">Goal Sniper</h1>
+                    <div class="w-64 relative mt-2">
+                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 w-full animate-pulse"></div>
+                        </div>
+                        <i class="fa-solid fa-futbol text-white text-2xl absolute -top-3 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-roll"></i>
+                    </div>
+                    <span class="text-blue-400 text-xs font-bold mt-8 animate-pulse">جاري معالجة حساب غوغل... ⚽</span>
                 </div>`;
 
             // سحب البيانات المخبأة في الذاكرة
@@ -4890,10 +4905,19 @@ async function deleteLeagueByAdmin() {
                     localStorage.setItem('oracle_token_v8', data.token);
                     
                     document.getElementById('app').innerHTML = `
-                        <div class="flex flex-col items-center justify-center min-h-screen text-slate-400 gap-4">
-                            <i class="fa-solid fa-cloud-arrow-down fa-spin text-4xl text-blue-500"></i>
-                            <span class="font-bold text-lg text-white">Goal Sniper</span>
-                            <span class="font-bold text-sm">جاري مزامنة جدول المباريات الرسمي...</span>
+                        <div class="flex flex-col items-center justify-center min-h-screen bg-[#0a0f1c] z-50" dir="rtl">
+                            <div class="relative mb-6">
+                                <div class="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
+                                <img src="${APP_LOGO_URL}" class="relative w-28 h-28 rounded-[2rem] shadow-[0_0_30px_rgba(14,165,233,0.3)] object-cover border border-blue-500/30 animate-pulse" onerror="this.style.display='none'">
+                            </div>
+                            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 mb-8 tracking-wider">Goal Sniper</h1>
+                            <div class="w-64 relative mt-2">
+                                <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                    <div class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 w-full animate-pulse"></div>
+                                </div>
+                                <i class="fa-solid fa-futbol text-white text-2xl absolute -top-3 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-roll"></i>
+                            </div>
+                            <span class="text-emerald-400 text-xs font-bold mt-8 animate-pulse">تم الدخول بنجاح! جاري مزامنة البيانات... ⚽</span>
                         </div>`;
                     
                     await syncData(); 
@@ -5216,29 +5240,49 @@ async function deleteLeagueByAdmin() {
             document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore()); // رسم نسخة جديدة بالرصيد المحدث
         }
 
-        window.onload = function() {
-            // 1. جلب بيانات المستخدم من الذاكرة وفورا رسم الشاشة (صفر تأخير)
+        window.onload = async function() {
             currentUser = JSON.parse(localStorage.getItem('oracle_current_user_v8') || 'null');
-            fetchMarquee(); 
+            
+            if (!currentUser) {
+                fetchMarquee();
+                render();
+                return;
+            }
+
+            // 🌟 رسم شاشة التحميل الفخمة (الكرة المتحركة) 🌟
+            document.getElementById('app').innerHTML = `
+                <div class="flex flex-col items-center justify-center min-h-screen bg-[#0a0f1c] z-50 animate-fade-up" dir="rtl">
+                    <div class="relative mb-8">
+                        <div class="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
+                        <img src="${APP_LOGO_URL}" class="relative w-32 h-32 rounded-[2.5rem] shadow-[0_0_30px_rgba(14,165,233,0.3)] object-cover border border-blue-500/30 animate-pulse" onerror="this.style.display='none'">
+                    </div>
+                    <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-amber-400 mb-10 tracking-wider drop-shadow-md">Goal Sniper</h1>
+                    
+                    <div class="w-64 relative mt-2">
+                        <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full bg-gradient-to-r from-blue-600 to-emerald-500 w-full animate-pulse"></div>
+                        </div>
+                        <i class="fa-solid fa-futbol text-white text-2xl absolute -top-3 drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-roll"></i>
+                    </div>
+                    <span class="text-slate-400 text-xs font-bold mt-8 animate-pulse">جاري تجهيز الملعب والمباريات... ⚽</span>
+                </div>
+            `;
+
+            // 🌟 انتظار جلب البيانات بالكامل قبل الدخول 🌟
+            try {
+                await Promise.all([syncData(), fetchMarquee()]);
+            } catch(e) {
+                console.error(e);
+            }
+
+            // 🌟 بعد اكتمال التحميل، رسم الشاشة الرئيسية لتظهر جاهزة تماماً بدون تعليق 🌟
             render(); 
 
-            // 2. إذا كان مسجلاً، نجلب البيانات الجديدة في الخلفية دون تجميد الواجهة
-            if (currentUser) {
-                setTimeout(async () => {
-                    try {
-                        await syncData(); 
-                        render(); // تحديث صامت للأرقام بعد اكتمال الجلب
-                    } catch(e) {
-                        console.error(e);
-                    }
-                }, 500); // تأخير نصف ثانية لضمان أن فلاتر قام بتحميل الواجهة أولاً
-            }
-            
             setTimeout(() => {
                 if (typeof showWelcomeMessage === 'function') {
                     showWelcomeMessage();
                 }
-            }, 1200); 
+            }, 800); 
         };
         
         async function fireSniper(leagueCode, victimName, penaltyPoints, gw, isBought = false) {
