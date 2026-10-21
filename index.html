@@ -4006,29 +4006,38 @@ function renderPrizesTab() {
             const changedMatches = new Set();
             changedMatches.add(activeMatchModal.id);
 
-            // 2. تطبيق التبديل الذكي وتفريغ القديم
+            // 2. تطبيق التبديل الذكي وتفريغ القديم (مع التأكد من وجود الكائن)
             if (isCap) {
                 if (oldPrediction?.isMagnet && currentCapId) {
+                    if (!userP[currentCapId]) userP[currentCapId] = { home: '', away: '' };
                     userP[currentCapId].isMagnet = true;
                     userP[currentCapId].isCaptain = false;
                     changedMatches.add(currentCapId);
                 } else if (currentCapId) {
+                    if (!userP[currentCapId]) userP[currentCapId] = { home: '', away: '' };
                     userP[currentCapId].isCaptain = false;
                     changedMatches.add(currentCapId);
                 }
             } else if (isMag) {
                 if (oldPrediction?.isCaptain && currentMagId) {
+                    if (!userP[currentMagId]) userP[currentMagId] = { home: '', away: '' };
                     userP[currentMagId].isCaptain = true;
                     userP[currentMagId].isMagnet = false;
                     changedMatches.add(currentMagId);
                 } else if (currentMagId) {
+                    if (!userP[currentMagId]) userP[currentMagId] = { home: '', away: '' };
                     userP[currentMagId].isMagnet = false;
                     changedMatches.add(currentMagId);
                 }
             }
 
-            // 3. حفظ التوقع الجديد للمباراة المطلوبة (محلياً وفي الذاكرة فقط لتسريع الشاشة)
-            userP[activeMatchModal.id] = { home: h, away: a, isCaptain: isCap, isTripleCaptain: isTC, isMagnet: isMag };
+            // 3. حفظ التوقع الجديد للمباراة المطلوبة بأمان (تحديث وليس استبدال كامل)
+            if (!userP[activeMatchModal.id]) userP[activeMatchModal.id] = { home: '', away: '' };
+            userP[activeMatchModal.id].home = h;
+            userP[activeMatchModal.id].away = a;
+            userP[activeMatchModal.id].isCaptain = isCap;
+            userP[activeMatchModal.id].isTripleCaptain = isTC;
+            userP[activeMatchModal.id].isMagnet = isMag;
 
             closeModal(); // إغلاق النافذة بنعومة
             requestAnimationFrame(() => { setTimeout(() => { render(); }, 120); });
@@ -4042,8 +4051,10 @@ function renderPrizesTab() {
                     // إرسال الطلبات بالترتيب الفعلي لمنع تضارب قاعدة البيانات
                     for (let mId of Array.from(changedMatches)) {
                         const p = userP[mId];
-                        // حماية إضافية: نرسل المباريات المعبأة بالأرقام فقط
-                        if (p && p.home !== '' && p.away !== '' && p.home !== null && p.away !== null) {
+                        
+                        // ✅ حماية متطورة: إرسال الطلب فقط إذا كانت المباراة تحتوي على أرقام.
+                        // استخدام !== undefined و !== null يمنع الفشل إذا كانت النتيجة "0"
+                        if (p && p.home !== undefined && p.home !== null && p.home !== '' && p.away !== undefined && p.away !== null && p.away !== '') {
                             const res = await fetch(`${API_BASE_URL}/predict`, {
                                 method: 'POST', headers, 
                                 body: JSON.stringify({ 
@@ -4060,8 +4071,6 @@ function renderPrizesTab() {
                             if (!data.success) throw new Error(data.message);
                         }
                     }
-                    
-                    // ❌ تمت إزالة الدالة البطيئة syncData من هنا لكي لا يحدث تعليق الشاشة ❌
                     
                 } catch(e) {
                     // في حال حدوث فشل حقيقي من السيرفر، نعلم اللاعب ونجلب البيانات الصحيحة لإصلاح الشاشة
@@ -5230,45 +5239,70 @@ async function deleteLeagueByAdmin() {
             else if (currentTab === 'rules') mainContent.innerHTML = renderRulesTab();
             else if (currentTab === 'admin' && currentUser.username.toLowerCase() === 'red army') mainContent.innerHTML = renderAdminTab();
 
-            // 🌟 تحديث ألوان الأزرار في الشريط السفلي لتمييز الصفحة النشطة 🌟
-            const bottomNav = document.getElementById('bottom-nav');
-            bottomNav.innerHTML = `
-                <button onclick="switchTab('home')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'home' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-house text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navHome') : 'الرئيسية'}</span>
-                </button>
-                <button onclick="switchTab('matches')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'matches' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-calendar-days text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navMatches') : 'المباريات'}</span>
-                </button>
-                <button onclick="switchTab('standings')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'standings' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-trophy text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navStandings') : 'الترتيب'}</span>
-                </button>
-                
-                <button onclick="switchTab('prizes')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'prizes' ? 'text-amber-400 bg-amber-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-gift text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navPrizes') : 'الجوائز'}</span>
-                </button>
-
-                <button onclick="switchTab('minileagues')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'minileagues' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-users text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navLeagues') : 'الدوريات'}</span>
-                </button>
-                <button onclick="switchTab('rules')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${currentTab === 'rules' ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-slate-200'}">
-                    <i class="fa-solid fa-scale-balanced text-lg"></i>
-                    <span class="text-[9px] font-bold">${typeof t === 'function' ? t('navRules') : 'القوانين'}</span>
-                </button>
-            `;
+            // 🌟 التحسين الجذري: تحديث الشريط السفلي والمتجر بذكاء دون إعادة بناء الـ DOM 🌟
+            updateBottomNavUI();
+            updateStoreUI();
 
             renderModal();
             updateTheme();
+        }
+
+        // 🌟 دالة تحديث الشريط السفلي الذكية (تمنع الرمشة وإعادة البناء) 🌟
+        function updateBottomNavUI() {
+            const bottomNav = document.getElementById('bottom-nav');
+            if (!bottomNav) return;
+
+            const tabs = [
+                { id: 'home', icon: 'fa-house', label: typeof t === 'function' ? t('navHome') : 'الرئيسية' },
+                { id: 'matches', icon: 'fa-calendar-days', label: typeof t === 'function' ? t('navMatches') : 'المباريات' },
+                { id: 'standings', icon: 'fa-trophy', label: typeof t === 'function' ? t('navStandings') : 'الترتيب' },
+                { id: 'prizes', icon: 'fa-gift', label: typeof t === 'function' ? t('navPrizes') : 'الجوائز' },
+                { id: 'minileagues', icon: 'fa-users', label: typeof t === 'function' ? t('navLeagues') : 'الدوريات' },
+                { id: 'rules', icon: 'fa-scale-balanced', label: typeof t === 'function' ? t('navRules') : 'القوانين' }
+            ];
+
+            // بناء الأزرار مرة واحدة فقط إذا كان الشريط فارغاً
+            if (bottomNav.innerHTML.trim() === '') {
+                bottomNav.innerHTML = tabs.map(tab => `
+                    <button id="nav-btn-${tab.id}" onclick="switchTab('${tab.id}')" class="flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all">
+                        <i class="fa-solid ${tab.icon} text-lg"></i>
+                        <span class="text-[9px] font-bold">${tab.label}</span>
+                    </button>
+                `).join('');
+            }
+
+            // تحديث كلاسات الألوان فقط (سريع جداً وخفيف على الذاكرة)
+            tabs.forEach(tab => {
+                const btn = document.getElementById(`nav-btn-${tab.id}`);
+                if (!btn) return;
+                
+                btn.className = 'flex flex-col items-center gap-1.5 px-2 py-1 rounded-xl transition-all';
+                if (currentTab === tab.id) {
+                    if (tab.id === 'prizes') btn.classList.add('text-amber-400', 'bg-amber-500/10');
+                    else btn.classList.add('text-blue-400', 'bg-blue-500/10');
+                } else {
+                    btn.classList.add('text-slate-400', 'hover:text-slate-200');
+                }
+            });
+        }
+
+        // 🌟 دالة تحديث بيانات المتجر الذكية (تمنع إعادة بناء النافذة بالكامل) 🌟
+        function updateStoreUI() {
+            let storeEl = document.getElementById('store-modal');
             
-            // 🌟 تحديث المتجر لمنع تكرار الواجهة وظهور أرقام قديمة 🌟
-            const oldStore = document.getElementById('store-modal');
-            if (oldStore) oldStore.remove(); // مسح النسخة القديمة من المتجر
-            
-            document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore()); // رسم نسخة جديدة بالرصيد المحدث
+            // إذا لم يكن المتجر موجوداً، نضيفه للـ DOM مرة واحدة
+            if (!storeEl) {
+                document.getElementById('app').insertAdjacentHTML('beforeend', renderAdminStore());
+            } else {
+                // إذا كان موجوداً، نغير فقط الأرقام من الداخل
+                const tokenEl = document.getElementById('store-tokens-display');
+                const shieldEl = document.getElementById('store-shields-display');
+                const sniperEl = document.getElementById('store-snipers-display');
+                
+                if (tokenEl) tokenEl.innerHTML = '<i class="fa-solid fa-coins fa-beat-fade"></i> ' + (currentUser.tokens || 0);
+                if (shieldEl) shieldEl.innerHTML = '<i class="fa-solid fa-shield-halved"></i> ' + (currentUser.shields || 0);
+                if (sniperEl) sniperEl.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ' + (currentUser.extra_snipers || 0);
+            }
         }
 
         window.onload = async function() {
@@ -5373,19 +5407,19 @@ async function deleteLeagueByAdmin() {
                     <div class="bg-slate-900/80 rounded-xl p-3 mb-5 border border-white/5 shadow-inner flex justify-between items-center divide-x divide-white/10 divide-x-reverse text-center">
                         <div class="flex-1 px-1">
                             <span class="text-slate-400 text-[10px] font-bold block mb-1">التوكن</span>
-                            <span class="text-amber-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                            <span id="store-tokens-display" class="text-amber-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
                                 <i class="fa-solid fa-coins fa-beat-fade"></i> ${currentUser.tokens || 0}
                             </span>
                         </div>
                         <div class="flex-1 px-1">
                             <span class="text-slate-400 text-[10px] font-bold block mb-1">الدروع</span>
-                            <span class="text-blue-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                            <span id="store-shields-display" class="text-blue-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
                                 <i class="fa-solid fa-shield-halved"></i> ${currentUser.shields || 0}
                             </span>
                         </div>
                         <div class="flex-1 px-1">
                             <span class="text-slate-400 text-[10px] font-bold block mb-1">الرصاصات</span>
-                            <span class="text-rose-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
+                            <span id="store-snipers-display" class="text-rose-400 font-black text-lg flex items-center justify-center gap-1 drop-shadow-md">
                                 <i class="fa-solid fa-crosshairs"></i> ${currentUser.extra_snipers || 0}
                             </span>
                         </div>
