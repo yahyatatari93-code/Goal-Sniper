@@ -5464,7 +5464,7 @@ async function deleteLeagueByAdmin() {
                     <div class="space-y-3">
                         <!-- درع حصانة -->
                         <div class="flex items-center justify-between bg-slate-700/30 p-3 rounded-xl border border-slate-600/50 hover:border-blue-500/50 transition-colors">
-                            <button onclick="simulatePurchase('shield', 70)" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
+                            <button onclick="promptShieldLeague()" class="bg-amber-500 hover:bg-amber-400 text-slate-900 px-4 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1 shadow-lg">
                                 70 <i class="fa-solid fa-coins text-[10px]"></i>
                             </button>
                             <div class="flex items-center gap-3 text-right">
@@ -5524,36 +5524,70 @@ async function deleteLeagueByAdmin() {
             }
         };
 
-        window.simulatePurchase = async function(item, cost) {
-            // 🚀 1. الجدار الأمني الأول (فحص الرصيد محلياً قبل أي شيء)
+        window.promptShieldLeague = function() {
+            const myLeagues = miniLeagues.filter(ml => ml.members.includes(currentUser.username));
+            if(myLeagues.length === 0) {
+                showCustomDialog("يجب أن تنضم لدوري مصغر أولاً لكي تتمكن من حماية نفسك فيه.");
+                return;
+            }
+            
+            let options = myLeagues.map(ml => `<option value="${ml.code}">${ml.name}</option>`).join('');
+            
+            const container = document.getElementById('dialog-container');
+            container.innerHTML = `
+                <div class="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
+                    <div class="glass max-w-xs w-full p-6 rounded-3xl shadow-2xl border border-blue-500/30 text-center animate-fade-up">
+                        <div class="text-4xl mb-4 text-blue-400"><i class="fa-solid fa-shield-halved"></i></div>
+                        <h3 class="text-sm font-bold text-white mb-2">تخصيص الدرع السري</h3>
+                        <p class="text-[10px] text-slate-400 mb-4">اختر الدوري الذي تريد تفعيل الدرع فيه (سيكون مفاجأة لمنافسيك):</p>
+                        
+                        <select id="shield-league-select" class="w-full bg-slate-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-5 outline-none focus:border-blue-500 text-center font-bold">
+                            ${options}
+                        </select>
+                        
+                        <div class="flex gap-3">
+                            <button id="btn-confirm-shield" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg shadow-blue-600/20">شراء (70 توكن)</button>
+                            <button id="diag-close" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">إلغاء</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('diag-close').onclick = () => { container.innerHTML = ''; };
+            document.getElementById('btn-confirm-shield').onclick = () => { 
+                const selectedCode = document.getElementById('shield-league-select').value;
+                container.innerHTML = ''; 
+                simulatePurchase('shield', 70, selectedCode);
+            };
+        };
+        
+        window.simulatePurchase = async function(item, cost, leagueCode = null) {
             const currentBalance = currentUser.tokens || 0;
             if (currentBalance < cost) {
                 showCustomDialog(`⚠️ رصيدك غير كافٍ!<br>تحتاج إلى <strong class="text-amber-400">${cost}</strong> توكن لإتمام الشراء، بينما رصيدك الحالي هو <strong class="text-rose-400">${currentBalance}</strong>.`);
-                return; // إيقاف العملية فوراً وعدم إرسال أي طلب للسيرفر
+                return; 
             }
 
             toggleStoreModal(); 
-            showCustomDialog('جاري معالجة عملية الشراء...', 'alert');
+            showCustomDialog('جاري تجهيز طلبك السري...', 'alert');
 
             try {
                 const token = localStorage.getItem('oracle_token_v8');
                 const res = await fetch(`${API_BASE_URL}/store/purchase`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    // نرسل اسم العنصر فقط للسيرفر (السيرفر يجب أن يعرف السعر بنفسه لضمان الأمان)
-                    body: JSON.stringify({ username: currentUser.username, item: item })
+                    body: JSON.stringify({ username: currentUser.username, item: item, leagueCode: leagueCode })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
-                    // 🚀 2. التحديث الفوري للرصيد والعتاد في الهاتف لضمان عدم وجود خلل في العرض
                     currentUser.tokens = data.newTokens;
                     if (item === 'shield') currentUser.shields = (currentUser.shields || 0) + 1;
                     if (item === 'sniper') currentUser.extra_snipers = (currentUser.extra_snipers || 0) + 1;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     
                     showCustomDialog(`🎉 ${data.message}<br>رصيدك المتبقي: <strong class="text-amber-400">${data.newTokens}</strong> توكن`);
-                    await syncData(); // المزامنة في الخلفية للتأكيد
+                    await syncData(); 
                     render(); 
                 } else {
                     showCustomDialog(`⚠️ ${data.message}`);
