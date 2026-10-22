@@ -1200,12 +1200,20 @@ function changeLanguage(langCode) {
             });
 
             if (globalLatestGw && lastLeagueGw === globalLatestGw) {
-                let highestGwPts = -1, motwUser = null;
+                let highestGwPts = -1;
+                // إيجاد أعلى رقم تم تحقيقه في الجولة
                 Object.values(statsMap).forEach(userStats => {
                     const pts = userStats.gwPoints[globalLatestGw] || 0;
-                    if (pts > highestGwPts && pts > 0) { highestGwPts = pts; motwUser = userStats.username; }
+                    if (pts > highestGwPts && pts > 0) { highestGwPts = pts; }
                 });
-                if (motwUser) statsMap[motwUser].badges.motw = true;
+                // إعطاء وسام عراف الأسبوع (التاج) لكل لاعب حقق هذا الرقم
+                if (highestGwPts > 0) {
+                    Object.values(statsMap).forEach(userStats => {
+                        if ((userStats.gwPoints[globalLatestGw] || 0) === highestGwPts) {
+                            userStats.badges.motw = true;
+                        }
+                    });
+                }
             }
 
             Object.values(statsMap).forEach(userStats => {
@@ -1611,23 +1619,31 @@ function isMatchLocked(match) {
     };
 
     const globalLatestGw = getLatestCompletedGw();
-    let motw = null;
+    let motws = [];
     let motwGwStr = '';
+    let motwScore = 0;
 
     if (globalLatestGw) {
         const motwLeague = (globalLatestGw >= 101) ? 'UCL' : 'EPL';
         const standings = (motwLeague === 'UCL') ? uclStandings : eplStandings;
-        motw = standings.find(u => u.badges.motw);
         
-        if (!motw) {
+        // جلب كل اللاعبين الذين يملكون وسام العراف
+        motws = standings.filter(u => u.badges.motw);
+        
+        if (motws.length === 0) {
             let highestPts = -1;
             standings.forEach(u => {
                 const pts = u.gwPoints[globalLatestGw] || 0;
-                if (pts > highestPts && pts > 0) { highestPts = pts; motw = u; }
+                if (pts > highestPts && pts > 0) { highestPts = pts; }
             });
+            if (highestPts > 0) {
+                motws = standings.filter(u => (u.gwPoints[globalLatestGw] || 0) === highestPts);
+            }
         }
-        if (motw) {
+        
+        if (motws.length > 0) {
             motwGwStr = (motwLeague === 'UCL') ? 'UCL MD ' + (globalLatestGw - 100) : 'GW ' + globalLatestGw;
+            motwScore = motws[0].gwPoints[globalLatestGw];
         }
     }
 
@@ -1736,17 +1752,19 @@ function isMatchLocked(match) {
                 return '';
             })()}
 
-            ${motw ? `
+            ${motws.length > 0 ? `
                 <div class="glass p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 to-amber-700/10 border border-amber-500/20 flex items-center justify-between shadow-lg">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-full flex items-center justify-center text-lg shadow-inner">👑</div>
-                        <div>
-                            <h3 class="text-[10px] font-bold text-amber-500/80">${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'} (${motwGwStr})</h3>
-                            <button onclick="openComparison('${motw.username}')" class="text-sm font-black text-amber-400 hover:text-amber-300 transition-all cursor-pointer underline-offset-4 decoration-amber-500/40 hover:underline outline-none text-left md:text-right" title="كشف الأوراق والمقارنة">${motw.username}</button>
+                    <div class="flex items-center gap-3 w-full">
+                        <div class="w-10 h-10 bg-amber-500/20 text-amber-400 border border-amber-500/50 rounded-full flex shrink-0 items-center justify-center text-lg shadow-inner">👑</div>
+                        <div class="flex-1 overflow-hidden">
+                            <h3 class="text-[10px] font-bold text-amber-500/80 mb-1">${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'} (${motwGwStr})</h3>
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                ${motws.map(m => `<button onclick="openComparison('${m.username}')" class="text-xs md:text-sm font-black text-amber-400 hover:text-amber-300 transition-all cursor-pointer underline-offset-4 decoration-amber-500/40 hover:underline outline-none" title="كشف الأوراق والمقارنة">${m.username}</button>`).join('<span class="text-amber-500/50 text-xs font-bold px-1">|</span>')}
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-center bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20">
-                        <span class="block text-xl font-black text-amber-400">${motw.gwPoints[globalLatestGw]}</span>
+                        <div class="text-center bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/20 shrink-0 ${isAr ? 'mr-2' : 'ml-2'}">
+                            <span class="block text-xl font-black text-amber-400">${motwScore}</span>
+                        </div>
                     </div>
                 </div>
             ` : ''}
