@@ -318,18 +318,16 @@ app.post('/api/predict', authenticateToken, async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 🌟 مسار متجر التوكن 🌟
+// 🌟 مسار متجر التوكن (محدث لدعم الدروع المخصصة للدوريات) 🌟
 app.post('/api/store/purchase', authenticateToken, async (req, res) => {
-    const { username, item } = req.body; // 🛑 قمنا بإلغاء استقبال cost من الهاتف
+    const { username, item, leagueCode } = req.body; 
 
-    // حماية: التأكد من أن اللاعب يشتري لحسابه الخاص
     if (req.user.username !== username) return res.status(403).json({ success: false, message: 'غير مصرح.' });
 
-    // 🛡️ تحديد السعر بشكل صارم من داخل السيرفر 
     let cost = 0;
-    if (item === 'shield') cost = 70; // استبدل الرقم بسعرك الفعلي
-    else if (item === 'sniper') cost = 120; // استبدل الرقم بسعرك الفعلي
-    else if (item === 'tshirt') cost = 500; // استبدل الرقم بسعرك الفعلي
+    if (item === 'shield') cost = 70; 
+    else if (item === 'sniper') cost = 120; 
+    else if (item === 'tshirt') cost = 500; 
     else return res.status(400).json({ success: false, message: 'عنصر غير معروف.' });
 
     try {
@@ -341,7 +339,11 @@ app.post('/api/store/purchase', authenticateToken, async (req, res) => {
         }
 
         if (item === 'shield') {
+            if (!leagueCode) return res.status(400).json({ success: false, message: 'يجب تحديد الدوري.' });
+            // تحديث الرصيد العام
             await pool.query('UPDATE users SET tokens = tokens - ?, shields = shields + 1 WHERE username = ?', [cost, username]);
+            // 🌟 إضافة الدرع سرياً للدوري المختار 🌟
+            await pool.query('UPDATE mini_league_members SET active_shields = active_shields + 1 WHERE league_code = ? AND username = ?', [leagueCode, username]);
         } else if (item === 'sniper') {
             await pool.query('UPDATE users SET tokens = tokens - ?, extra_snipers = extra_snipers + 1 WHERE username = ?', [cost, username]);
         } else if (item === 'tshirt') {
@@ -378,8 +380,7 @@ app.post('/api/leagues/join', authenticateToken, async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 🌟 مسار إطلاق رصاصة القناص (محدث لدعم الدروع والرصاص المشترى) 🌟
-// 🛡️ أضفنا authenticateToken هنا
+// 🌟 مسار إطلاق رصاصة القناص (محدث لدعم الدروع المخصصة) 🌟
 app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
     const { leagueCode, gw, sniper, victim, pointsDeducted, isBought } = req.body;
     if (req.user.username !== sniper) return res.status(403).json({ success: false, message: 'لا يمكنك إطلاق النار نيابة عن لاعب آخر!' });
@@ -388,7 +389,8 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
         const [existing] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND sniper = ?', [leagueCode, gw, sniper]);
         if (existing.length > 0) return res.status(400).json({ success: false, message: 'استخدمت رصاصتك في هذا الدوري لهذه الجولة مسبقاً!' });
 
-        const [victimData] = await pool.query('SELECT shields FROM users WHERE username = ?', [victim]);
+        // 🌟 التعديل: فحص الدروع المخصصة لهذا الدوري بالذات 🌟
+        const [victimData] = await pool.query('SELECT active_shields FROM mini_league_members WHERE league_code = ? AND username = ?', [leagueCode, victim]);
         const [sniperData] = await pool.query('SELECT extra_snipers FROM users WHERE username = ?', [sniper]);
 
         if (isBought && sniperData[0].extra_snipers <= 0) return res.status(400).json({ success: false, message: 'لا تملك رصاصات إضافية.' });
@@ -396,14 +398,17 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
         let actualDeduction = pointsDeducted;
         let msg = 'تمت عملية القنص بنجاح!';
 
-        if (victimData[0].shields > 0) {
+        // 🌟 هل يمتلك الضحية درعاً في هذا الدوري؟ 🌟
+        if (victimData.length > 0 && victimData[0].active_shields > 0) {
             actualDeduction = 0; 
-            msg = `💥 الضربة طاشت! [${victim}] تصدى للرصاصة.`;
-            await pool.query('UPDATE users SET shields = shields - 1 WHERE username = ?', [victim]);
-            // 🌟 إشعار: الدرع السري 🌟
-            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك، لكن درعك السري تصدى للرصاصة بنجاح!`);
+            msg = `💥 الضربة طاشت! [${victim}] كان يمتلك درعاً حصيناً مخصصاً لهذا الدوري!`;
+            
+            // كسر الدرع السري
+            await pool.query('UPDATE mini_league_members SET active_shields = active_shields - 1 WHERE league_code = ? AND username = ?', [leagueCode, victim]);
+            await pool.query('UPDATE users SET shields = GREATEST(0, shields - 1) WHERE username = ?', [victim]);
+            
+            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك، لكن درعك السري في دوري (${leagueCode}) تصدى للرصاصة بنجاح!`);
         } else {
-            // 🌟 إشعار: الإصابة الناجحة 🌟
             sendFCMToUser(victim, '💥 تمت إصابتك!', `القناص ${sniper} قنصك وخصم من رصيدك في دوري ${leagueCode}!`);
         }
 
