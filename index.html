@@ -5584,7 +5584,7 @@ async function deleteLeagueByAdmin() {
             };
         };
         
-        window.simulatePurchase = async function(item, cost, leagueCode = null) {
+        window.simulatePurchase = async function(item, cost, leagueCode = null, targetComp = null) {
             const currentBalance = currentUser.tokens || 0;
             if (currentBalance < cost) {
                 showCustomDialog(`⚠️ رصيدك غير كافٍ!<br>تحتاج إلى <strong class="text-amber-400">${cost}</strong> توكن لإتمام الشراء، بينما رصيدك الحالي هو <strong class="text-rose-400">${currentBalance}</strong>.`);
@@ -5599,13 +5599,13 @@ async function deleteLeagueByAdmin() {
                 const res = await fetch(`${API_BASE_URL}/store/purchase`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ username: currentUser.username, item: item, leagueCode: leagueCode })
+                    body: JSON.stringify({ username: currentUser.username, item: item, leagueCode: leagueCode, targetComp: targetComp })
                 });
                 const data = await res.json();
                 
                 if (data.success) {
                     currentUser.tokens = data.newTokens;
-                    if (item === 'shield') currentUser.shields = (currentUser.shields || 0) + 1;
+                    // ملاحظة: لم نعد نزيد currentUser.shields لأن الدروع أصبحت سرية وموزعة داخل قاعدة البيانات
                     if (item === 'sniper') currentUser.extra_snipers = (currentUser.extra_snipers || 0) + 1;
                     localStorage.setItem('oracle_current_user_v8', JSON.stringify(currentUser));
                     
