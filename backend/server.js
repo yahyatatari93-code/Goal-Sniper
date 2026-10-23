@@ -89,10 +89,10 @@ async function sendFCMToAll(title, body) {
             },
             body: JSON.stringify({
                 app_id: appId,
-                included_segments: ["All"],
+                // 🌟 التعديل: استخدام الاسم المعتمد في OneSignal للجميع 🌟
+                included_segments: ["Subscribed Users"], 
                 headings: { "en": title, "ar": title },
                 contents: { "en": body, "ar": body },
-                // 🌟 إضافة الشعار هنا 🌟
                 large_icon: NOTIFICATION_ICON_URL,
                 ios_attachments: { id: NOTIFICATION_ICON_URL }
             })
@@ -700,36 +700,35 @@ async function checkUpcomingMatches() {
             console.log("[System] Notified days memory cleared.");
         }
 
-        const [matches] = await pool.query('SELECT id, gw, league, date, time FROM matches WHERE actual_h IS NULL');
+        // 🌟 التعديل 1: إزالة عمود league غير الموجود لحل مشكلة توقف السيرفر
+        const [matches] = await pool.query("SELECT id, gw, date, time FROM matches WHERE actual_h IS NULL OR actual_h = ''");
         if (matches.length === 0) return;
 
         const firstMatchesPerDay = {};
 
-        // البحث عن المباراة الأبكر لكل بطولة ولكل جولة في اليوم الواحد
         matches.forEach(m => {
             const matchTime = parseMatchDateTime(m.date, m.time);
             if (matchTime === 0) return;
 
-            // توحيد التاريخ كـ YYYY-MM-DD لتجنب اختلافات الإدخال
             const dDate = new Date(matchTime);
             if (isNaN(dDate.getTime())) return;
             
             const cleanDate = `${dDate.getFullYear()}-${dDate.getMonth() + 1}-${dDate.getDate()}`;
-            const dayKey = `${m.league || 'EPL'}_gw${m.gw}_${cleanDate}`; 
+            // 🌟 التعديل 2: تحديد البطولة برمجياً بناءً على الجولة بدلاً من قاعدة البيانات
+            const matchLeague = Number(m.gw) >= 101 ? 'UCL' : 'EPL';
+            const dayKey = `${matchLeague}_gw${m.gw}_${cleanDate}`; 
 
             if (!firstMatchesPerDay[dayKey] || matchTime < firstMatchesPerDay[dayKey].time) {
-                firstMatchesPerDay[dayKey] = { gw: m.gw, league: m.league, time: matchTime };
+                firstMatchesPerDay[dayKey] = { gw: m.gw, league: matchLeague, time: matchTime };
             }
         });
 
         const now = Date.now();
         
-        // فحص المباريات التي تقترب
         for (const [dayKey, firstMatch] of Object.entries(firstMatchesPerDay)) {
             const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
 
-            // 🚀 الشرط الذهبي: الإشعار يرسل فقط إذا كان الفارق بين 119 و 121 دقيقة (تقريباً ساعتين بالضبط)
-            // نأخذ نطاق 3 دقائق لضمان عدم تخطي الإشعار في حال تأخر السيرفر بضعة ثواني
+            // الشرط الذهبي: الإشعار يرسل فقط إذا كان الفارق بين 118 و 121 دقيقة
             if (timeDiffMinutes >= 118 && timeDiffMinutes <= 121) {
                 if (!notifiedDays.has(dayKey)) {
                     notifiedDays.add(dayKey); 
