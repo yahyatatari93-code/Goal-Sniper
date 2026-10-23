@@ -1681,8 +1681,8 @@ function isMatchLocked(match) {
             </div>
 
             ${(() => {
-                const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
-                if (clasicoMatch && currentUser.username.toLowerCase() === 'red army') {
+                    const clasicoMatch = matches.find(m => m.home === 'BAR' && m.away === 'RMA');
+                    if (clasicoMatch) {
                     const pred = userPreds[clasicoMatch.id] || { home: '', away: '' };
                     const isPredicted = pred.home !== '' && pred.away !== '';
                     
