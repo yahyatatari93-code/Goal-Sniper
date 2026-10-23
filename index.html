@@ -1789,6 +1789,17 @@ function isMatchLocked(match) {
                                 <i class="fa-solid fa-copy text-[10px] text-slate-400 group-hover:text-emerald-400"></i>
                             </button>
                         </div>
+                        
+                        <!-- 🌟 زر ربط غوغل الذكي 🌟 -->
+                        ${(!currentUser.email && !currentUser.google_id) ? `
+                        <button onclick="startInternalGoogleLink()" class="mt-3 flex items-center gap-2 text-[10px] text-slate-300 hover:text-white bg-slate-800 hover:bg-blue-600 border border-white/10 px-3 py-1 rounded-lg w-max transition-all shadow-md outline-none">
+                            <i class="fa-brands fa-google"></i> ${currentLang === 'ar' ? 'ربط حساب غوغل لحمايته' : 'Link Google Account'}
+                        </button>
+                        ` : `
+                        <div class="mt-3 flex items-center gap-2 text-[10px] text-emerald-400 bg-emerald-900/20 border border-emerald-500/20 px-3 py-1 rounded-lg w-max shadow-inner">
+                            <i class="fa-solid fa-shield-check"></i> ${currentLang === 'ar' ? 'حساب غوغل مرتبط ومحمي' : 'Google Account Linked'}
+                        </div>
+                        `}
                     </div>
 
                     <!-- أزرار الترتيب المزدوج (في الجهة المقابلة) -->
@@ -4674,6 +4685,12 @@ async function deleteLeagueByAdmin() {
             `;
         }
 
+        // 🌟 دالة الانطلاق لغوغل من داخل التطبيق للربط 🌟
+        window.startInternalGoogleLink = function() {
+            sessionStorage.setItem('pending_internal_link', 'true'); // ترك علامة أننا نريد "الربط الداخلي"
+            startGoogleRedirect();
+        };
+        
         // 3. دالة الانتقال الآمن لغوغل (الحل الجذري لمنع خطأ 400 ولمنع رسالة التحديث)
         function startGoogleRedirect() {
             const clientId = "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com";
@@ -4736,23 +4753,40 @@ async function deleteLeagueByAdmin() {
             const pendingUser = sessionStorage.getItem('pending_reg_username');
             const pendingPin = sessionStorage.getItem('pending_reg_pin');
             const pendingRef = sessionStorage.getItem('pending_reg_referral');
-            const pendingResetPin = sessionStorage.getItem('pending_reset_pin'); // 👈 السطر المضاف لالتقاط طلب الاستعادة
+            const pendingResetPin = sessionStorage.getItem('pending_reset_pin');
+            const pendingInternalLink = sessionStorage.getItem('pending_internal_link'); // 👈 العلامة الجديدة
 
             try {
                 let res, data;
                 
+                // 🌟 مسار الربط الداخلي المباشر 🌟
+                if (pendingInternalLink) {
+                    const jwt = localStorage.getItem('oracle_token_v8'); // أخذ هوية اللاعب
+                    res = await fetch(`${API_BASE_URL}/auth/google/link-internal`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${jwt}` },
+                        body: JSON.stringify({ token: googleToken })
+                    });
+                    data = await res.json();
+                    sessionStorage.removeItem('pending_internal_link'); // مسح الذاكرة
+                    
+                    if (!data.success) {
+                        window.isHandlingGoogleCallback = false;
+                        showCustomDialog(data.message);
+                        render();
+                        return; 
+                    }
+                }
                 // 🌟 مسار استعادة وتغيير الرمز السري الجديد 🌟
-                if (pendingResetPin) {
+                else if (pendingResetPin) {
                     res = await fetch(`${API_BASE_URL}/auth/google/reset-pin`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ token: googleToken, newPin: pendingResetPin })
                     });
                     data = await res.json();
+                    sessionStorage.removeItem('pending_reset_pin'); 
                     
-                    sessionStorage.removeItem('pending_reset_pin'); // مسح الذاكرة
-                    
-                    // إذا كان حساب غوغل غير مرتبط بأي لاعب نعطيه رسالة توضيحية ونوقف الدخول
                     if (!data.success) {
                         window.isHandlingGoogleCallback = false;
                         showCustomDialog(data.message);
@@ -4795,14 +4829,13 @@ async function deleteLeagueByAdmin() {
                     window.history.replaceState({}, document.title, window.location.pathname);
                     window.isHandlingGoogleCallback = false;
                     
-                    // إذا كانت عملية استعادة رمز، نظهر له رسالة نجاح قبل الإكمال
-                    if (pendingResetPin) {
+                    if (pendingResetPin || pendingInternalLink) { // 👈 إظهار رسالة النجاح
                         showCustomDialog('✅ ' + data.message, 'alert');
                     }
                     
                     await syncData(); 
                     render();    
-                    setTimeout(() => { if (typeof showWelcomeMessage === 'function') showWelcomeMessage(); }, 800);
+                    setTimeout(() => { if (typeof showWelcomeMessage === 'function' && !pendingInternalLink) showWelcomeMessage(); }, 800);
                 } else {
                     window.isHandlingGoogleCallback = false;
                     showCustomDialog(data.message || 'فشل التوثيق بحساب غوغل.');
@@ -4814,7 +4847,6 @@ async function deleteLeagueByAdmin() {
                 showCustomDialog('تعذر الاتصال بالسيرفر.');
                 render();
             }
-        }
 
        // 🌟 1. دالة رسم شاشة إكمال حساب غوغل 🌟
         function showGoogleUsernamePrompt(googleToken) {
