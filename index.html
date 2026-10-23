@@ -5531,7 +5531,8 @@ async function deleteLeagueByAdmin() {
                 return;
             }
             
-            let options = myLeagues.map(ml => `<option value="${ml.code}">${ml.name}</option>`).join('');
+            // 🌟 التعديل: دمج اسم الدوري مع الكود الخاص به لسهولة التمييز المطلق
+            let options = myLeagues.map(ml => `<option value="${ml.code}">${ml.name} (كود: ${ml.code})</option>`).join('');
             
             const container = document.getElementById('dialog-container');
             container.innerHTML = `
