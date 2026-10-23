@@ -234,6 +234,41 @@ app.post('/api/auth/google/link', async (req, res) => {
     }
 });
 
+// 🌟 5. مسار ربط الحساب من داخل التطبيق (مباشر وآمن عبر التوكن) 🌟
+app.post('/api/auth/google/link-internal', authenticateToken, async (req, res) => {
+    const { token } = req.body;
+    const username = req.user.username; // السيرفر عرف اسم اللاعب تلقائياً من التوكن (بدون سؤال)
+    
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken: token,
+            audience: "59332683123-kn1b91eqf87da9ld641tecnrcb0kj0jm.apps.googleusercontent.com",
+        });
+        const payload = ticket.getPayload();
+        const googleId = payload['sub'];
+        const email = payload['email'];
+
+        // التأكد من أن هذا الإيميل غير مستخدم في حساب قناص آخر
+        const [existing] = await pool.query('SELECT username FROM users WHERE (email = ? OR google_id = ?) AND username != ?', [email, googleId, username]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'هذا الإيميل مربوط بحساب قناص آخر مسبقاً.' });
+        }
+
+        // التحديث المباشر لحساب اللاعب الحالي
+        await pool.query('UPDATE users SET google_id = ?, email = ? WHERE username = ?', [googleId, email, username]);
+        
+        // جلب بيانات اللاعب المحدثة وإرسالها للتطبيق
+        const [updatedUser] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        const jwtToken = jwt.sign({ username: username }, process.env.JWT_SECRET || 'sniper_secret_key_123', { expiresIn: '365d' });
+        
+        res.json({ success: true, message: 'تم ربط حسابك بغوغل بنجاح، وهو الآن محمي!', user: updatedUser[0], token: jwtToken });
+
+    } catch (error) {
+        console.error("Internal Google Link Error:", error);
+        res.status(500).json({ success: false, message: 'فشل ربط الحساب.' });
+    }
+});
+
 // 🌟 4. مسار استعادة/تغيير الرمز السري عبر غوغل 🌟
 app.post('/api/auth/google/reset-pin', async (req, res) => {
     const { token, newPin } = req.body;
