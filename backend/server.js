@@ -90,7 +90,7 @@ async function sendFCMToAll(title, body) {
         },
         body: JSON.stringify({
             app_id: appId,
-            included_segments: ["Subscribed Users"],
+            included_segments: ["All"], // 🚀 التعديل الحاسم: العودة للشريحة الأصلية
             headings: { "en": title, "ar": title },
             contents: { "en": body, "ar": body },
             large_icon: NOTIFICATION_ICON_URL,
