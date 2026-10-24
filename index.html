@@ -1373,7 +1373,6 @@ function formatMatchDate(dateStr) {
 // 2. دالة حساب الوقت (النسخة المدرعة للترتيب الصحيح 100%)
         function parseMatchDate(dateStr, timeStr) {
             try {
-                // 1. استخدام دالة formatMatchDate لتوحيد وتنظيف أي تاريخ (مهما كان التنسيق)
                 let dStr = formatMatchDate(dateStr);
                 if (!dStr) return 0;
 
@@ -1384,7 +1383,6 @@ function formatMatchDate(dateStr) {
                 let m = parseInt(parts[1], 10);
                 let y = parseInt(parts[2], 10);
 
-                // 2. تنظيف وتوحيد الوقت (يدعم نظام 12 و 24 ساعة بدقة)
                 let [time, period] = (timeStr || '00:00').trim().split(/\s+/);
                 let [hours, minutes] = time.split(':');
                 hours = parseInt(hours, 10) || 0;
@@ -1397,8 +1395,9 @@ function formatMatchDate(dateStr) {
                     if (hours === 12) hours = 0;
                 }
                 
-                // 3. إرجاع الطابع الزمني الدقيق للترتيب والمقارنة
-                return new Date(y, m - 1, d, hours, minutes).getTime();
+                // 🌟 التعديل الخطير: توحيد المنطقة الزمنية إجبارياً بتوقيت تركيا (+03:00) 🌟
+                const isoString = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}T${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00+03:00`;
+                return new Date(isoString).getTime();
             } catch (e) {
                 return 0;
             }
