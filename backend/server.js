@@ -728,14 +728,11 @@ function parseMatchDateTime(dateStr, timeStr) {
 // 2. المحرك الأساسي للفحص
 async function checkUpcomingMatches() {
     try {
-        // تنظيف الذاكرة كل 24 ساعة لمنع تراكمها
         if (Date.now() - lastCleanupTime > 24 * 60 * 60 * 1000) {
             notifiedDays.clear();
             lastCleanupTime = Date.now();
-            console.log("[System] Notified days memory cleared.");
         }
 
-        // 🌟 التعديل 1: إزالة عمود league غير الموجود لحل مشكلة توقف السيرفر
         const [matches] = await pool.query("SELECT id, gw, date, time FROM matches WHERE actual_h IS NULL OR actual_h = ''");
         if (matches.length === 0) return;
 
@@ -748,8 +745,8 @@ async function checkUpcomingMatches() {
             const dDate = new Date(matchTime);
             if (isNaN(dDate.getTime())) return;
             
-            const cleanDate = `${dDate.getFullYear()}-${dDate.getMonth() + 1}-${dDate.getDate()}`;
-            // 🌟 التعديل 2: تحديد البطولة برمجياً بناءً على الجولة بدلاً من قاعدة البيانات
+            // 🌟 استخدام توقيت UTC المطلق لضمان عدم تأثر السيرفر بتوقيت ألمانيا المحلي 🌟
+            const cleanDate = `${dDate.getUTCFullYear()}-${dDate.getUTCMonth() + 1}-${dDate.getUTCDate()}`;
             const matchLeague = Number(m.gw) >= 101 ? 'UCL' : 'EPL';
             const dayKey = `${matchLeague}_gw${m.gw}_${cleanDate}`; 
 
@@ -763,8 +760,8 @@ async function checkUpcomingMatches() {
         for (const [dayKey, firstMatch] of Object.entries(firstMatchesPerDay)) {
             const timeDiffMinutes = (firstMatch.time - now) / (1000 * 60);
 
-            // الشرط الذهبي: الإشعار يرسل فقط إذا كان الفارق بين 118 و 121 دقيقة
-            if (timeDiffMinutes >= 118 && timeDiffMinutes <= 121) {
+            // 🚀 التعديل الذهبي: توسيع نافذة الرادار لتكون بين 125 و 60 دقيقة
+            if (timeDiffMinutes <= 125 && timeDiffMinutes >= 60) {
                 if (!notifiedDays.has(dayKey)) {
                     notifiedDays.add(dayKey); 
 
