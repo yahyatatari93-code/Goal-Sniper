@@ -50,54 +50,58 @@ const authenticateToken = (req, res, next) => {
 
 // 1. إشعار للاعب محدد
 async function sendFCMToUser(username, title, body) {
-    try {
-        const appId = process.env.ONESIGNAL_APP_ID;
-        const apiKey = process.env.ONESIGNAL_REST_API_KEY;
-        if (!appId || !apiKey) return;
+    const appId = process.env.ONESIGNAL_APP_ID;
+    const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+    if (!appId || !apiKey) throw new Error("مفاتيح الإشعارات (API Keys) مفقودة من السيرفر!");
 
-        await fetch('https://onesignal.com/api/v1/notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'Authorization': `Basic ${apiKey}`
-            },
-            body: JSON.stringify({
-                app_id: appId,
-                include_external_user_ids: [username],
-                headings: { "en": title, "ar": title },
-                contents: { "en": body, "ar": body },
-                // 🌟 إضافة الشعار هنا 🌟
-                large_icon: NOTIFICATION_ICON_URL,
-                ios_attachments: { id: NOTIFICATION_ICON_URL }
-            })
-        });
-    } catch (error) { console.error(`خطأ إشعار OneSignal لـ ${username}:`, error.message); }
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': `Basic ${apiKey}`
+        },
+        body: JSON.stringify({
+            app_id: appId,
+            include_external_user_ids: [username],
+            headings: { "en": title, "ar": title },
+            contents: { "en": body, "ar": body },
+            large_icon: NOTIFICATION_ICON_URL,
+            ios_attachments: { id: NOTIFICATION_ICON_URL }
+        })
+    });
+    
+    const data = await res.json();
+    if (data.errors) {
+        throw new Error(JSON.stringify(data.errors));
+    }
 }
 
 // 2. إشعار جماعي لكل اللاعبين
 async function sendFCMToAll(title, body) {
-    try {
-        const appId = process.env.ONESIGNAL_APP_ID;
-        const apiKey = process.env.ONESIGNAL_REST_API_KEY;
-        if (!appId || !apiKey) return;
+    const appId = process.env.ONESIGNAL_APP_ID;
+    const apiKey = process.env.ONESIGNAL_REST_API_KEY;
+    if (!appId || !apiKey) throw new Error("مفاتيح الإشعارات (API Keys) مفقودة من السيرفر!");
 
-        await fetch('https://onesignal.com/api/v1/notifications', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json; charset=utf-8',
-                'Authorization': `Basic ${apiKey}`
-            },
-            body: JSON.stringify({
-                app_id: appId,
-                // 🌟 التعديل: استخدام الاسم المعتمد في OneSignal للجميع 🌟
-                included_segments: ["Subscribed Users"], 
-                headings: { "en": title, "ar": title },
-                contents: { "en": body, "ar": body },
-                large_icon: NOTIFICATION_ICON_URL,
-                ios_attachments: { id: NOTIFICATION_ICON_URL }
-            })
-        });
-    } catch (error) { console.error(`خطأ إشعار جماعي OneSignal:`, error.message); }
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': `Basic ${apiKey}`
+        },
+        body: JSON.stringify({
+            app_id: appId,
+            included_segments: ["Subscribed Users"],
+            headings: { "en": title, "ar": title },
+            contents: { "en": body, "ar": body },
+            large_icon: NOTIFICATION_ICON_URL,
+            ios_attachments: { id: NOTIFICATION_ICON_URL }
+        })
+    });
+    
+    const data = await res.json();
+    if (data.errors) {
+        throw new Error(JSON.stringify(data.errors));
+    }
 }
 // ==========================================
 // 1. مسارات الدخول القديمة
@@ -646,12 +650,15 @@ app.post('/api/admin/announcement', async (req, res) => {
 // 🌟 مسار البث المباشر (إرسال إشعار مخصص للجميع) 🌟
 app.post('/api/admin/broadcast', async (req, res) => {
     const { adminPassword, title, body } = req.body;
-    if (adminPassword !== '101383') return res.status(403).json({ success: false, message: 'غير مصرح!' });
+    if (adminPassword !== '101383') return res.status(403).json({ success: false, message: 'كلمة المرور غير صحيحة!' });
 
     try {
         await sendFCMToAll(title, body);
         res.json({ success: true, message: 'تم إطلاق الإشعار لجميع القناصين بنجاح 🚀' });
-    } catch (error) { res.status(500).json({ success: false, message: error.message }); }
+    } catch (error) { 
+        console.error("Broadcast Error:", error.message);
+        res.status(500).json({ success: false, message: 'رفض من السيرفر: ' + error.message }); 
+    }
 });
 
 // 🌟 مسار إرسال إشعار مخصص للاعب محدد 🌟
@@ -659,15 +666,14 @@ app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) 
     const { targetUsername, title, body } = req.body;
 
     try {
-        // التأكد من أن اللاعب موجود في قاعدة البيانات أولاً
         const [users] = await pool.query('SELECT username FROM users WHERE username = ?', [targetUsername]);
         if (users.length === 0) return res.status(404).json({ success: false, message: 'اللاعب غير موجود.' });
 
-        // استدعاء الدالة الجاهزة لإرسال الإشعار
         await sendFCMToUser(users[0].username, title, body);
         res.json({ success: true, message: `تم إرسال الإشعار بنجاح إلى ${targetUsername} 🎯` });
     } catch (error) { 
-        res.status(500).json({ success: false, message: error.message }); 
+        console.error("Single Notify Error:", error.message);
+        res.status(500).json({ success: false, message: 'رفض من السيرفر: ' + error.message }); 
     }
 });
 
