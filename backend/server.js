@@ -577,16 +577,25 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
         let notificationsSent = 0;
         for (const [user, netTokens] of Object.entries(tokenUpdates)) {
             if (netTokens > 0) {
-                // إضافة التوكن وإرسال إشعار للمستحقين الجدد
+                // 1. إضافة التوكن في قاعدة البيانات بأمان تام
                 await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [netTokens, user]);
-                let msg = isSpecialClasico ? `توقعك للكلاسيكو كان مذهلاً! منحك ${netTokens} توكن، تفقد المتجر.` : `توقعك للمباراة كان دقيقاً. تمت إضافة 10 توكن لمحفظتك في المتجر!`;
-                sendFCMToUser(user, '🎯 قناص محترف!', msg);
+                
+                let msg = isSpecialClasico ? `توقعك للكلاسيكو كان مذهلاً! منحك ${netTokens} توكن، تفقد المتجر.` : `توقعك للمباراة كان دقيقاً. تمت إضافة ${netTokens} توكن لمحفظتك في المتجر!`;
+                
+                // 🌟 التعديل الحاسم: استخدام .catch لمنع انهيار الحلقة إذا فشل الإشعار (مثل لاعبي الآيفون) 🌟
+                sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
+                
                 notificationsSent++;
             } else if (netTokens < 0) {
                 // سحب التوكن السريع ممن فقدوا النتيجة بعد تحديث البوت
                 await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(netTokens), user]);
             }
         }
+
+        // إرسال الإشعار الجماعي مع حمايته أيضاً من التسبب بانهيار السيرفر
+        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
+
+        res.json({ success: true, message: `تم حفظ النتيجة! وتم محاولة إرسال ${notificationsSent} إشعار مكافأة.` });
 
         // إرسال الإشعار الجماعي لكل القناصين
         sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!');
