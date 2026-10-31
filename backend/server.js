@@ -514,22 +514,33 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
         const homeCode = oldMatchData[0].home;
         const awayCode = oldMatchData[0].away;
         
-        // جلب النتيجة القديمة (قبل تحديث البوت الجديد)
         const oldH = oldMatchData[0].actual_h !== null && oldMatchData[0].actual_h !== '' ? Number(oldMatchData[0].actual_h) : null;
         const oldA = oldMatchData[0].actual_a !== null && oldMatchData[0].actual_a !== '' ? Number(oldMatchData[0].actual_a) : null;
 
-        // 🌟 دمج قوانين الكلاسيكو (GW 99) الذي أضفناه في الواجهة 🌟
         const isSpecialClasico = (matchGw === 99 || (homeCode === 'BAR' && awayCode === 'RMA'));
-        const isEligibleForTokens = isSpecialClasico || (matchGw >= 6 && matchGw !== 101);
+        const isEligibleForTokens = true; // تم تفعيلها لجميع الجولات دون استثناء
 
-        // دالة مساعدة لحساب التوكن المستحق لأي نتيجة
-        const getTokensEarned = (ph, pa, ah, aa, isMagnet) => {
+        // دالة الحساب المنقحة والمدرعة
+        const getTokensEarned = (ph, pa, ah, aa, isMagnetStr) => {
             if (ph === null || pa === null || ah === null || aa === null) return 0;
-            let isExact = (ph === ah && pa === aa);
-            if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) isExact = true; 
+            
+            // تحويل دقيق للمتغيرات إلى أرقام لضمان عدم فشل المقارنة
+            const numPh = Number(ph);
+            const numPa = Number(pa);
+            const numAh = Number(ah);
+            const numAa = Number(aa);
+            
+            // التحقق من المغناطيس (يدعم كل صيغ البيانات القادمة من MySQL)
+            const isMagnet = (isMagnetStr === 1 || isMagnetStr === '1' || String(isMagnetStr).toLowerCase() === 'true');
+            
+            let isExact = (numPh === numAh && numPa === numAa);
+            
+            if (isMagnet && !isExact && (Math.abs(numPh - numAh) + Math.abs(numPa - numAa) === 1)) {
+                isExact = true; 
+            }
             
             if (isSpecialClasico) {
-                const isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
+                const isOutcomeCorrect = (numPh > numPa && numAh > numAa) || (numPh < numPa && numAh < numAa) || (numPh === numPa && numAh === numAa);
                 if (isExact) return 100;
                 if (isOutcomeCorrect) return 50;
                 return 0;
@@ -538,20 +549,20 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
             }
         };
 
-        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
-        const tokenUpdates = {}; // محفظة التغيرات الذكية { 'Ahmed': +10, 'Ali': -10 }
+        // تم إضافة جلب المتغيرات الناقصة من قاعدة البيانات
+        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet, is_captain, is_triple_captain FROM predictions WHERE match_id = ?', [matchId]);
+        const tokenUpdates = {}; 
 
-        // 1. حساب التوكن القديم (لسحبه في حال تعديل النتيجة من قبل البوت)
         if (oldH !== null && oldA !== null && isEligibleForTokens) {
             predictions.forEach(p => {
-                if (p.pred_h === '' || p.pred_h === null || p.pred_a === '' || p.pred_a === null) return;
-                const earnedOld = getTokensEarned(Number(p.pred_h), Number(p.pred_a), oldH, oldA, p.is_magnet === 1 || p.is_magnet === 'true');
+                // الفحص الآمن ضد الأصفار والفراغات
+                if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') return;
+                const earnedOld = getTokensEarned(p.pred_h, p.pred_a, oldH, oldA, p.is_magnet);
                 if (earnedOld > 0) tokenUpdates[p.username] = (tokenUpdates[p.username] || 0) - earnedOld;
             });
         }
 
-        // 2. حالة إلغاء النتيجة تماماً (Cancel) عبر زر الواجهة
-        if (actualH === null || actualA === null || actualH === '') {
+        if (actualH === null || actualA === null || String(actualH).trim() === '') {
             for (const [user, net] of Object.entries(tokenUpdates)) {
                 if (net < 0) await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(net), user]);
             }
@@ -559,48 +570,35 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
             return res.json({ success: true, message: 'تم إلغاء النتيجة وسحب التوكن المرتبط بها.' });
         }
 
-        // 3. حالة حفظ أو تحديث النتيجة عبر البوت
         const newH = Number(actualH);
         const newA = Number(actualA);
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [newH, newA, matchId]);
 
-        // حساب التوكن الجديد للنتيجة الحالية
         if (isEligibleForTokens) {
             predictions.forEach(p => {
-                if (p.pred_h === '' || p.pred_h === null || p.pred_a === '' || p.pred_a === null) return;
-                const earnedNew = getTokensEarned(Number(p.pred_h), Number(p.pred_a), newH, newA, p.is_magnet === 1 || p.is_magnet === 'true');
+                if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') return;
+                const earnedNew = getTokensEarned(p.pred_h, p.pred_a, newH, newA, p.is_magnet);
                 if (earnedNew > 0) tokenUpdates[p.username] = (tokenUpdates[p.username] || 0) + earnedNew;
             });
         }
 
-        // 4. تطبيق التغيرات الصافية (Net Changes) في قاعدة البيانات وإرسال الإشعارات
         let notificationsSent = 0;
         for (const [user, netTokens] of Object.entries(tokenUpdates)) {
             if (netTokens > 0) {
-                // 1. إضافة التوكن في قاعدة البيانات بأمان تام
                 await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [netTokens, user]);
-                
                 let msg = isSpecialClasico ? `توقعك للكلاسيكو كان مذهلاً! منحك ${netTokens} توكن، تفقد المتجر.` : `توقعك للمباراة كان دقيقاً. تمت إضافة ${netTokens} توكن لمحفظتك في المتجر!`;
-                
-                // 🌟 التعديل الحاسم: استخدام .catch لمنع انهيار الحلقة إذا فشل الإشعار (مثل لاعبي الآيفون) 🌟
-                sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
-                
+                // استخدام .catch لمنع السيرفر من الانهيار عند فشل الإشعار
+                // sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
                 notificationsSent++;
             } else if (netTokens < 0) {
-                // سحب التوكن السريع ممن فقدوا النتيجة بعد تحديث البوت
                 await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(netTokens), user]);
             }
         }
 
-        // إرسال الإشعار الجماعي مع حمايته أيضاً من التسبب بانهيار السيرفر
-        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
+        // إشعار جماعي محمي
+        // sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
 
         res.json({ success: true, message: `تم حفظ النتيجة! وتم محاولة إرسال ${notificationsSent} إشعار مكافأة.` });
-
-        // إرسال الإشعار الجماعي لكل القناصين
-        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!');
-
-        res.json({ success: true, message: `تم حفظ النتيجة! وتم إرسال ${notificationsSent} إشعار مكافأة.` });
     } catch (error) { 
         console.error("Result Save Error:", error);
         res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); 
