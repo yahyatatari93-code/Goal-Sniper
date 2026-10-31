@@ -588,7 +588,7 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
                 await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [netTokens, user]);
                 let msg = isSpecialClasico ? `توقعك للكلاسيكو كان مذهلاً! منحك ${netTokens} توكن، تفقد المتجر.` : `توقعك للمباراة كان دقيقاً. تمت إضافة ${netTokens} توكن لمحفظتك في المتجر!`;
                 // استخدام .catch لمنع السيرفر من الانهيار عند فشل الإشعار
-                // sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
+                sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
                 notificationsSent++;
             } else if (netTokens < 0) {
                 await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(netTokens), user]);
@@ -596,7 +596,7 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
         }
 
         // إشعار جماعي محمي
-        // sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
+        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
 
         res.json({ success: true, message: `تم حفظ النتيجة! وتم محاولة إرسال ${notificationsSent} إشعار مكافأة.` });
     } catch (error) { 
