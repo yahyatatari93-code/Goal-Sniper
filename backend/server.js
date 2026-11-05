@@ -503,102 +503,94 @@ app.delete('/api/admin/match/:id', authenticateToken, isAdmin, async (req, res) 
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// 🌟 مسار حفظ النتيجة الديناميكي (مضاد لخلل البوتات ويدعم الكلاسيكو) 🌟
+// 🌟 مسار حفظ النتيجة الديناميكي (بنظام الختم الصارم المضاد لتدخل البوتات) 🌟
 app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
-        const [oldMatchData] = await pool.query('SELECT actual_h, actual_a, gw, home, away FROM matches WHERE id = ?', [matchId]);
+        // 1. جلب بيانات المباراة بما فيها ختم التوزيع الجديد
+        const [oldMatchData] = await pool.query('SELECT actual_h, actual_a, gw, home, away, is_token_distributed FROM matches WHERE id = ?', [matchId]);
         if (oldMatchData.length === 0) return res.status(404).json({success: false, message: 'المباراة غير موجودة'});
         
         const matchGw = Number(oldMatchData[0].gw);
         const homeCode = oldMatchData[0].home;
         const awayCode = oldMatchData[0].away;
+        const isDistributed = oldMatchData[0].is_token_distributed === 1; // 👈 فحص الختم
         
-        const oldH = oldMatchData[0].actual_h !== null && oldMatchData[0].actual_h !== '' ? Number(oldMatchData[0].actual_h) : null;
-        const oldA = oldMatchData[0].actual_a !== null && oldMatchData[0].actual_a !== '' ? Number(oldMatchData[0].actual_a) : null;
+        const oldH = oldMatchData[0].actual_h;
+        const oldA = oldMatchData[0].actual_a;
 
         const isSpecialClasico = (matchGw === 99 || (homeCode === 'BAR' && awayCode === 'RMA'));
-        const isEligibleForTokens = true; // تم تفعيلها لجميع الجولات دون استثناء
 
-        // دالة الحساب المنقحة والمدرعة
+        // دالة حساب التوكن (تعطي 10 للتطابق التام فقط ولا تضاعف الكابتن/الجوكر)
         const getTokensEarned = (ph, pa, ah, aa, isMagnetStr) => {
             if (ph === null || pa === null || ah === null || aa === null) return 0;
-            
-            // تحويل دقيق للمتغيرات إلى أرقام لضمان عدم فشل المقارنة
-            const numPh = Number(ph);
-            const numPa = Number(pa);
-            const numAh = Number(ah);
-            const numAa = Number(aa);
-            
-            // التحقق من المغناطيس (يدعم كل صيغ البيانات القادمة من MySQL)
+            const numPh = Number(ph), numPa = Number(pa), numAh = Number(ah), numAa = Number(aa);
             const isMagnet = (isMagnetStr === 1 || isMagnetStr === '1' || String(isMagnetStr).toLowerCase() === 'true');
             
             let isExact = (numPh === numAh && numPa === numAa);
-            
-            if (isMagnet && !isExact && (Math.abs(numPh - numAh) + Math.abs(numPa - numAa) === 1)) {
-                isExact = true; 
-            }
+            if (isMagnet && !isExact && (Math.abs(numPh - numAh) + Math.abs(numPa - numAa) === 1)) isExact = true; 
             
             if (isSpecialClasico) {
                 const isOutcomeCorrect = (numPh > numPa && numAh > numAa) || (numPh < numPa && numAh < numAa) || (numPh === numPa && numAh === numAa);
                 if (isExact) return 100;
                 if (isOutcomeCorrect) return 50;
                 return 0;
-            } else {
-                return isExact ? 10 : 0;
             }
+            return isExact ? 10 : 0;
         };
 
-        // تم إضافة جلب المتغيرات الناقصة من قاعدة البيانات
-        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet, is_captain, is_triple_captain FROM predictions WHERE match_id = ?', [matchId]);
-        const tokenUpdates = {}; 
+        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
 
-        if (oldH !== null && oldA !== null && isEligibleForTokens) {
-            predictions.forEach(p => {
-                // الفحص الآمن ضد الأصفار والفراغات
-                if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') return;
-                const earnedOld = getTokensEarned(p.pred_h, p.pred_a, oldH, oldA, p.is_magnet);
-                if (earnedOld > 0) tokenUpdates[p.username] = (tokenUpdates[p.username] || 0) - earnedOld;
-            });
-        }
-
+        // 2. حالة الإلغاء وتصفير النتيجة
         if (actualH === null || actualA === null || String(actualH).trim() === '') {
-            for (const [user, net] of Object.entries(tokenUpdates)) {
-                if (net < 0) await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(net), user]);
+            // نسحب التوكن فقط إذا كان الختم يؤكد أنه تم توزيعه مسبقاً
+            if (isDistributed) {
+                for (let p of predictions) {
+                    if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') continue;
+                    const earned = getTokensEarned(p.pred_h, p.pred_a, oldH, oldA, p.is_magnet);
+                    if (earned > 0) {
+                        await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [earned, p.username]);
+                    }
+                }
             }
-            await pool.query('UPDATE matches SET actual_h = NULL, actual_a = NULL WHERE id = ?', [matchId]);
-            return res.json({ success: true, message: 'تم إلغاء النتيجة وسحب التوكن المرتبط بها.' });
+            // تصفير النتيجة وإزالة ختم التوزيع
+            await pool.query('UPDATE matches SET actual_h = NULL, actual_a = NULL, is_token_distributed = 0 WHERE id = ?', [matchId]);
+            return res.json({ success: true, message: 'تم إلغاء النتيجة وسحب التوكن بنجاح.' });
         }
 
+        // 3. حالة تثبيت النتيجة الجديدة
         const newH = Number(actualH);
         const newA = Number(actualA);
+        let notificationsSent = 0;
+
+        // تحديث النتيجة في قاعدة البيانات دائماً (لتحديث النقاط والترتيب العام)
         await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [newH, newA, matchId]);
 
-        if (isEligibleForTokens) {
-            predictions.forEach(p => {
-                if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') return;
-                const earnedNew = getTokensEarned(p.pred_h, p.pred_a, newH, newA, p.is_magnet);
-                if (earnedNew > 0) tokenUpdates[p.username] = (tokenUpdates[p.username] || 0) + earnedNew;
-            });
-        }
-
-        let notificationsSent = 0;
-        for (const [user, netTokens] of Object.entries(tokenUpdates)) {
-            if (netTokens > 0) {
-                await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [netTokens, user]);
-                let msg = isSpecialClasico ? `توقعك للكلاسيكو كان مذهلاً! منحك ${netTokens} توكن، تفقد المتجر.` : `توقعك للمباراة كان دقيقاً. تمت إضافة ${netTokens} توكن لمحفظتك في المتجر!`;
-                // استخدام .catch لمنع السيرفر من الانهيار عند فشل الإشعار
-                sendFCMToUser(user, '🎯 قناص محترف!', msg).catch(err => console.log(`FCM Ignored for ${user}`));
-                notificationsSent++;
-            } else if (netTokens < 0) {
-                await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [Math.abs(netTokens), user]);
+        // 4. توزيع التوكن (فقط إذا لم يتم توزيعه مسبقاً لهذه المباراة)
+        if (!isDistributed) {
+            for (let p of predictions) {
+                if (p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') continue;
+                const earned = getTokensEarned(p.pred_h, p.pred_a, newH, newA, p.is_magnet);
+                if (earned > 0) {
+                    await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [earned, p.username]);
+                    let msg = isSpecialClasico ? `توقعك للكلاسيكو مذهل! كسبت ${earned} توكن.` : `توقع دقيق! تمت إضافة ${earned} توكن لمحفظتك.`;
+                    // إشعار فردي محمي
+                    sendFCMToUser(p.username, '🎯 قناص محترف!', msg).catch(() => {});
+                    notificationsSent++;
+                }
             }
+            // إغلاق التوزيع نهائياً لهذه المباراة بطباعة الختم
+            await pool.query('UPDATE matches SET is_token_distributed = 1 WHERE id = ?', [matchId]);
+            
+            // إشعار جماعي محمي
+            sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل لترى رصيدك!').catch(() => {});
+            
+            res.json({ success: true, message: `تم التثبيت وتوزيع التوكن بنجاح لـ ${notificationsSent} لاعب!` });
+        } else {
+            // إذا قام البوت بتحديث النتيجة مرة أخرى (مثلاً تصحيح بسيط)، نتجاهل التوكن لأنه موزع مسبقاً
+            res.json({ success: true, message: 'تم تحديث النتيجة (التوكن موزع مسبقاً ولا حاجة لتوزيعه مجدداً).' });
         }
 
-        // إشعار جماعي محمي
-        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل فوراً لترى كم نقطة وتوكن حصدت!').catch(err => console.log('Global FCM Ignored'));
-
-        res.json({ success: true, message: `تم حفظ النتيجة! وتم محاولة إرسال ${notificationsSent} إشعار مكافأة.` });
     } catch (error) { 
         console.error("Result Save Error:", error);
         res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); 
