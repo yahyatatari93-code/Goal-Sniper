@@ -1770,11 +1770,15 @@ function isMatchLocked(match) {
                 <div class="flex justify-between items-start mb-5 relative z-10">
                     <div>
                         <!-- اسم القناص والأوسمة -->
-                        <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-2">
-                            ${currentUser.username}${myBadges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
-                            ${myBadges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
-                            ${myBadges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
-                        </h2>
+                        <div class="flex items-center gap-2 mb-1">
+    <h2 class="text-xl md:text-2xl font-black text-white flex items-center gap-1">
+        ${currentUser.username}
+        ${myBadges.motw ? `<span title="${typeof t === 'function' ? t('motw') : 'عراف الأسبوع'}" class="text-amber-400 text-base"><i class="fa-solid fa-fire"></i></span>` : ''}
+        ${myBadges.sniper ? `<span title="${typeof t === 'function' ? t('sniperBadge') : 'القناص'}" class="text-emerald-400 text-base"><i class="fa-solid fa-crosshairs"></i></span>` : ''}
+        ${myBadges.giantSlayer ? `<span title="${typeof t === 'function' ? t('giantSlayer') : 'قاهر الكبار'}" class="text-rose-400 text-base"><i class="fa-solid fa-shield-halved"></i></span>` : ''}
+    </h2>
+    <button onclick="openSocialSettingsModal()" class="text-slate-400 hover:text-white transition-colors text-xs mr-2 bg-white/5 hover:bg-white/10 w-7 h-7 rounded-full inline-flex items-center justify-center border border-white/10 shadow-inner align-middle" title="إعدادات الملف الشخصي"><i class="fa-solid fa-user-pen"></i></button>
+</div>
                         
                         <!-- رمز الدعوة المنسق أسفل الاسم مباشرة -->
                         <div class="mt-2.5 flex items-center gap-2">
@@ -3291,6 +3295,16 @@ function renderPrizesTab() {
                             <textarea id="admin-single-body" placeholder="نص رسالتك الخاصة للاعب..." rows="2" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white mb-3 outline-none focus:border-fuchsia-500 text-right resize-none"></textarea>
                             <button onclick="sendSingleNotification()" class="w-full py-2.5 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-xl transition-all text-sm shadow-lg shadow-fuchsia-600/20">🎯 إرسال الإشعار للاعب فقط</button>
                         </div>
+
+                        <!-- بطاقة سوشال ميديا اللاعبين (خاصة بالإدارة) -->
+<div class="bg-slate-900/80 border border-teal-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(20,184,166,0.1)]">
+    <h3 class="text-teal-400 font-bold text-sm mb-3"><i class="fa-solid fa-address-card ml-1"></i> استكشاف روابط اللاعبين (سري)</h3>
+    <div class="flex gap-2 mb-3">
+        <input type="text" id="admin-social-username" placeholder="اسم اللاعب (مثال: Ahmed99)" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-teal-500 text-right">
+        <button onclick="adminSearchSocial()" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl transition-all shadow-lg text-xs">بحث</button>
+    </div>
+    <div id="admin-social-result" class="hidden space-y-2 pt-3 border-t border-white/10"></div>
+</div>
                         
                         <!-- بطاقة الشريط المتحرك -->
                         <div class="bg-slate-900/80 border border-blue-500/30 rounded-2xl p-4 relative z-10 mt-4 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
@@ -5185,6 +5199,116 @@ async function deleteLeagueByAdmin() {
                 if (syncIcon) syncIcon.classList.remove('fa-spin'); 
             }
         }
+
+        // 1. فتح نافذة اللاعب لإدخال روابطه
+async function openSocialSettingsModal() {
+    const container = document.getElementById('dialog-container');
+    container.innerHTML = `<div class="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center"><i class="fa-solid fa-spinner fa-spin text-4xl text-blue-500"></i></div>`;
+    
+    try {
+        const token = localStorage.getItem('oracle_token_v8');
+        const res = await fetch(`${API_BASE_URL}/profile/social`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const json = await res.json();
+        const data = json.success ? json.data : { fb_link: '', ig_link: '' };
+
+        container.innerHTML = `
+            <div class="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
+                <div class="glass max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-blue-500/30 animate-fade-up bg-slate-900/90">
+                    <div class="text-center mb-5 border-b border-white/10 pb-4">
+                        <i class="fa-solid fa-user-shield text-3xl text-blue-400 mb-2"></i>
+                        <h3 class="text-lg font-black text-white">ملفي الشخصي</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">هذه الروابط سرية ومخصصة لتواصل الإدارة معك عند فوزك بالجوائز.</p>
+                    </div>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl overflow-hidden focus-within:border-blue-500 transition-colors">
+                            <div class="w-10 h-10 bg-slate-900 flex items-center justify-center text-blue-600 border-l border-white/10"><i class="fa-brands fa-facebook-f"></i></div>
+                            <input type="text" id="prof-fb" value="${data.fb_link || ''}" placeholder="رابط أو يوزر فيسبوك" class="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none text-left" dir="ltr">
+                        </div>
+                        <div class="flex items-center bg-slate-950 border border-white/10 rounded-xl overflow-hidden focus-within:border-rose-500 transition-colors">
+                            <div class="w-10 h-10 bg-slate-900 flex items-center justify-center text-rose-500 border-l border-white/10"><i class="fa-brands fa-instagram"></i></div>
+                            <input type="text" id="prof-ig" value="${data.ig_link || ''}" placeholder="رابط أو يوزر انستغرام" class="flex-1 bg-transparent px-3 py-2 text-xs text-white outline-none text-left" dir="ltr">
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="saveSocialSettings()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-lg">حفظ البيانات</button>
+                        <button onclick="document.getElementById('dialog-container').innerHTML=''" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all">إغلاق</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch(e) { document.getElementById('dialog-container').innerHTML=''; showCustomDialog('خطأ في الاتصال'); }
+}
+
+// 2. حفظ بيانات اللاعب
+async function saveSocialSettings() {
+    const fb = document.getElementById('prof-fb').value.trim();
+    const ig = document.getElementById('prof-ig').value.trim();
+    document.getElementById('dialog-container').innerHTML = '';
+    showCustomDialog("جاري الحفظ...", "alert");
+    
+    try {
+        const token = localStorage.getItem('oracle_token_v8');
+        const res = await fetch(`${API_BASE_URL}/profile/social`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ fb, ig })
+        });
+        const data = await res.json();
+        showCustomDialog(data.message, 'alert');
+    } catch(e) { showCustomDialog('فشل الحفظ. تأكد من الاتصال.'); }
+}
+
+// 3. بحث الإدارة الذكي (يحول اليوزر لروابط قابلة للضغط والنسخ)
+async function adminSearchSocial() {
+    const username = document.getElementById('admin-social-username').value.trim();
+    if (!username) return;
+    
+    const resultBox = document.getElementById('admin-social-result');
+    resultBox.innerHTML = '<div class="text-center text-teal-400 text-xs py-2"><i class="fa-solid fa-spinner fa-spin"></i> جاري البحث...</div>';
+    resultBox.classList.remove('hidden');
+
+    try {
+        const token = localStorage.getItem('oracle_token_v8');
+        const res = await fetch(`${API_BASE_URL}/admin/get-social`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ targetUsername: username })
+        });
+        const data = await res.json();
+        
+        if (!data.success) {
+            resultBox.innerHTML = `<div class="text-rose-400 text-xs text-center py-2">${data.message}</div>`;
+            return;
+        }
+
+        const buildLinkRow = (icon, color, val, label) => {
+            if (!val) return `<div class="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-white/5 opacity-50"><span class="text-[10px] text-slate-500"><i class="${icon} ${color} ml-1"></i> ${label}</span><span class="text-[10px] text-slate-600">غير متوفر</span></div>`;
+            
+            // تحويل اليوزر العادي إلى رابط إذا لم يكن رابطاً
+            let href = val;
+            if (!val.includes('http')) {
+                if (label === 'انستغرام') href = `https://instagram.com/${val.replace('@', '')}`;
+                else if (label === 'فيسبوك') href = `https://facebook.com/${val}`;
+            }
+
+            return `
+            <div class="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-white/10">
+                <span class="text-xs font-bold text-slate-300 truncate pl-2 flex-1" dir="ltr">${val}</span>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="navigator.clipboard.writeText('${val}')" class="w-7 h-7 rounded bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px]" title="نسخ"><i class="fa-solid fa-copy"></i></button>
+                    <a href="${href}" target="_blank" class="w-7 h-7 rounded bg-slate-800 ${color} hover:text-white transition-all text-[10px] flex items-center justify-center" title="فتح الرابط"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+                </div>
+            </div>`;
+        };
+
+        resultBox.innerHTML = `
+            ${buildLinkRow('fa-brands fa-instagram', 'text-rose-500', data.data.ig_link, 'انستغرام')}
+            ${buildLinkRow('fa-brands fa-facebook-f', 'text-blue-500', data.data.fb_link, 'فيسبوك')}
+        `;
+    } catch(e) { resultBox.innerHTML = '<div class="text-rose-400 text-xs text-center py-2">خطأ في الاتصال</div>'; }
+}
         
         function render() {
             // 🔴 إخبار تطبيق فلاتر باسم اللاعب لكي تصله الإشعارات الفردية
