@@ -679,6 +679,39 @@ app.post('/api/admin/notify-user', authenticateToken, isAdmin, async (req, res) 
 const PORT = process.env.PORT || 5000;
 
 // ==========================================
+// 🌟 نظام الملف الشخصي السري (السوشال ميديا) 🌟
+// ==========================================
+
+// 1. مسار لجلب اللاعب لروابطه الخاصة فقط
+app.get('/api/profile/social', authenticateToken, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT fb_link, ig_link FROM users WHERE username = ?', [req.user.username]);
+        if (rows.length > 0) res.json({ success: true, data: rows[0] });
+        else res.json({ success: false });
+    } catch (error) { res.status(500).json({ success: false }); }
+});
+
+// 2. مسار لحفظ أو تحديث الروابط من قبل اللاعب
+app.post('/api/profile/social', authenticateToken, async (req, res) => {
+    const { fb, ig } = req.body;
+    try {
+        await pool.query('UPDATE users SET fb_link = ?, ig_link = ? WHERE username = ?', 
+        [fb || '', ig || '', req.user.username]);
+        res.json({ success: true, message: 'تم حفظ بيانات ملفك الشخصي بنجاح!' });
+    } catch (error) { res.status(500).json({ success: false, message: 'فشل الحفظ.' }); }
+});
+
+// 3. مسار خاص بالإدارة فقط (للبحث عن روابط أي لاعب)
+app.post('/api/admin/get-social', authenticateToken, isAdmin, async (req, res) => {
+    const { targetUsername } = req.body;
+    try {
+        const [rows] = await pool.query('SELECT fb_link, ig_link FROM users WHERE username = ?', [targetUsername]);
+        if (rows.length > 0) res.json({ success: true, data: rows[0] });
+        else res.json({ success: false, message: 'القناص غير موجود في السجلات.' });
+    } catch (error) { res.status(500).json({ success: false, message: 'خطأ في السيرفر.' }); }
+});
+
+// ==========================================
 // 🌟 نظام المراقب الآلي للتذكير بالمباريات (النسخة المدرعة) 🌟
 // ==========================================
 
