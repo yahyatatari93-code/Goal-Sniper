@@ -2519,7 +2519,11 @@ function renderMiniLeaguesTab() {
                                         let showShield = false;
                                         
                                         if (canCurrentUseSniper) {
-                                            if (leagueData.victimsLastGw && leagueData.victimsLastGw.has(mem.username)) showShield = true;
+                                            // 🛡️ التعديل: فحص إذا كان الضحية يمتلك درعاً من الجولة الماضية أو تم قنصه بالفعل في الجولة الحالية
+                                            if ((leagueData.victimsLastGw && leagueData.victimsLastGw.has(mem.username)) || 
+                                                (leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username))) {
+                                                showShield = true;
+                                            }
                                         } else {
                                             if (leagueData.snipersThisGw && leagueData.snipersThisGw.has(currentUser.username)) {
                                                 showShield = leagueData.victimsThisGw && leagueData.victimsThisGw.has(mem.username);
