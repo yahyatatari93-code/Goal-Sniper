@@ -424,16 +424,26 @@ app.post('/api/leagues/join', authenticateToken, async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 🌟 مسار إطلاق رصاصة القناص (محدث لدعم الدروع المنفصلة) 🌟
+// 🌟 مسار إطلاق رصاصة القناص (محدث لدعم الدروع التلقائية ومنع القنص المزدوج) 🌟
 app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
     const { leagueCode, gw, sniper, victim, pointsDeducted, isBought } = req.body;
     if (req.user.username !== sniper) return res.status(403).json({ success: false, message: 'لا يمكنك إطلاق النار نيابة عن لاعب آخر!' });
 
     try {
+        // 1. فحص القناص (لمنع إطلاق رصاصتين من نفس الشخص)
         const [existing] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND sniper = ?', [leagueCode, gw, sniper]);
         if (existing.length > 0) return res.status(400).json({ success: false, message: 'استخدمت رصاصتك في هذا الدوري لهذه الجولة مسبقاً!' });
 
-        // التمييز البرمجي بين البطولتين
+        // 2. فحص القنص المزدوج (منع ضرب الضحية مرتين في نفس الجولة) 🛡️
+        const [victimThisGw] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND victim = ?', [leagueCode, gw, victim]);
+        if (victimThisGw.length > 0) return res.status(400).json({ success: false, message: 'تأخرت! هذا اللاعب تلقى رصاصة بالفعل في هذه الجولة، لا يمكن قنصه مرتين.' });
+
+        // 3. فحص الدرع التلقائي (حماية الضحية إذا تعرض للقنص في الجولة الماضية) 🛡️
+        const prevGw = Number(gw) - 1;
+        const [victimLastGw] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND victim = ?', [leagueCode, prevGw, victim]);
+        if (victimLastGw.length > 0) return res.status(400).json({ success: false, message: 'طاشت الرصاصة! هذا اللاعب يمتلك درع حصانة تلقائي لأنه تعرض للقنص في الجولة الماضية.' });
+
+        // التمييز البرمجي بين البطولتين للعتاد المشتراة
         const isUCL = Number(gw) >= 101;
         const shieldCol = isUCL ? 'active_shields_ucl' : 'active_shields_epl';
         const compName = isUCL ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
@@ -452,20 +462,18 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
 
         if (hasLeagueShield) {
             actualDeduction = 0; 
-            msg = `💥 الضربة طاشت! [${victim}] كان يمتلك درعاً حصيناً مخصصاً لـ (${compName})!`;
-            
+            msg = `💥 الضربة طاشت! [${victim}] كان يمتلك درعاً مشتراة مخصصاً لـ (${compName})!`;
             await pool.query(`UPDATE mini_league_members SET ${shieldCol} = ${shieldCol} - 1 WHERE league_code = ? AND username = ?`, [leagueCode, victim]);
-            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك في (${compName})، لكن درعك السري تصدى للرصاصة!`);
+            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك في (${compName})، لكن درعك السري تصدى للرصاصة!`).catch(() => {});
         } 
         else if (hasGlobalShield) {
             actualDeduction = 0; 
             msg = `💥 الضربة طاشت! [${victim}] تصدى للرصاصة باستخدام درع عام!`;
-            
             await pool.query('UPDATE users SET shields = GREATEST(0, shields - 1) WHERE username = ?', [victim]);
-            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك، لكن درعك العام القديم أنقذك!`);
+            sendFCMToUser(victim, '🛡️ ضربة طائشة!', `حاول ${sniper} قنصك، لكن درعك العام القديم أنقذك!`).catch(() => {});
         }
         else {
-            sendFCMToUser(victim, '💥 تمت إصابتك!', `القناص ${sniper} قنصك وخصم من رصيدك في دوري ${leagueCode}!`);
+            sendFCMToUser(victim, '💥 تمت إصابتك!', `القناص ${sniper} قنصك وخصم من رصيدك في دوري ${leagueCode}!`).catch(() => {});
         }
 
         if (isBought) await pool.query('UPDATE users SET extra_snipers = extra_snipers - 1 WHERE username = ?', [sniper]);
