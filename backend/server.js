@@ -514,8 +514,8 @@ app.delete('/api/admin/match/:id', authenticateToken, isAdmin, async (req, res) 
 // ==========================================
 // 🌟 مسار حفظ النتيجة + المراقب الآلي لتوزيع التوكن 🌟
 // ==========================================
-const SILENT_TOKEN_MODE = true;        // 🔇 لتعويض الـ 34 مباراة بصمت الآن، ثم غيّرها إلى false بعد دقيقة
-const SEND_GLOBAL_RESULT_NOTIF = true; // 📢 اجعلها false إذا كان البوت يرسل إشعاراً جماعياً بنفسه
+const SILENT_TOKEN_MODE = false;        // 🔇 لتعويض الـ 34 مباراة بصمت الآن، ثم غيّرها إلى false بعد دقيقة
+const SEND_GLOBAL_RESULT_NOTIF = false; // 📢 اجعلها false إذا كان البوت يرسل إشعاراً جماعياً بنفسه
 
 // 1. مسار حفظ وتعديل النتيجة من لوحة الإدارة
 app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
