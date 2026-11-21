@@ -511,55 +511,42 @@ app.delete('/api/admin/match/:id', authenticateToken, isAdmin, async (req, res) 
     } catch(e) { res.status(500).json({ success: false, message: e.message }); }
 });
 
-// 🌟 مسار حفظ النتيجة الديناميكي (بنظام الختم الصارم المضاد لتعليق السيرفر وفخاخ الأصفار) 🌟
+// ==========================================
+// 🌟 مسار حفظ النتيجة + المراقب الآلي لتوزيع التوكن 🌟
+// ==========================================
+const SILENT_TOKEN_MODE = true;        // 🔇 لتعويض الـ 34 مباراة بصمت الآن، ثم غيّرها إلى false بعد دقيقة
+const SEND_GLOBAL_RESULT_NOTIF = true; // 📢 اجعلها false إذا كان البوت يرسل إشعاراً جماعياً بنفسه
+
+// 1. مسار حفظ وتعديل النتيجة من لوحة الإدارة
 app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, actualH, actualA } = req.body;
     try {
-        // 1. جلب بيانات المباراة بما فيها ختم التوزيع
-        const [oldMatchData] = await pool.query('SELECT actual_h, actual_a, gw, home, away, is_token_distributed FROM matches WHERE id = ?', [matchId]);
-        if (oldMatchData.length === 0) return res.status(404).json({success: false, message: 'المباراة غير موجودة'});
-        
-        const matchGw = Number(oldMatchData[0].gw);
-        const homeCode = oldMatchData[0].home;
-        const awayCode = oldMatchData[0].away;
-        const isDistributed = oldMatchData[0].is_token_distributed === 1; // 👈 فحص الختم
-        
-        const oldH = oldMatchData[0].actual_h;
-        const oldA = oldMatchData[0].actual_a;
+        const [oldMatchData] = await pool.query(
+            'SELECT actual_h, actual_a, gw, home, away, is_token_distributed FROM matches WHERE id = ?',
+            [matchId]
+        );
+        if (oldMatchData.length === 0) {
+            return res.status(404).json({ success: false, message: 'المباراة غير موجودة' });
+        }
 
-        const isSpecialClasico = (matchGw === 99 || (homeCode === 'BAR' && awayCode === 'RMA'));
+        const m = oldMatchData[0];
+        const isDistributed = Number(m.is_token_distributed) === 1;
+        const isSpecialClasico = (Number(m.gw) === 99 || (m.home === 'BAR' && m.away === 'RMA'));
 
-        // دالة حساب التوكن الصارمة 
-        const getTokensEarned = (ph, pa, ah, aa, isMagnetStr) => {
-            // فحص رياضي مباشر يتجاهل الفراغات ويمرر الصفر
-            if (ph === null || pa === null || ah === null || aa === null) return 0;
-            if (ph === '' || pa === '' || ah === '' || aa === '') return 0;
-            
-            const numPh = Number(ph), numPa = Number(pa), numAh = Number(ah), numAa = Number(aa);
-            const isMagnet = (isMagnetStr === 1 || isMagnetStr === '1' || String(isMagnetStr).toLowerCase() === 'true');
-            
-            let isExact = (numPh === numAh && numPa === numAa);
-            if (isMagnet && !isExact && (Math.abs(numPh - numAh) + Math.abs(numPa - numAa) === 1)) isExact = true; 
-            
-            if (isSpecialClasico) {
-                const isOutcomeCorrect = (numPh > numPa && numAh > numAa) || (numPh < numPa && numAh < numAa) || (numPh === numPa && numAh === numAa);
-                if (isExact) return 100;
-                if (isOutcomeCorrect) return 50;
-                return 0;
-            }
-            return isExact ? 10 : 0;
-        };
-
-        const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
-
-        // 2. حالة الإلغاء وتصفير النتيجة من لوحة الإدارة
-        if (actualH === null || actualA === null || String(actualH) === '') {
+        // حالة الإلغاء وتصفير النتيجة
+        if (actualH === null || actualA === null || String(actualH).trim() === '' || String(actualA).trim() === '') {
             if (isDistributed) {
-                for (let p of predictions) {
-                    if (p.pred_h === null || p.pred_a === null || p.pred_h === '' || p.pred_a === '') continue;
-                    const earned = getTokensEarned(p.pred_h, p.pred_a, oldH, oldA, p.is_magnet);
+                const [predictions] = await pool.query(
+                    'SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?',
+                    [matchId]
+                );
+                for (const p of predictions) {
+                    const earned = calculateTokensForPrediction(p.pred_h, p.pred_a, m.actual_h, m.actual_a, p.is_magnet, isSpecialClasico);
                     if (earned > 0) {
-                        await pool.query('UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?', [earned, p.username]);
+                        await pool.query(
+                            'UPDATE users SET tokens = GREATEST(0, COALESCE(tokens, 0) - ?) WHERE username = ?',
+                            [earned, p.username]
+                        );
                     }
                 }
             }
@@ -567,41 +554,119 @@ app.post('/api/admin/result', authenticateToken, isAdmin, async (req, res) => {
             return res.json({ success: true, message: 'تم إلغاء النتيجة وسحب التوكن بنجاح.' });
         }
 
-        // 3. حالة تثبيت النتيجة الجديدة من البوت
-        const newH = Number(actualH);
-        const newA = Number(actualA);
-        let notificationsSent = 0;
+        // حالة التثبيت اليدوي
+        await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [Number(actualH), Number(actualA), matchId]);
+        const result = await distributeTokensForMatch(matchId);
 
-        // تحديث النتيجة في قاعدة البيانات دائماً لكي يراها اللاعبون في التطبيق
-        await pool.query('UPDATE matches SET actual_h = ?, actual_a = ? WHERE id = ?', [newH, newA, matchId]);
-
-        // 4. توزيع التوكن (فقط إذا لم يتم توزيعه مسبقاً لهذه المباراة)
-        if (!isDistributed) {
-            for (let p of predictions) {
-                if (p.pred_h === null || p.pred_a === null || p.pred_h === '' || p.pred_a === '') continue;
-                const earned = getTokensEarned(p.pred_h, p.pred_a, newH, newA, p.is_magnet);
-                if (earned > 0) {
-                    await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [earned, p.username]);
-                    let msg = isSpecialClasico ? `توقعك للكلاسيكو مذهل! كسبت ${earned} توكن.` : `توقع دقيق! تمت إضافة ${earned} توكن لمحفظتك.`;
-                    sendFCMToUser(p.username, '🎯 قناص محترف!', msg).catch(() => {});
-                    notificationsSent++;
-                }
-            }
-            // إغلاق التوزيع نهائياً بطباعة الختم
-            await pool.query('UPDATE matches SET is_token_distributed = 1 WHERE id = ?', [matchId]);
-            
-            sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل لترى رصيدك!').catch(() => {});
-            
-            res.json({ success: true, message: `تم التثبيت وتوزيع التوكن بنجاح لـ ${notificationsSent} لاعب!` });
+        if (result.distributed) {
+            res.json({ success: true, message: `تم التثبيت وتوزيع التوكن بنجاح لـ ${result.count} لاعب!` });
         } else {
             res.json({ success: true, message: 'تم تحديث النتيجة (التوكن موزع مسبقاً لهذه المباراة).' });
         }
-
-    } catch (error) { 
-        console.error("Result Save Error:", error);
-        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' }); 
+    } catch (error) {
+        console.error('Result Save Error:', error);
+        res.status(500).json({ success: false, message: 'فشل حفظ النتيجة.' });
     }
 });
+
+// 2. دالة حساب التوكن (تدعم الصفر والمغناطيس والكلاسيكو بدون مضاعفة الكابتن/الجوكر)
+function calculateTokensForPrediction(ph, pa, ah, aa, isMagnetStr, isSpecialClasico) {
+    if (ph === null || pa === null || ah === null || aa === null) return 0;
+    if (String(ph).trim() === '' || String(pa).trim() === '' || String(ah).trim() === '' || String(aa).trim() === '') return 0;
+
+    const numPh = Number(ph), numPa = Number(pa), numAh = Number(ah), numAa = Number(aa);
+    if (isNaN(numPh) || isNaN(numPa) || isNaN(numAh) || isNaN(numAa)) return 0;
+
+    const isMagnet = (isMagnetStr === 1 || isMagnetStr === '1' || String(isMagnetStr).toLowerCase() === 'true');
+    let isExact = (numPh === numAh && numPa === numAa);
+
+    if (isMagnet && !isExact && (Math.abs(numPh - numAh) + Math.abs(numPa - numAa) === 1)) {
+        isExact = true;
+    }
+
+    if (isSpecialClasico) {
+        const isOutcomeCorrect = (numPh > numPa && numAh > numAa) || (numPh < numPa && numAh < numAa) || (numPh === numPa && numAh === numAa);
+        if (isExact) return 100;
+        if (isOutcomeCorrect) return 50;
+        return 0;
+    }
+    return isExact ? 10 : 0;
+}
+
+// 3. دالة التوزيع المحمية بقفل ذري لمنع التكرار
+async function distributeTokensForMatch(matchId) {
+    const [lockResult] = await pool.query(
+        `UPDATE matches 
+         SET is_token_distributed = 1 
+         WHERE id = ? 
+           AND actual_h IS NOT NULL AND actual_a IS NOT NULL 
+           AND TRIM(CAST(actual_h AS CHAR)) != '' 
+           AND TRIM(CAST(actual_a AS CHAR)) != '' 
+           AND COALESCE(is_token_distributed, 0) = 0`,
+        [matchId]
+    );
+
+    if (lockResult.affectedRows === 0) {
+        return { distributed: false, count: 0 };
+    }
+
+    const [matchRows] = await pool.query('SELECT gw, home, away, actual_h, actual_a FROM matches WHERE id = ?', [matchId]);
+    if (matchRows.length === 0) return { distributed: false, count: 0 };
+
+    const m = matchRows[0];
+    const isSpecialClasico = (Number(m.gw) === 99 || (m.home === 'BAR' && m.away === 'RMA'));
+    const [predictions] = await pool.query('SELECT username, pred_h, pred_a, is_magnet FROM predictions WHERE match_id = ?', [matchId]);
+
+    let winnersCount = 0;
+    for (const p of predictions) {
+        const earned = calculateTokensForPrediction(p.pred_h, p.pred_a, m.actual_h, m.actual_a, p.is_magnet, isSpecialClasico);
+        if (earned > 0) {
+            await pool.query('UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username = ?', [earned, p.username]);
+            if (!SILENT_TOKEN_MODE) {
+                const msg = isSpecialClasico
+                    ? `توقعك للكلاسيكو مذهل! كسبت ${earned} توكن.`
+                    : `توقع دقيق! تمت إضافة ${earned} توكن لمحفظتك.`;
+                sendFCMToUser(p.username, '🎯 قناص محترف!', msg).catch(() => {});
+            }
+            winnersCount++;
+        }
+    }
+
+    if (!SILENT_TOKEN_MODE && SEND_GLOBAL_RESULT_NOTIF) {
+        sendFCMToAll('⏱️ تم تثبيت النتيجة!', 'انتهت إحدى المواجهات، ادخل لترى رصيدك!').catch(() => {});
+    }
+
+    console.log(`[Token-Distributor] Match ${matchId} (${m.home} ${m.actual_h}-${m.actual_a} ${m.away}) -> Distributed to ${winnersCount} players (Silent: ${SILENT_TOKEN_MODE})`);
+    return { distributed: true, count: winnersCount };
+}
+
+// 4. المراقب الآلي لالتقاط النتائج التي يثبتها البوت مباشرة في MySQL
+let isCheckingTokens = false;
+async function checkPendingTokenDistributions() {
+    if (isCheckingTokens) return;
+    isCheckingTokens = true;
+    try {
+        const [pendingMatches] = await pool.query(
+            `SELECT id FROM matches 
+             WHERE actual_h IS NOT NULL AND actual_a IS NOT NULL 
+               AND TRIM(CAST(actual_h AS CHAR)) != '' 
+               AND TRIM(CAST(actual_a AS CHAR)) != '' 
+               AND COALESCE(is_token_distributed, 0) = 0`
+        );
+
+        for (const m of pendingMatches) {
+            await distributeTokensForMatch(m.id);
+        }
+    } catch (error) {
+        console.error('[Token-Distributor] Error:', error.message);
+    } finally {
+        isCheckingTokens = false;
+    }
+}
+
+// تشغيل الفحص بعد 5 ثوانٍ من بدء السيرفر ثم كل 60 ثانية تلقائياً
+setTimeout(checkPendingTokenDistributions, 5000);
+setInterval(checkPendingTokenDistributions, 60 * 1000);
 
 app.post('/api/admin/update-time', authenticateToken, isAdmin, async (req, res) => {
     const { matchId, newDate, newTime } = req.body;
