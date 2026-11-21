@@ -1294,7 +1294,7 @@ function changeLanguage(langCode) {
                 // عزل رصاصات القناص لتكون مخصصة لبطولة واحدة (حسب الجولة)
                 if (uniqueGws.includes(shot.gw)) {
                     if (victim) victim.mlTotalPts -= penalty;
-                    if (shot.gw === lastCompletedGw - 1) victimsLastGw.add(shot.victim);
+                    if (shot.gw === lastCompletedGw - 1 && Number(penalty) > 0) victimsLastGw.add(shot.victim);
                     if (shot.gw === lastCompletedGw) {
                         snipersThisGw.add(shot.sniper);
                         victimsThisGw.add(shot.victim); 
