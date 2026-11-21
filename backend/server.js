@@ -438,11 +438,11 @@ app.post('/api/sniper/shoot', authenticateToken, async (req, res) => {
         const [victimThisGw] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND victim = ?', [leagueCode, gw, victim]);
         if (victimThisGw.length > 0) return res.status(400).json({ success: false, message: 'تأخرت! هذا اللاعب تلقى رصاصة بالفعل في هذه الجولة، لا يمكن قنصه مرتين.' });
 
-        // 3. فحص الدرع التلقائي (حماية الضحية إذا تعرض للقنص في الجولة الماضية) 🛡️
+        // 3. فحص الدرع التلقائي (حماية الضحية فقط إذا خُصمت منه نقاط فعلياً في الجولة الماضية) 🛡️
         const prevGw = Number(gw) - 1;
-        const [victimLastGw] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND victim = ?', [leagueCode, prevGw, victim]);
+        const [victimLastGw] = await pool.query('SELECT id FROM sniper_shots WHERE league_code = ? AND gw = ? AND victim = ? AND points_deducted > 0', [leagueCode, prevGw, victim]);
         if (victimLastGw.length > 0) return res.status(400).json({ success: false, message: 'طاشت الرصاصة! هذا اللاعب يمتلك درع حصانة تلقائي لأنه تعرض للقنص في الجولة الماضية.' });
-
+        
         // التمييز البرمجي بين البطولتين للعتاد المشتراة
         const isUCL = Number(gw) >= 101;
         const shieldCol = isUCL ? 'active_shields_ucl' : 'active_shields_epl';
