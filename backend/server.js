@@ -403,6 +403,26 @@ app.post('/api/store/purchase', authenticateToken, async (req, res) => {
     }
 });
 
+// 🌟 مسار سري لجلب عدد الدروع الخفية الخاصة باللاعب الحالي فقط لكل دوري 🌟
+app.get('/api/my-shields', authenticateToken, async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            'SELECT league_code, COALESCE(active_shields_epl, 0) AS epl, COALESCE(active_shields_ucl, 0) AS ucl FROM mini_league_members WHERE username = ?',
+            [req.user.username]
+        );
+        const shieldsMap = {};
+        rows.forEach(r => {
+            shieldsMap[r.league_code] = {
+                EPL: Number(r.epl) || 0,
+                UCL: Number(r.ucl) || 0
+            };
+        });
+        res.json({ success: true, shields: shieldsMap });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'فشل جلب بيانات الدروع.' });
+    }
+});
+
 app.post('/api/leagues', authenticateToken, async (req, res) => {
     const { name, code, creator } = req.body;
     try {
