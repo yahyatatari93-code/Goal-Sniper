@@ -323,6 +323,11 @@ app.get('/api/sync', async (req, res) => {
         const [leagues] = await pool.query('SELECT name, league_code as code, creator FROM mini_leagues');
         const [members] = await pool.query('SELECT league_code, username FROM mini_league_members');
         const [shots] = await pool.query('SELECT league_code as leagueCode, gw, sniper, victim, points_deducted as pointsDeducted FROM sniper_shots');
+        let cupMatches = [];
+        try {
+            const [cupRows] = await pool.query('SELECT * FROM cup_matches ORDER BY round_size DESC, slot ASC');
+            cupMatches = cupRows;
+        } catch (e) { cupMatches = []; }
 
         const formattedPreds = {};
         preds.forEach(p => {
@@ -340,7 +345,7 @@ app.get('/api/sync', async (req, res) => {
             return { name: l.name, code: l.code, creator: l.creator, members: leagueMembers };
         });
 
-        res.json({ success: true, data: { users, matches, predictions: formattedPreds, miniLeagues: formattedLeagues, sniperShots: shots } });
+        res.json({ success: true, data: { users, matches, predictions: formattedPreds, miniLeagues: formattedLeagues, sniperShots: shots, cupMatches } });
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
@@ -921,6 +926,338 @@ async function checkUpcomingMatches() {
 
 // ⏱️ تشغيل المراقب كل 60 ثانية (دقيقة واحدة)
 setInterval(checkUpcomingMatches, 60 * 1000);
+
+// ==========================================
+// 🏆 محرك كأس الدوري الإنجليزي (64 لاعباً - أتمتة كاملة) 🏆
+// ==========================================
+const CUP_BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
+const toBoolFlag = v => v === 1 || v === '1' || v === true || String(v).toLowerCase() === 'true';
+
+function calcEplPointsServer(homeCode, awayCode, predH, predA, actualH, actualA, isCaptain, isTripleCaptain, isMagnet) {
+    if (homeCode === 'BAR' && awayCode === 'RMA') return 0;
+    if (predH === '' || predA === '' || predH === null || predA === null || predH === undefined || predA === undefined) return 0;
+    if (actualH === '' || actualA === '' || actualH === null || actualA === null || actualH === undefined || actualA === undefined) return 0;
+
+    const ph = Number(predH), pa = Number(predA), ah = Number(actualH), aa = Number(actualA);
+    if (isNaN(ph) || isNaN(pa) || isNaN(ah) || isNaN(aa)) return 0;
+
+    let isExact = (ph === ah && pa === aa);
+    if (isMagnet && !isExact && (Math.abs(ph - ah) + Math.abs(pa - aa) === 1)) isExact = true;
+
+    let isOutcomeCorrect = (ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa);
+    if (isMagnet && isExact) isOutcomeCorrect = true;
+    if (!isOutcomeCorrect && !isExact) return 0;
+
+    const isDraw = (ah === aa);
+    const homeIsBig = CUP_BIG_TEAMS.includes(homeCode), awayIsBig = CUP_BIG_TEAMS.includes(awayCode);
+    const totalGoals = ah + aa;
+    let pts = 0;
+
+    if (!homeIsBig && !awayIsBig) {
+        if (isExact) pts = (totalGoals >= 5 || (ah === 0 && aa === 0)) ? 5 : 3;
+        else if (isOutcomeCorrect) pts = 1;
+    } else if (homeIsBig && awayIsBig) {
+        if (isDraw) pts = isExact ? 3 : 2;
+        else pts = isExact ? 5 : 3;
+    } else {
+        const bigWon = (homeIsBig && ah > aa) || (awayIsBig && aa > ah);
+        const bigLost = (homeIsBig && ah < aa) || (awayIsBig && aa < ah);
+        if (isDraw) pts = isExact ? 4 : 3;
+        else if (bigWon) pts = isExact ? 3 : 1;
+        else if (bigLost) pts = isExact ? 6 : 4;
+    }
+
+    if (isTripleCaptain) return pts * 3;
+    if (isCaptain) return pts * 2;
+    return pts;
+}
+
+async function computeEplStatsForCup() {
+    const [users] = await pool.query('SELECT id, username FROM users');
+    const [matches] = await pool.query('SELECT id, gw, home, away, date, time, actual_h, actual_a FROM matches WHERE gw BETWEEN 1 AND 38');
+    const [preds] = await pool.query('SELECT username, match_id, pred_h, pred_a, is_captain, is_triple_captain, is_magnet FROM predictions');
+
+    const predsMap = {};
+    preds.forEach(p => {
+        if (!predsMap[p.username]) predsMap[p.username] = {};
+        predsMap[p.username][p.match_id] = p;
+    });
+
+    const matchesByGw = {};
+    matches.forEach(m => {
+        const g = Number(m.gw);
+        if (!matchesByGw[g]) matchesByGw[g] = [];
+        matchesByGw[g].push(m);
+    });
+    Object.keys(matchesByGw).forEach(g => {
+        matchesByGw[g].sort((a, b) => parseMatchDateTime(a.date, a.time) - parseMatchDateTime(b.date, b.time));
+    });
+
+    const userStats = {};
+    users.forEach(u => {
+        userStats[u.username] = { id: u.id, username: u.username, overallPts: 0, byGw: {} };
+    });
+
+    const isPlayed = m => m.actual_h !== null && m.actual_a !== null && String(m.actual_h).trim() !== '' && String(m.actual_a).trim() !== '';
+
+    const gwCompletion = {};
+    Object.entries(matchesByGw).forEach(([gwStr, gwMatches]) => {
+        const gw = Number(gwStr);
+        const playedCount = gwMatches.filter(isPlayed).length;
+        gwCompletion[gw] = { total: gwMatches.length, played: playedCount, isComplete: gwMatches.length > 0 && playedCount === gwMatches.length };
+
+        const lastMatchId = gwMatches.length > 0 ? gwMatches[gwMatches.length - 1].id : null;
+        const autoMagId = gw >= 6 && gwMatches.length > 0 ? (gwMatches.length > 1 ? gwMatches[gwMatches.length - 2].id : gwMatches[0].id) : null;
+
+        users.forEach(u => {
+            const uPreds = predsMap[u.username] || {};
+            const hasExplicitCap = gwMatches.some(m => uPreds[m.id] && toBoolFlag(uPreds[m.id].is_captain));
+            const hasExplicitMag = gw >= 6 && gwMatches.some(m => uPreds[m.id] && toBoolFlag(uPreds[m.id].is_magnet));
+
+            let pts = 0, exacts = 0, correctOutcomes = 0, participated = false;
+            gwMatches.forEach(m => {
+                const p = uPreds[m.id];
+                if (!p || p.pred_h === null || p.pred_a === null || String(p.pred_h).trim() === '' || String(p.pred_a).trim() === '') return;
+                participated = true;
+                if (!isPlayed(m)) return;
+
+                const isCap = toBoolFlag(p.is_captain) || (!hasExplicitCap && m.id === lastMatchId);
+                const isTC = toBoolFlag(p.is_triple_captain);
+                const isMag = toBoolFlag(p.is_magnet) || (gw >= 6 && !hasExplicitMag && m.id === autoMagId);
+
+                const mPts = calcEplPointsServer(m.home, m.away, p.pred_h, p.pred_a, m.actual_h, m.actual_a, isCap, isTC, isMag);
+                pts += mPts;
+
+                const ph = Number(p.pred_h), pa = Number(p.pred_a), ah = Number(m.actual_h), aa = Number(m.actual_a);
+                if (ph === ah && pa === aa) exacts++;
+                if ((ph > pa && ah > aa) || (ph < pa && ah < aa) || (ph === pa && ah === aa)) correctOutcomes++;
+            });
+
+            userStats[u.username].overallPts += pts;
+            userStats[u.username].byGw[gw] = { pts, exacts, correctOutcomes, participated };
+        });
+    });
+
+    return { userStats, gwCompletion };
+}
+
+function decideCupWinner(p1Name, p2Name, gw, userStats) {
+    const s1 = userStats[p1Name] || { id: 999999, overallPts: 0, byGw: {} };
+    const s2 = userStats[p2Name] || { id: 999999, overallPts: 0, byGw: {} };
+    const g1 = s1.byGw[gw] || { pts: 0, exacts: 0, correctOutcomes: 0 };
+    const g2 = s2.byGw[gw] || { pts: 0, exacts: 0, correctOutcomes: 0 };
+
+    if (g1.pts !== g2.pts) return { winner: g1.pts > g2.pts ? p1Name : p2Name, loser: g1.pts > g2.pts ? p2Name : p1Name, note: null };
+    if (g1.exacts !== g2.exacts) return { winner: g1.exacts > g2.exacts ? p1Name : p2Name, loser: g1.exacts > g2.exacts ? p2Name : p1Name, note: 'بأفضلية التطابق التام' };
+    if (g1.correctOutcomes !== g2.correctOutcomes) return { winner: g1.correctOutcomes > g2.correctOutcomes ? p1Name : p2Name, loser: g1.correctOutcomes > g2.correctOutcomes ? p2Name : p1Name, note: 'بأفضلية التوقعات الصحيحة' };
+    if (s1.overallPts !== s2.overallPts) return { winner: s1.overallPts > s2.overallPts ? p1Name : p2Name, loser: s1.overallPts > s2.overallPts ? p2Name : p1Name, note: 'بأفضلية الترتيب العام' };
+    return { winner: s1.id <= s2.id ? p1Name : p2Name, loser: s1.id <= s2.id ? p2Name : p1Name, note: 'بأفضلية الأقدمية' };
+}
+
+async function advanceCupWinner(cupId, roundSize, slot, winnerName) {
+    if (roundSize <= 2) return;
+    const nextRound = roundSize / 2;
+    const nextSlot = Math.ceil(slot / 2);
+    const col = (slot % 2 === 1) ? 'player1' : 'player2';
+    await pool.query(
+        `UPDATE cup_matches SET ${col} = ? WHERE cup_id = ? AND round_size = ? AND slot = ?`,
+        [winnerName, cupId, nextRound, nextSlot]
+    );
+}
+
+let isSyncingCup = false;
+async function syncCupProgress(sendNotifs = true) {
+    if (isSyncingCup) return { updated: 0, finalized: 0 };
+    isSyncingCup = true;
+    let updated = 0, finalized = 0;
+
+    try {
+        const [activeMatches] = await pool.query(
+            "SELECT * FROM cup_matches WHERE status != 'finished' ORDER BY round_size DESC, slot ASC"
+        );
+        if (activeMatches.length === 0) return { updated: 0, finalized: 0 };
+
+        const { userStats, gwCompletion } = await computeEplStatsForCup();
+        const roundNames = { 64: 'دور الـ 32', 32: 'دور الـ 16', 16: 'ربع النهائي', 8: 'نصف النهائي', 4: 'النهائي 🏆' };
+
+        for (const m of activeMatches) {
+            if (!m.player1 || !m.player2) continue;
+
+            // معالجة التأهل المباشر (BYE)
+            if (m.player1 === 'BYE' || m.player2 === 'BYE') {
+                const realPlayer = m.player1 === 'BYE' ? m.player2 : m.player1;
+                await pool.query("UPDATE cup_matches SET winner = ?, tiebreak_note = 'تأهل مباشر', status = 'finished' WHERE id = ?", [realPlayer, m.id]);
+                await advanceCupWinner(m.cup_id, m.round_size, m.slot, realPlayer);
+                finalized++;
+                continue;
+            }
+
+            const gwInfo = gwCompletion[m.gw];
+            if (!gwInfo || gwInfo.played === 0) continue;
+
+            const s1 = (userStats[m.player1]?.byGw[m.gw]?.pts) || 0;
+            const s2 = (userStats[m.player2]?.byGw[m.gw]?.pts) || 0;
+
+            if (!gwInfo.isComplete) {
+                if (m.score1 !== s1 || m.score2 !== s2 || m.status !== 'live') {
+                    await pool.query("UPDATE cup_matches SET score1 = ?, score2 = ?, status = 'live' WHERE id = ?", [s1, s2, m.id]);
+                    updated++;
+                }
+            } else {
+                const result = decideCupWinner(m.player1, m.player2, m.gw, userStats);
+                const [lock] = await pool.query(
+                    "UPDATE cup_matches SET score1 = ?, score2 = ?, winner = ?, tiebreak_note = ?, status = 'finished' WHERE id = ? AND status != 'finished'",
+                    [s1, s2, result.winner, result.note, m.id]
+                );
+                if (lock.affectedRows > 0) {
+                    await advanceCupWinner(m.cup_id, m.round_size, m.slot, result.winner);
+                    finalized++;
+
+                    if (sendNotifs) {
+                        if (m.round_size === 2) {
+                            sendFCMToAll('🏆 بطل كأس الدوري الإنجليزي!', `تُوج القناص [${result.winner}] بطلاً لكأس Goal Sniper بعد تفوقه على [${result.loser}]!`).catch(() => {});
+                        } else {
+                            const nextLabel = roundNames[m.round_size] || 'الدور القادم';
+                            const noteTxt = result.note ? ` (${result.note})` : '';
+                            sendFCMToUser(result.winner, '🎉 تأهلت في الكأس!', `تفوقت على ${result.loser}${noteTxt} وتأهلت إلى ${nextLabel}!`).catch(() => {});
+                            sendFCMToUser(result.loser, '💔 وداع مشرّف للكأس', `انتهى مشوارك في الكأس أمام ${result.winner}${noteTxt}. حظاً أوفر في البطولات القادمة!`).catch(() => {});
+                        }
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('[Cup-Sync] Error:', error.message);
+    } finally {
+        isSyncingCup = false;
+    }
+    return { updated, finalized };
+}
+
+// فحص وتحديث نقاط الكأس تلقائياً كل 60 ثانية
+setInterval(() => syncCupProgress(true), 60 * 1000);
+
+// 1. مسار سحب قرعة الكأس (أول 64 لاعباً من جولة التصفيات)
+app.post('/api/admin/cup/draw', authenticateToken, isAdmin, async (req, res) => {
+    const qualifierGw = Number(req.body.qualifierGw || 13);
+    const startGw = Number(req.body.startGw || 14);
+    const cupId = req.body.cupId || 'epl_cup_1';
+
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS cup_matches (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                cup_id VARCHAR(50) NOT NULL DEFAULT 'epl_cup_1',
+                round_size INT NOT NULL,
+                gw INT NOT NULL,
+                slot INT NOT NULL,
+                player1 VARCHAR(100) DEFAULT NULL,
+                player2 VARCHAR(100) DEFAULT NULL,
+                score1 INT DEFAULT NULL,
+                score2 INT DEFAULT NULL,
+                winner VARCHAR(100) DEFAULT NULL,
+                tiebreak_note VARCHAR(100) DEFAULT NULL,
+                status VARCHAR(20) NOT NULL DEFAULT 'pending',
+                UNIQUE KEY uniq_cup_slot (cup_id, round_size, slot)
+            )
+        `);
+
+        const [existing] = await pool.query('SELECT id FROM cup_matches WHERE cup_id = ? LIMIT 1', [cupId]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'القرعة موجودة مسبقاً! احذفها أولاً إذا أردت إعادة السحب.' });
+        }
+
+        const { userStats, gwCompletion } = await computeEplStatsForCup();
+        if (!gwCompletion[qualifierGw] || !gwCompletion[qualifierGw].isComplete) {
+            return res.status(400).json({ success: false, message: `لا يمكن إجراء القرعة قبل اكتمال جميع مباريات الجولة ${qualifierGw} رسمياً.` });
+        }
+
+        const ranked = Object.values(userStats)
+            .filter(u => u.byGw[qualifierGw] && u.byGw[qualifierGw].participated)
+            .sort((a, b) => {
+                const ga = a.byGw[qualifierGw], gb = b.byGw[qualifierGw];
+                if (gb.pts !== ga.pts) return gb.pts - ga.pts;
+                if (gb.exacts !== ga.exacts) return gb.exacts - ga.exacts;
+                if (gb.correctOutcomes !== ga.correctOutcomes) return gb.correctOutcomes - ga.correctOutcomes;
+                if (b.overallPts !== a.overallPts) return b.overallPts - a.overallPts;
+                return a.id - b.id;
+            })
+            .slice(0, 64)
+            .map(u => u.username);
+
+        if (ranked.length < 2) {
+            return res.status(400).json({ success: false, message: 'لا يوجد عدد كافٍ من اللاعبين المشاركين في هذه الجولة.' });
+        }
+
+        // خلط عشوائي (Fisher-Yates)
+        for (let i = ranked.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [ranked[i], ranked[j]] = [ranked[j], ranked[i]];
+        }
+
+        // تجهيز 32 مواجهة مع حماية ضد BYE vs BYE إن قل العدد عن 64
+        const pairings = [];
+        const byesCount = Math.max(0, 64 - ranked.length);
+        let idx = 0;
+        for (let b = 0; b < byesCount && idx < ranked.length; b++) {
+            pairings.push([ranked[idx++], 'BYE']);
+        }
+        while (idx < ranked.length) {
+            const p1 = ranked[idx++];
+            const p2 = idx < ranked.length ? ranked[idx++] : 'BYE';
+            pairings.push([p1, p2]);
+        }
+        while (pairings.length < 32) {
+            pairings.push(['BYE', 'BYE']);
+        }
+        for (let i = pairings.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pairings[i], pairings[j]] = [pairings[j], pairings[i]];
+        }
+
+        // بناء الشجرة الكاملة (64 -> 32 -> 16 -> 8 -> 4 -> 2)
+        const rounds = [64, 32, 16, 8, 4, 2];
+        for (let rIdx = 0; rIdx < rounds.length; rIdx++) {
+            const rSize = rounds[rIdx];
+            const rGw = startGw + rIdx;
+            const slotsCount = rSize / 2;
+
+            for (let slot = 1; slot <= slotsCount; slot++) {
+                const p1 = rSize === 64 ? pairings[slot - 1][0] : null;
+                const p2 = rSize === 64 ? pairings[slot - 1][1] : null;
+                await pool.query(
+                    'INSERT INTO cup_matches (cup_id, round_size, gw, slot, player1, player2, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [cupId, rSize, rGw, slot, p1, p2, 'pending']
+                );
+            }
+        }
+
+        await syncCupProgress(false);
+        sendFCMToAll('🏆 انطلاق كأس الدوري الإنجليزي!', `تم سحب قرعة أفضل ${ranked.length} قناصاً! ادخل الآن لمعرفة خصمك في دور الـ 64 (الجولة ${startGw}).`).catch(() => {});
+
+        res.json({ success: true, message: `تم سحب قرعة الكأس بنجاح لـ ${ranked.length} لاعباً وبناء الشجرة حتى النهائي!` });
+    } catch (error) {
+        console.error('Cup Draw Error:', error);
+        res.status(500).json({ success: false, message: 'فشل إجراء القرعة: ' + error.message });
+    }
+});
+
+// 2. مسار تحديث نتائج الكأس يدوياً
+app.post('/api/admin/cup/sync', authenticateToken, isAdmin, async (req, res) => {
+    const result = await syncCupProgress(true);
+    res.json({ success: true, message: `تم التحديث! (تحديث مباشر: ${result.updated} | حسم وتأهيل: ${result.finalized})` });
+});
+
+// 3. مسار إعادة ضبط الكأس
+app.post('/api/admin/cup/reset', authenticateToken, isAdmin, async (req, res) => {
+    const cupId = req.body.cupId || 'epl_cup_1';
+    try {
+        await pool.query('DELETE FROM cup_matches WHERE cup_id = ?', [cupId]);
+        res.json({ success: true, message: 'تم مسح بيانات الكأس بنجاح، يمكنك إعادة القرعة الآن.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'فشل حذف الكأس.' });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server running securely on port ${PORT}`);
