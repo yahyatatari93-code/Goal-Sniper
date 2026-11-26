@@ -643,6 +643,8 @@ let activeGwCache = null;
         let currentTab = 'home', authMode = 'login', activeMatchModal = null;
         let sniperShots = [];
         let mySecretShields = {};
+        let cupMatches = [];
+        let cupViewMode = 'tree'; // 'tree' للشجرة الكاملة أو رقم الدور (64, 32, 16, 8, 4, 2)
         let activeMatchesLeague = 'EPL';
         let activeMiniLeaguesLeague = 'EPL';
         function setMiniLeaguesLeague(league) { 
@@ -772,6 +774,10 @@ function updateTheme() {
                 }
             } catch(e) {}
         }
+        const ENABLE_CUP_GLOBALLY = false; // غيّرها إلى true لاحقاً لنشر الكأس للجميع
+        function isCupVisible() {
+            return ENABLE_CUP_GLOBALLY || (currentUser && currentUser.username.toLowerCase() === 'red army');
+        }
         
         async function syncData() {
             // 🌟 تفريغ الذاكرة عند جلب بيانات جديدة لضمان دقة الحسابات 🌟
@@ -816,6 +822,7 @@ function updateTheme() {
                     predictions = json.data.predictions || {};
                     miniLeagues = json.data.miniLeagues || [];
                     sniperShots = json.data.sniperShots || [];
+                    cupMatches = json.data.cupMatches || [];
                     // 🌟 جلب الدروع الخفية الخاصة باللاعب الحالي فقط (بسرية تامة) 🌟
                     const authToken = localStorage.getItem('oracle_token_v8');
                     if (currentUser && authToken) {
@@ -1860,6 +1867,31 @@ function isMatchLocked(match) {
                         </div>
                     </div>
 
+${(() => {
+                if (!isCupVisible()) return '';
+                const hasCup = cupMatches && cupMatches.length > 0;
+                const myActiveCupMatch = hasCup ? cupMatches.find(m => (m.player1 === currentUser.username || m.player2 === currentUser.username) && m.status !== 'finished') : null;
+                const myOpponent = myActiveCupMatch ? (myActiveCupMatch.player1 === currentUser.username ? myActiveCupMatch.player2 : myActiveCupMatch.player1) : null;
+                return `
+                <button onclick="switchTab('cup')" class="w-full text-right glass p-4 rounded-2xl border border-amber-500/40 bg-gradient-to-l from-amber-600/20 via-slate-900/80 to-yellow-600/10 flex items-center justify-between gap-3 hover:border-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)] group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shrink-0 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm font-black text-amber-400 flex items-center gap-2">
+                                كأس الدوري الإنجليزي (64 قناصاً)
+                                ${hasCup ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full animate-pulse">مشتعل الآن</span>' : '<span class="text-[9px] bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded-full">الجولة 13</span>'}
+                            </div>
+                            <div class="text-[11px] text-slate-300 font-bold mt-0.5">
+                                ${myOpponent && myOpponent !== 'BYE' ? `مواجهتك القادمة ضد <span class="text-white font-black">${myOpponent}</span> (GW ${myActiveCupMatch.gw})` : (hasCup ? 'اضغط لاستعراض شجرة المسارات والنتائج المباشرة' : 'تصفيات أول 64 قناصاً في الجولة 13 — اضغط للتفاصيل')}
+                            </div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-${isAr ? 'left' : 'right'} text-amber-400 text-sm shrink-0"></i>
+                </button>`;
+            })()}
+            
             <div class="mt-2">
                 <div class="flex items-center justify-between mb-4 px-1 gap-2">
                     <h3 class="font-bold text-[13px] md:text-base flex items-center gap-1.5 flex-wrap">
@@ -2358,6 +2390,12 @@ function changeGw(gw) {
                             <button onclick="toggleStandingsMode('gw')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${isGw ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.3)]' : 'text-slate-400 hover:text-white'}">
                                 ${isAr ? 'ترتيب الجولة' : 'Gameweek'}
                             </button>
+
+                            ${activeStandingsLeague === 'EPL' && isCupVisible() ? `
+                            <button onclick="switchTab('cup')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-black">
+                                🏆 ${isAr ? 'الكأس' : 'Cup'}
+                            </button>
+                            ` : ''}
                         </div>
 
                         <!-- قائمة اختيار الشهر (تظهر فقط في ترتيب الشهر) -->
@@ -2614,6 +2652,242 @@ function renderMiniLeaguesTab() {
         </div>
     `;
 }
+
+        function setCupViewMode(mode) {
+            cupViewMode = mode;
+            render();
+        }
+
+        function scrollToMyCupMatch() {
+            const myMatches = (cupMatches || []).filter(m => m.player1 === currentUser.username || m.player2 === currentUser.username);
+            if (myMatches.length === 0) {
+                showCustomDialog('أنت لست ضمن قائمة الـ 64 المتأهلين في هذا الكأس.', 'alert');
+                return;
+            }
+            // التركيز على أحدث دور وصل إليه اللاعب
+            myMatches.sort((a, b) => a.round_size - b.round_size);
+            const target = myMatches[0];
+            if (cupViewMode !== 'tree' && cupViewMode !== target.round_size) {
+                cupViewMode = 'tree';
+                render();
+            }
+            setTimeout(() => {
+                const el = document.getElementById(`cup-card-${target.round_size}-${target.slot}`);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }, 80);
+        }
+
+        function renderCupMatchCard(m, showPathHint = false) {
+            const p1 = m.player1 || '؟';
+            const p2 = m.player2 || '؟';
+            const isP1Me = p1 === currentUser.username;
+            const isP2Me = p2 === currentUser.username;
+            const isMyMatch = isP1Me || isP2Me;
+
+            const isFinished = m.status === 'finished';
+            const isLive = m.status === 'live';
+            const p1Won = isFinished && m.winner === p1;
+            const p2Won = isFinished && m.winner === p2;
+
+            const canCompare = m.player1 && m.player2 && p1 !== 'BYE' && p2 !== 'BYE' && (isLive || isFinished);
+            const clickAttr = canCompare ? `onclick="openComparison('${p2}', ${m.gw}, 'EPL', '${p1}')"` : '';
+
+            const s1Display = p1 === 'BYE' ? '—' : (m.score1 !== null && m.score1 !== undefined ? m.score1 : '—');
+            const s2Display = p2 === 'BYE' ? '—' : (m.score2 !== null && m.score2 !== undefined ? m.score2 : '—');
+
+            const cardBorder = isMyMatch
+                ? 'border-blue-400 shadow-[0_0_16px_rgba(59,130,246,0.35)] bg-blue-950/35'
+                : (m.round_size === 2 ? 'border-amber-400/70 shadow-[0_0_20px_rgba(245,158,11,0.25)] bg-amber-950/20' : 'border-white/10 bg-slate-900/80');
+
+            const statusBadge = isFinished
+                ? '<span class="text-[8px] font-black text-emerald-400 bg-emerald-500/15 px-1.5 py-0.5 rounded">انتهت</span>'
+                : (isLive ? '<span class="text-[8px] font-black text-rose-400 bg-rose-500/15 px-1.5 py-0.5 rounded animate-pulse">مباشر ●</span>' : `<span class="text-[8px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded">GW ${m.gw}</span>`);
+
+            const nextSlot = Math.ceil(m.slot / 2);
+            const pairSlot = m.slot % 2 === 1 ? m.slot + 1 : m.slot - 1;
+
+            return `
+                <div id="cup-card-${m.round_size}-${m.slot}" ${clickAttr} class="rounded-2xl border ${cardBorder} p-2.5 w-full transition-all ${canCompare ? 'cursor-pointer hover:border-amber-400/60' : ''}">
+                    <div class="flex justify-between items-center text-[9px] text-slate-400 mb-2 pb-1 border-b border-white/5">
+                        <span class="font-bold">#${m.slot} ${showPathHint && m.round_size > 2 ? `<span class="text-slate-500 font-normal">(الفائز يواجه #${pairSlot})</span>` : ''}</span>
+                        <div class="flex items-center gap-1">
+                            ${canCompare ? '<i class="fa-solid fa-code-compare text-blue-400 text-[9px]" title="اضغط لمقارنة التوقعات"></i>' : ''}
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 text-center">
+                        <!-- اللاعب الأول + خانة نقاطه أسفل اسمه -->
+                        <div class="rounded-xl p-1.5 border ${p1Won ? 'border-emerald-500/50 bg-emerald-500/10' : (isFinished && !p1Won ? 'border-white/5 opacity-45' : 'border-white/5 bg-slate-950/50')}">
+                            <div class="text-[10px] font-black truncate ${isP1Me ? 'text-blue-300' : (p1Won ? 'text-emerald-300' : 'text-white')}" title="${p1}">
+                                ${p1Won ? '👑 ' : ''}${p1 === 'BYE' ? 'تأهل مباشر' : p1}
+                            </div>
+                            <div class="mt-1 inline-block min-w-[34px] px-2 py-0.5 rounded-lg text-xs font-black ${p1Won ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-amber-400'}">
+                                ${s1Display}
+                            </div>
+                        </div>
+
+                        <div class="text-[9px] font-black text-slate-500">VS</div>
+
+                        <!-- اللاعب الثاني + خانة نقاطه أسفل اسمه -->
+                        <div class="rounded-xl p-1.5 border ${p2Won ? 'border-emerald-500/50 bg-emerald-500/10' : (isFinished && !p2Won ? 'border-white/5 opacity-45' : 'border-white/5 bg-slate-950/50')}">
+                            <div class="text-[10px] font-black truncate ${isP2Me ? 'text-blue-300' : (p2Won ? 'text-emerald-300' : 'text-white')}" title="${p2}">
+                                ${p2Won ? '👑 ' : ''}${p2 === 'BYE' ? 'تأهل مباشر' : p2}
+                            </div>
+                            <div class="mt-1 inline-block min-w-[34px] px-2 py-0.5 rounded-lg text-xs font-black ${p2Won ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-amber-400'}">
+                                ${s2Display}
+                            </div>
+                        </div>
+                    </div>
+
+                    ${m.tiebreak_note ? `<div class="mt-1.5 text-center text-[9px] font-bold text-cyan-300 bg-cyan-500/10 rounded-md py-0.5 border border-cyan-500/20">⚖️ ${m.tiebreak_note}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function renderCupTab() {
+            const hasCup = cupMatches && cupMatches.length > 0;
+            const roundsMeta = [
+                { size: 64, label: 'دور الـ 64' },
+                { size: 32, label: 'دور الـ 32' },
+                { size: 16, label: 'دور الـ 16' },
+                { size: 8,  label: 'ربع النهائي' },
+                { size: 4,  label: 'نصف النهائي' },
+                { size: 2,  label: 'النهائي 🏆' }
+            ];
+
+            if (!hasCup) {
+                const gw13Standings = getGwStandings(13, 'EPL');
+                return `
+                    <div class="space-y-5" dir="rtl">
+                        <div class="glass p-6 rounded-3xl text-center border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950 space-y-3">
+                            <i class="fa-solid fa-trophy text-5xl text-amber-400 drop-shadow-[0_0_15px_rgba(245,158,11,0.6)]"></i>
+                            <h2 class="text-xl font-black text-white">كأس الدوري الإنجليزي (64 قناصاً)</h2>
+                            <p class="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+                                يتأهل <span class="text-amber-400 font-black">أعلى 64 لاعباً</span> في ترتيب <span class="text-emerald-400 font-black">الجولة 13</span> بغض النظر عن الترتيب العام. تُجرى القرعة عشوائياً بمسارات ثابتة ومحددة وصولاً للنهائي!
+                            </p>
+                            <div class="bg-slate-950/70 border border-white/10 rounded-2xl p-3 text-[11px] text-slate-300 space-y-1 text-right max-w-md mx-auto">
+                                <div class="font-black text-amber-400 mb-1">⚖️ نظام كسر التعادل التلقائي:</div>
+                                <div>1. الأكثر توقعاً للنتائج المطابقة تماماً في نفس الجولة.</div>
+                                <div>2. الأكثر توقعاً للنتيجة الصحيحة (فوز/تعادل) في نفس الجولة.</div>
+                                <div>3. الأعلى في الترتيب العام للدوري الإنجليزي.</div>
+                            </div>
+                        </div>
+
+                        ${gw13Standings.length > 0 ? `
+                        <div class="glass p-4 rounded-2xl space-y-2">
+                            <div class="flex justify-between items-center border-b border-white/10 pb-2">
+                                <h3 class="text-sm font-black text-emerald-400">سباق التأهل المباشر (الجولة 13)</h3>
+                                <span class="text-[10px] text-slate-400 font-bold">يتأهل أول 64 لاعباً</span>
+                            </div>
+                            <div class="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                                ${gw13Standings.slice(0, 70).map((u, idx) => `
+                                    <div class="flex justify-between items-center px-3 py-2 rounded-xl text-xs border ${idx < 64 ? 'bg-emerald-950/20 border-emerald-500/20' : 'bg-rose-950/15 border-rose-500/20 opacity-60'} ${u.username === currentUser.username ? 'ring-1 ring-blue-400' : ''}">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-black w-6 text-center ${idx < 64 ? 'text-emerald-400' : 'text-rose-400'}">#${idx + 1}</span>
+                                            <span class="font-bold text-white">${u.username}</span>
+                                        </div>
+                                        <span class="font-black text-amber-400">${u.gwSpecificPts} نقطة</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                `;
+            }
+
+            const finalMatch = cupMatches.find(m => m.round_size === 2);
+            const champion = finalMatch && finalMatch.status === 'finished' ? finalMatch.winner : null;
+            const isUserInCup = cupMatches.some(m => m.player1 === currentUser.username || m.player2 === currentUser.username);
+
+            return `
+                <div class="space-y-4" dir="rtl">
+                    <!-- الترويسة -->
+                    <div class="glass p-4 rounded-3xl border border-amber-500/30 bg-gradient-to-l from-amber-950/30 to-slate-900/90 flex flex-wrap justify-between items-center gap-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-base md:text-lg font-black text-white">كأس الدوري الإنجليزي</h2>
+                                <p class="text-[10px] text-slate-400 font-bold">اضغط على أي مواجهة جارية أو منتهية لمقارنة التوقعات</p>
+                            </div>
+                        </div>
+                        ${isUserInCup ? `
+                        <button onclick="scrollToMyCupMatch()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-crosshairs"></i> موقعي في الكأس
+                        </button>` : ''}
+                    </div>
+
+                    ${champion ? `
+                    <div class="glass p-4 rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 text-center">
+                        <div class="text-xs font-bold text-amber-300 mb-1">🏆 بطل كأس Goal Sniper 🏆</div>
+                        <div class="text-2xl font-black text-white drop-shadow">${champion}</div>
+                    </div>` : ''}
+
+                    <!-- شريط التبديل بين الشجرة الكاملة والأدوار -->
+                    <div class="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                        <button onclick="setCupViewMode('tree')" class="shrink-0 px-3 py-2 rounded-xl text-xs font-black transition-all border ${cupViewMode === 'tree' ? 'bg-amber-500 text-black border-amber-400 shadow-lg' : 'bg-slate-900/80 text-slate-300 border-white/10 hover:text-white'}">
+                            🌳 الشجرة الكاملة
+                        </button>
+                        ${roundsMeta.map(r => `
+                            <button onclick="setCupViewMode(${r.size})" class="shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-all border ${cupViewMode === r.size ? 'bg-blue-600 text-white border-blue-400 shadow-lg' : 'bg-slate-900/80 text-slate-300 border-white/10 hover:text-white'}">
+                                ${r.label}
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    ${cupViewMode === 'tree' ? `
+                        <!-- 🌳 الشجرة الأفقية المتصلة بمساراتها الكاملة -->
+                        <div class="glass p-3 rounded-3xl border border-white/10 overflow-x-auto" dir="rtl">
+                            <div class="text-[10px] text-slate-400 font-bold mb-3 flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrows-left-right text-amber-400"></i> اسحب الشجرة أفقياً لتتبع المسارات من دور الـ 64 حتى النهائي
+                            </div>
+                            <div class="flex items-stretch gap-6 min-w-max pb-4" style="min-height: 3650px;">
+                                ${roundsMeta.map(r => {
+                                    const rMatches = cupMatches.filter(m => m.round_size === r.size).sort((a, b) => a.slot - b.slot);
+                                    const gwNum = rMatches.length > 0 ? rMatches[0].gw : '';
+                                    return `
+                                        <div class="w-[240px] shrink-0 flex flex-col">
+                                            <div class="sticky top-0 z-10 bg-slate-900/95 border border-amber-500/30 rounded-xl py-2 px-3 text-center mb-3 shadow-md">
+                                                <div class="text-xs font-black text-amber-400">${r.label}</div>
+                                                <div class="text-[10px] text-slate-400 font-bold">الجولة ${gwNum}</div>
+                                            </div>
+                                            <div class="flex-1 flex flex-col justify-around gap-2">
+                                                ${rMatches.map(m => `
+                                                    <div class="relative flex items-center">
+                                                        ${renderCupMatchCard(m, false)}
+                                                        ${r.size > 2 ? `<div class="absolute -left-6 top-1/2 w-6 h-[2px] bg-amber-500/40 pointer-events-none"></div>` : ''}
+                                                        ${r.size < 64 ? `<div class="absolute -right-6 top-1/2 w-6 h-[2px] bg-amber-500/40 pointer-events-none"></div>` : ''}
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : `
+                        <!-- عرض مدمج ومريح لدور واحد محدد -->
+                        ${(() => {
+                            const rMatches = cupMatches.filter(m => m.round_size === cupViewMode).sort((a, b) => a.slot - b.slot);
+                            const rMeta = roundsMeta.find(r => r.size === cupViewMode);
+                            return `
+                                <div class="space-y-3 animate-fade-up">
+                                    <div class="flex justify-between items-center px-1">
+                                        <h3 class="text-sm font-black text-amber-400">${rMeta ? rMeta.label : ''} ${rMatches[0] ? `(الجولة ${rMatches[0].gw})` : ''}</h3>
+                                        <span class="text-xs text-slate-400 font-bold">${rMatches.length} مواجهة</span>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        ${rMatches.map(m => renderCupMatchCard(m, true)).join('')}
+                                    </div>
+                                </div>
+                            `;
+                        })()}
+                    `}
+                </div>
+            `;
+        }
         
         function renderRulesTab() {
             // قاموس القوانين الشامل (يحتوي على كافة اللغات ونصوص الأبطال الجديدة)
@@ -3249,6 +3523,33 @@ function renderPrizesTab() {
                             </div>
                             <div class="bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 rounded-lg text-xs font-bold text-blue-300 shadow-inner">الجولة ${activeAdminGw}</div>
                         </div>
+
+                        <!-- 🏆 إدارة كأس الدوري الإنجليزي (64 لاعباً) -->
+                    <div class="glass p-5 rounded-3xl space-y-4 border border-amber-500/40 bg-gradient-to-br from-amber-950/20 to-slate-900/80">
+                        <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+                            <h3 class="text-base font-black text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-trophy"></i> إدارة كأس الدوري الإنجليزي (64 لاعباً)
+                            </h3>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg ${cupMatches.length > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">
+                                ${cupMatches.length > 0 ? 'الكأس مفعّل' : 'لم تُسحب القرعة'}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة التصفيات (أول 64)</label>
+                                <input type="number" id="cup-qual-gw" value="13" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة انطلاق دور الـ 64</label>
+                                <input type="number" id="cup-start-gw" value="14" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <button onclick="triggerCupDraw()" class="py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition-all shadow-lg">🎲 سحب قرعة الـ 64</button>
+                            <button onclick="syncCupByAdmin()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all">🔄 تحديث نقاط الكأس</button>
+                            <button onclick="resetCupByAdmin()" class="py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs rounded-xl transition-all">🗑️ مسح وإعادة ضبط</button>
+                        </div>
+                    </div>
                         
                         <div class="space-y-4 relative z-10">
                             <!-- 1. التوقع الدقيق -->
@@ -3559,63 +3860,72 @@ function renderPrizesTab() {
             `;
         }
 
-        // 🌟 متغيرات ودوال المقارنة (Head-to-Head) 🌟
+        // 🌟 متغيرات ودوال المقارنة الحية (تفتح فور تثبيت كل مباراة) 🌟
+        let comparisonPlayer1 = null;
         let comparisonUser = null;
         let comparisonGw = null;
         let comparisonLeague = 'EPL';
 
+        function isMatchConfirmed(m) {
+            return m && m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '' && m.actualH !== undefined && m.actualA !== undefined;
+        }
+
         function getCompletedGws(leagueFilter = 'EPL') {
-            const completed = [];
+            const available = [];
             const uniqueGws = getAvailableGws(leagueFilter);
             
             uniqueGws.forEach(g => {
+                if (g === 99) return;
                 const gwMatches = matches.filter(m => Number(m.gw) === g && (m.league || 'EPL') === leagueFilter);
-                if (gwMatches.length > 0 && gwMatches.every(m => m.actualH !== null && m.actualA !== null && m.actualH !== '' && m.actualA !== '')) {
-                    completed.push(g);
+                // ✅ تُفتح الجولة للمقارنة بمجرد تثبيت نتيجة مباراة واحدة فيها على الأقل
+                if (gwMatches.length > 0 && gwMatches.some(isMatchConfirmed)) {
+                    available.push(g);
                 }
             });
-            return completed;
+            return available;
         }
 
-        function openComparison(otherUser) {
-            if (!currentUser || otherUser === currentUser.username) return; 
-            
-            // تحديد البطولة الافتراضية بذكاء حسب المكان الذي يتواجد فيه المستخدم
-            comparisonLeague = (currentTab === 'standings') ? activeStandingsLeague : ((currentTab === 'minileagues') ? activeMiniLeaguesLeague : 'EPL');
-            
+        function openComparison(otherUser, forcedGw = null, forcedLeague = null, player1Override = null) {
+            if (!currentUser) return;
+            const p1 = player1Override || currentUser.username;
+            if (!otherUser || otherUser === 'BYE' || p1 === 'BYE' || p1 === otherUser) return;
+
+            comparisonPlayer1 = p1;
+            comparisonUser = otherUser;
+            comparisonLeague = forcedLeague || ((currentTab === 'standings') ? activeStandingsLeague : ((currentTab === 'minileagues') ? activeMiniLeaguesLeague : 'EPL'));
+
             const compGws = getCompletedGws(comparisonLeague);
-            
-            // إذا لم تكن هناك جولات مكتملة في هذه البطولة، نتحقق من الأخرى قبل إظهار رسالة الخطأ
-            if (compGws.length === 0) {
+            if (forcedGw !== null && compGws.includes(Number(forcedGw))) {
+                comparisonGw = Number(forcedGw);
+            } else if (forcedGw !== null) {
+                showCustomDialog("لم تُثبّت نتيجة أي مباراة في هذه الجولة بعد. ستُفتح المقارنة تلقائياً فور تثبيت أول مباراة!", "alert");
+                return;
+            } else if (compGws.length === 0) {
                 const otherLeague = comparisonLeague === 'EPL' ? 'UCL' : 'EPL';
                 const otherCompGws = getCompletedGws(otherLeague);
                 if (otherCompGws.length > 0) {
                     comparisonLeague = otherLeague;
                     comparisonGw = otherCompGws[otherCompGws.length - 1];
                 } else {
-                    showCustomDialog("لا توجد جولات مكتملة حتى الآن. المراقبة والمقارنة تُفتح فقط بعد إطلاق صافرة النهاية لآخر مباراة في الجولة لضمان النزاهة!", "alert");
+                    showCustomDialog("لا توجد مباريات مثبتة نتائجها حتى الآن. ستُفتح المقارنة تلقائياً فور انتهاء وتثبيت أول مباراة!", "alert");
                     return;
                 }
             } else {
-                comparisonGw = compGws[compGws.length - 1]; 
+                comparisonGw = compGws[compGws.length - 1];
             }
 
-            comparisonUser = otherUser;
             renderComparisonModal();
         }
 
         function switchComparisonLeague(league) {
             comparisonLeague = league;
             const compGws = getCompletedGws(comparisonLeague);
-            if (compGws.length > 0) {
-                comparisonGw = compGws[compGws.length - 1];
-            } else {
-                comparisonGw = null; // لا يوجد جولات مكتملة في هذه البطولة
-            }
+            comparisonGw = compGws.length > 0 ? compGws[compGws.length - 1] : null;
             renderComparisonModal();
         }
 
         function closeComparison() {
+            comparisonPlayer1 = null;
             comparisonUser = null;
             document.getElementById('dialog-container').innerHTML = '';
         }
@@ -3626,19 +3936,19 @@ function renderPrizesTab() {
         }
 
         function renderComparisonModal() {
-            if (!comparisonUser) return;
+            if (!comparisonUser || !comparisonPlayer1) return;
             const container = document.getElementById('dialog-container');
             
             const direction = typeof currentLang !== 'undefined' && currentLang === 'ar' ? 'rtl' : 'ltr';
             const isAr = direction === 'rtl';
-
             const compGws = getCompletedGws(comparisonLeague);
+            const p1IsMe = comparisonPlayer1 === currentUser.username;
+            const p2IsMe = comparisonUser === currentUser.username;
             
-            // أزرار التبديل الأنيقة
             let leagueSwitcher = '';
             if (typeof isUclVisible === 'function' && isUclVisible()) {
                 leagueSwitcher = `
-                <div class="flex gap-2 mb-4 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner shrink-0 mt-3 md:mt-4">
+                <div class="flex gap-2 mb-3 bg-slate-900/50 p-1.5 rounded-xl border border-white/5 shadow-inner shrink-0 mt-3">
                     <button onclick="switchComparisonLeague('EPL')" class="flex-1 py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${comparisonLeague === 'EPL' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-[0_0_10px_rgba(59,130,246,0.3)]' : 'text-slate-400 hover:text-white'}">
                         <i class="fa-solid fa-trophy"></i> ${isAr ? 'الدوري الإنجليزي' : 'Premier League'}
                     </button>
@@ -3650,7 +3960,6 @@ function renderPrizesTab() {
 
             let html = `
                 <div class="fixed inset-0 z-[80] bg-[#060b19]/95 backdrop-blur-xl flex flex-col p-2 md:p-4 animate-fade-up" dir="${direction}">
-                    <!-- الهيدر -->
                     <div class="glass p-4 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 shadow-lg border-blue-500/30 mt-2 md:mt-0">
                         <div class="flex items-center gap-4 w-full md:w-auto justify-between">
                             <button onclick="closeComparison()" class="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all border border-rose-500/30 shrink-0">
@@ -3673,70 +3982,77 @@ function renderPrizesTab() {
                     ${leagueSwitcher}
             `;
 
-            // في حال عدم وجود جولات مكتملة في هذه البطولة المعينة
             if (compGws.length === 0 || !comparisonGw) {
                 html += `
                     <div class="flex-1 flex flex-col items-center justify-center text-slate-400 text-sm font-bold opacity-80">
                         <i class="fa-solid fa-futbol mb-3 text-4xl opacity-50"></i>
-                        ${isAr ? 'لا توجد جولات مكتملة في هذه البطولة حتى الآن.' : 'No completed gameweeks in this league yet.'}
+                        ${isAr ? 'لا توجد مباريات مثبتة نتائجها في هذه البطولة حتى الآن.' : 'No confirmed matches in this league yet.'}
                     </div>
                 </div>`;
                 container.innerHTML = html;
                 return;
             }
 
-            const gwMatches = matches.filter(m => Number(m.gw) === comparisonGw && (m.league || 'EPL') === comparisonLeague).sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
+            const allGwMatches = matches
+                .filter(m => Number(m.gw) === comparisonGw && (m.league || 'EPL') === comparisonLeague)
+                .sort((a, b) => parseMatchDate(a.date, a.time) - parseMatchDate(b.date, b.time));
 
-            const myPreds = predictions[currentUser.username] || {};
-            const theirPreds = predictions[comparisonUser] || {};
+            // ✅ عرض المباريات المنتهية والمثبتة نتائجها فقط (لحماية سرية توقعات المباريات المتبقية)
+            const confirmedMatches = allGwMatches.filter(isMatchConfirmed);
+            const isPartialGw = confirmedMatches.length < allGwMatches.length;
 
-            let myTotalPts = 0;
-            let theirTotalPts = 0;
+            const p1Preds = predictions[comparisonPlayer1] || {};
+            const p2Preds = predictions[comparisonUser] || {};
 
-            const myCaps = getActiveCaptains(currentUser.username, comparisonGw);
-            const theirCaps = getActiveCaptains(comparisonUser, comparisonGw);
+            let p1TotalPts = 0;
+            let p2TotalPts = 0;
+
+            const p1Caps = getActiveCaptains(comparisonPlayer1, comparisonGw);
+            const p2Caps = getActiveCaptains(comparisonUser, comparisonGw);
 
             html += `
-                    <!-- لوحة الترتيب العلوية -->
+                    ${isPartialGw ? `
+                    <div class="mt-1 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 text-center text-[11px] font-bold text-amber-300 shrink-0">
+                        <i class="fa-solid fa-bolt ml-1"></i>
+                        ${isAr ? `مقارنة حية: تم تثبيت ${confirmedMatches.length} من أصل ${allGwMatches.length} مباريات (تظهر بقية التوقعات فور تثبيت نتائجها)` : `Live H2H: ${confirmedMatches.length}/${allGwMatches.length} matches confirmed`}
+                    </div>` : ''}
+
                     <div class="flex justify-between items-center mt-2 glass p-4 rounded-3xl shrink-0 border-white/5 shadow-inner bg-slate-900/40">
                         <div class="flex-1 text-center border-r border-white/10 ${isAr ? 'border-r-0 border-l' : ''}">
-                            <span class="text-[10px] text-emerald-400 font-bold block mb-1">${isAr ? 'أنت' : 'You'}</span>
-                            <span class="text-sm md:text-base font-black text-white truncate block px-2">${currentUser.username}</span>
+                            <span class="text-[10px] text-emerald-400 font-bold block mb-1">${p1IsMe ? (isAr ? 'أنت' : 'You') : (isAr ? 'الطرف الأول' : 'Player 1')}</span>
+                            <span class="text-sm md:text-base font-black text-white truncate block px-2">${comparisonPlayer1}</span>
                             <span class="text-2xl md:text-3xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]" id="comp-my-total">0</span>
                         </div>
                         <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-800 flex items-center justify-center font-black text-slate-400 text-xs md:text-sm border border-white/5 shadow-inner shrink-0 mx-2">VS</div>
                         <div class="flex-1 text-center border-l border-white/10 ${isAr ? 'border-l-0 border-r' : ''}">
-                            <span class="text-[10px] text-amber-400 font-bold block mb-1">${isAr ? 'الخصم' : 'Opponent'}</span>
+                            <span class="text-[10px] text-amber-400 font-bold block mb-1">${p2IsMe ? (isAr ? 'أنت' : 'You') : (isAr ? 'الخصم' : 'Opponent')}</span>
                             <span class="text-sm md:text-base font-black text-white truncate block px-2">${comparisonUser}</span>
                             <span class="text-2xl md:text-3xl font-black text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" id="comp-their-total">0</span>
                         </div>
                     </div>
 
-                    <!-- قائمة المباريات للمقارنة -->
                     <div class="flex-1 overflow-y-auto hide-scrollbar mt-4 space-y-3 pb-6">
             `;
 
-            gwMatches.forEach(m => {
-                const myP = myPreds[m.id] || {home: '', away: '', isCaptain: false, isTripleCaptain: false};
-                const theirP = theirPreds[m.id] || {home: '', away: '', isCaptain: false, isTripleCaptain: false};
+            confirmedMatches.forEach(m => {
+                const myP = p1Preds[m.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
+                const theirP = p2Preds[m.id] || { home: '', away: '', isCaptain: false, isTripleCaptain: false, isMagnet: false };
 
                 const myHasPred = myP.home !== '' && myP.away !== '' && myP.home !== null && myP.away !== null;
                 const theirHasPred = theirP.home !== '' && theirP.away !== '' && theirP.home !== null && theirP.away !== null;
 
-                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, myCaps.includes(m.id), myP.isTripleCaptain, comparisonLeague, myP.isMagnet);
-                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, theirCaps.includes(m.id), theirP.isTripleCaptain, comparisonLeague, theirP.isMagnet);
+                const myPts = calcPoints(m.home, m.away, myP.home, myP.away, m.actualH, m.actualA, p1Caps.includes(m.id), myP.isTripleCaptain, comparisonLeague, myP.isMagnet);
+                const theirPts = calcPoints(m.home, m.away, theirP.home, theirP.away, m.actualH, m.actualA, p2Caps.includes(m.id), theirP.isTripleCaptain, comparisonLeague, theirP.isMagnet);
                 
-                myTotalPts += myPts;
-                theirTotalPts += theirPts;
+                p1TotalPts += myPts;
+                p2TotalPts += theirPts;
 
-                const actualScore = `${m.actualH} - ${m.actualA}`;
-                const visualActualScore = isAr ? `${m.actualA} - ${m.actualH}` : actualScore;
-
+                const visualActualScore = isAr ? `${m.actualA} - ${m.actualH}` : `${m.actualH} - ${m.actualA}`;
                 const myVisualPred = myHasPred ? (isAr ? `${myP.away} - ${myP.home}` : `${myP.home} - ${myP.away}`) : '-';
                 const theirVisualPred = theirHasPred ? (isAr ? `${theirP.away} - ${theirP.home}` : `${theirP.home} - ${theirP.away}`) : '-';
 
-                const myPower = myP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md ml-1 font-black shadow-lg">x3</span>' : (myP.isMagnet ? '<span class="text-[9px] bg-teal-500 text-white px-1.5 rounded-md ml-1 font-black shadow-lg"><i class="fa-solid fa-magnet"></i></span>' : (myCaps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md ml-1 font-black shadow-lg">C</span>' : ''));
-                const theirPower = theirP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md mr-1 font-black shadow-lg">x3</span>' : (theirP.isMagnet ? '<span class="text-[9px] bg-teal-500 text-white px-1.5 rounded-md mr-1 font-black shadow-lg"><i class="fa-solid fa-magnet"></i></span>' : (theirCaps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md mr-1 font-black shadow-lg">C</span>' : ''));
+                const myPower = myP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md ml-1 font-black shadow-lg">x3</span>' : (myP.isMagnet ? '<span class="text-[9px] bg-teal-500 text-white px-1.5 rounded-md ml-1 font-black shadow-lg"><i class="fa-solid fa-magnet"></i></span>' : (p1Caps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md ml-1 font-black shadow-lg">C</span>' : ''));
+                const theirPower = theirP.isTripleCaptain ? '<span class="text-[9px] bg-fuchsia-600 text-white px-1.5 rounded-md mr-1 font-black shadow-lg">x3</span>' : (theirP.isMagnet ? '<span class="text-[9px] bg-teal-500 text-white px-1.5 rounded-md mr-1 font-black shadow-lg"><i class="fa-solid fa-magnet"></i></span>' : (p2Caps.includes(m.id) ? '<span class="text-[9px] bg-amber-500 text-black px-1.5 rounded-md mr-1 font-black shadow-lg">C</span>' : ''));
 
                 const myPtsColor = myPts >= 3 ? 'text-emerald-400' : (myPts > 0 ? 'text-yellow-400' : 'text-slate-500');
                 const theirPtsColor = theirPts >= 3 ? 'text-emerald-400' : (theirPts > 0 ? 'text-yellow-400' : 'text-slate-500');
@@ -3758,7 +4074,6 @@ function renderPrizesTab() {
                         </div>
                         
                         <div class="flex justify-between items-center pt-1">
-                            <!-- أنا -->
                             <div class="flex-1 text-center bg-emerald-950/20 rounded-xl p-2 border border-emerald-500/10 flex flex-col items-center justify-center">
                                 <div class="flex items-center justify-center mb-1">
                                     ${myPower}
@@ -3769,7 +4084,6 @@ function renderPrizesTab() {
                             
                             <div class="w-6 shrink-0 text-center text-slate-600 text-[10px]"><i class="fa-solid fa-arrows-left-right"></i></div>
                             
-                            <!-- الخصم -->
                             <div class="flex-1 text-center bg-amber-950/20 rounded-xl p-2 border border-amber-500/10 flex flex-col items-center justify-center">
                                 <div class="flex items-center justify-center mb-1 flex-row-reverse">
                                     ${theirPower}
@@ -3782,16 +4096,10 @@ function renderPrizesTab() {
                 `;
             });
 
-            html += `
-                    </div>
-                </div>
-            `;
-
+            html += `</div></div>`;
             container.innerHTML = html;
-            
-            // تحديث المجاميع بتأثير بصري بسيط
-            document.getElementById('comp-my-total').innerText = myTotalPts;
-            document.getElementById('comp-their-total').innerText = theirTotalPts;
+            document.getElementById('comp-my-total').innerText = p1TotalPts;
+            document.getElementById('comp-their-total').innerText = p2TotalPts;
         }
         
         function openModal(matchId) { activeMatchModal = matches.find(m => m.id === matchId); renderModal(); }
@@ -4518,6 +4826,53 @@ async function deleteLeagueByAdmin() {
         await syncData(); render();
     } catch(e){}
 }
+
+        async function triggerCupDraw() {
+            const qualifierGw = Number(document.getElementById('cup-qual-gw').value || 13);
+            const startGw = Number(document.getElementById('cup-start-gw').value || 14);
+            showCustomDialog(`هل أنت متأكد من سحب قرعة الكأس لأفضل 64 لاعباً في الجولة ${qualifierGw} وانطلاق دور الـ 64 في الجولة ${startGw}؟`, 'confirm', async () => {
+                try {
+                    const token = localStorage.getItem('oracle_token_v8');
+                    const res = await fetch(`${API_BASE_URL}/admin/cup/draw`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ qualifierGw, startGw })
+                    });
+                    const data = await res.json();
+                    showCustomDialog(data.message, 'alert');
+                    if (data.success) { await syncData(); render(); }
+                } catch (e) { showCustomDialog('تعذر الاتصال بالسيرفر.'); }
+            });
+        }
+
+        async function syncCupByAdmin() {
+            try {
+                const token = localStorage.getItem('oracle_token_v8');
+                const res = await fetch(`${API_BASE_URL}/admin/cup/sync`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                showCustomDialog(data.message, 'alert');
+                await syncData(); render();
+            } catch (e) { showCustomDialog('تعذر الاتصال بالسيرفر.'); }
+        }
+
+        async function resetCupByAdmin() {
+            showCustomDialog('⚠️ هل أنت متأكد من مسح شجرة الكأس الحالية بالكامل؟', 'confirm', async () => {
+                try {
+                    const token = localStorage.getItem('oracle_token_v8');
+                    const res = await fetch(`${API_BASE_URL}/admin/cup/reset`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ cupId: 'epl_cup_1' })
+                    });
+                    const data = await res.json();
+                    showCustomDialog(data.message, 'alert');
+                    await syncData(); render();
+                } catch (e) { showCustomDialog('تعذر الاتصال بالسيرفر.'); }
+            });
+        }
 
         function showCustomDialog(message, type = 'alert', onConfirm = null) {
             const container = document.getElementById('dialog-container');
@@ -5433,6 +5788,7 @@ async function adminSearchSocial() {
             if (currentTab === 'home') mainContent.innerHTML = renderHomeTab();
             else if (currentTab === 'matches') mainContent.innerHTML = renderMatchesTab();
             else if (currentTab === 'standings') mainContent.innerHTML = renderStandingsTab();
+            else if (currentTab === 'cup' && isCupVisible()) mainContent.innerHTML = renderCupTab();
             else if (currentTab === 'prizes') mainContent.innerHTML = renderPrizesTab();
             else if (currentTab === 'minileagues') mainContent.innerHTML = renderMiniLeaguesTab();
             else if (currentTab === 'rules') mainContent.innerHTML = renderRulesTab();
