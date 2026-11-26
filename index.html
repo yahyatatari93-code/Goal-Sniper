@@ -3524,33 +3524,7 @@ function renderPrizesTab() {
                             <div class="bg-blue-600/20 border border-blue-500/30 px-2 py-0.5 rounded-lg text-xs font-bold text-blue-300 shadow-inner">الجولة ${activeAdminGw}</div>
                         </div>
 
-                        <!-- 🏆 إدارة كأس الدوري الإنجليزي (64 لاعباً) -->
-                    <div class="glass p-5 rounded-3xl space-y-4 border border-amber-500/40 bg-gradient-to-br from-amber-950/20 to-slate-900/80">
-                        <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
-                            <h3 class="text-base font-black text-amber-400 flex items-center gap-2">
-                                <i class="fa-solid fa-trophy"></i> إدارة كأس الدوري الإنجليزي (64 لاعباً)
-                            </h3>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg ${cupMatches.length > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">
-                                ${cupMatches.length > 0 ? 'الكأس مفعّل' : 'لم تُسحب القرعة'}
-                            </span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة التصفيات (أول 64)</label>
-                                <input type="number" id="cup-qual-gw" value="13" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة انطلاق دور الـ 64</label>
-                                <input type="number" id="cup-start-gw" value="14" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <button onclick="triggerCupDraw()" class="py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition-all shadow-lg">🎲 سحب قرعة الـ 64</button>
-                            <button onclick="syncCupByAdmin()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all">🔄 تحديث نقاط الكأس</button>
-                            <button onclick="resetCupByAdmin()" class="py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs rounded-xl transition-all">🗑️ مسح وإعادة ضبط</button>
-                        </div>
-                    </div>
-                        
+                                               
                         <div class="space-y-4 relative z-10">
                             <!-- 1. التوقع الدقيق -->
                             <div class="bg-slate-900/80 border border-white/5 p-4 rounded-2xl flex justify-between items-start gap-3 hover:bg-slate-800/80 transition-all shadow-md relative">
@@ -3602,6 +3576,33 @@ function renderPrizesTab() {
                                     <div class="w-10 h-10 shrink-0 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg border border-amber-500/30 shadow-inner"><i class="fa-solid fa-copyright"></i></div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- 🏆 إدارة كأس الدوري الإنجليزي (64 لاعباً) -->
+                    <div class="glass p-5 rounded-3xl space-y-4 border border-amber-500/40 bg-gradient-to-br from-amber-950/20 to-slate-900/80">
+                        <div class="flex items-center justify-between border-b border-amber-500/20 pb-3">
+                            <h3 class="text-base font-black text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-trophy"></i> إدارة كأس الدوري الإنجليزي (64 لاعباً)
+                            </h3>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg ${cupMatches.length > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}">
+                                ${cupMatches.length > 0 ? 'الكأس مفعّل' : 'لم تُسحب القرعة'}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة التصفيات (أول 64)</label>
+                                <input type="number" id="cup-qual-gw" value="13" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 mb-1">جولة انطلاق دور الـ 64</label>
+                                <input type="number" id="cup-start-gw" value="14" min="1" max="38" class="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white text-center font-bold outline-none focus:border-amber-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <button onclick="triggerCupDraw()" class="py-2.5 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl transition-all shadow-lg">🎲 سحب قرعة الـ 64</button>
+                            <button onclick="syncCupByAdmin()" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all">🔄 تحديث نقاط الكأس</button>
+                            <button onclick="resetCupByAdmin()" class="py-2.5 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 font-bold text-xs rounded-xl transition-all">🗑️ مسح وإعادة ضبط</button>
                         </div>
                     </div>
 
@@ -3737,7 +3738,6 @@ function renderPrizesTab() {
                     <div class="glass p-6 rounded-3xl space-y-4">
                         <h3 class="font-bold text-sm text-slate-200">إدخال النتائج الحقيقية للمباريات</h3>
                         
-                        // 🌟 شريط التنقل المحرر 🌟
                         ${(() => {
                             const adminGwList = [
                                 99, // 🌟 الجولة المنعزلة للأحداث الاستثنائية
