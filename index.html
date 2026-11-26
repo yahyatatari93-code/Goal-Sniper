@@ -1870,26 +1870,94 @@ function isMatchLocked(match) {
 ${(() => {
                 if (!isCupVisible()) return '';
                 const hasCup = cupMatches && cupMatches.length > 0;
+                const finalMatch = hasCup ? cupMatches.find(m => Number(m.round_size) === 2) : null;
+                const champion = finalMatch && finalMatch.status === 'finished' ? finalMatch.winner : null;
                 const myActiveCupMatch = hasCup ? cupMatches.find(m => (m.player1 === currentUser.username || m.player2 === currentUser.username) && m.status !== 'finished') : null;
-                const myOpponent = myActiveCupMatch ? (myActiveCupMatch.player1 === currentUser.username ? myActiveCupMatch.player2 : myActiveCupMatch.player1) : null;
+                const roundLabels = { 64: 'دور الـ 64', 32: 'دور الـ 32', 16: 'دور الـ 16', 8: 'ربع النهائي', 4: 'نصف النهائي', 2: 'النهائي' };
+
+                let statusBadge = `<span class="inline-flex items-center gap-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/35 px-2.5 py-1 rounded-full text-[10px] font-black whitespace-nowrap shrink-0">تصفيات GW 13</span>`;
+                if (champion) {
+                    statusBadge = `<span class="inline-flex items-center gap-1 bg-amber-500 text-slate-950 px-2.5 py-1 rounded-full text-[10px] font-black whitespace-nowrap shrink-0 shadow-[0_0_12px_rgba(245,158,11,0.5)]"><i class="fa-solid fa-crown text-[9px]"></i> حُسم اللقب</span>`;
+                } else if (hasCup) {
+                    statusBadge = `<span class="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full text-[10px] font-black whitespace-nowrap shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> مشتعل الآن</span>`;
+                }
+
+                let bottomBox = '';
+                if (champion) {
+                    bottomBox = `
+                        <div class="mt-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-[11px] text-amber-300 font-bold shrink-0">🏆 بطل الكأس:</span>
+                                <span class="text-sm font-black text-white truncate">${champion}</span>
+                            </div>
+                            <span class="text-[10px] font-black text-amber-400 whitespace-nowrap shrink-0 flex items-center gap-1">الشجرة <i class="fa-solid fa-arrow-${isAr ? 'left' : 'right'} text-[9px]"></i></span>
+                        </div>`;
+                } else if (myActiveCupMatch) {
+                    const isP1 = myActiveCupMatch.player1 === currentUser.username;
+                    const myOpponent = isP1 ? myActiveCupMatch.player2 : myActiveCupMatch.player1;
+                    const myScore = isP1 ? myActiveCupMatch.score1 : myActiveCupMatch.score2;
+                    const oppScore = isP1 ? myActiveCupMatch.score2 : myActiveCupMatch.score1;
+                    const isLive = myActiveCupMatch.status === 'live';
+                    const roundName = roundLabels[Number(myActiveCupMatch.round_size)] || 'مواجهة الكأس';
+
+                    if (myOpponent && myOpponent !== 'BYE') {
+                        bottomBox = `
+                            <div class="mt-3.5 bg-slate-950/75 border border-white/10 rounded-2xl p-3 space-y-2.5 shadow-inner">
+                                <div class="flex items-center justify-between text-[10px] font-bold">
+                                    <span class="text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-sitemap text-[9px]"></i> ${roundName}</span>
+                                    <span class="${isLive ? 'text-rose-400 animate-pulse' : 'text-slate-400'} whitespace-nowrap">${isLive ? 'مباشر الآن ●' : `الجولة ${myActiveCupMatch.gw}`}</span>
+                                </div>
+                                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                    <div class="bg-blue-500/10 border border-blue-500/25 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 min-w-0">
+                                        <span class="text-xs font-black text-blue-300 truncate">${currentUser.username}</span>
+                                        ${isLive ? `<span class="text-xs font-black text-amber-400 bg-slate-900 px-1.5 py-0.5 rounded-md shrink-0">${myScore ?? 0}</span>` : ''}
+                                    </div>
+                                    <span class="w-7 h-7 rounded-full bg-slate-900 border border-amber-500/30 text-[10px] font-black text-amber-400 flex items-center justify-center shrink-0">VS</span>
+                                    <div class="bg-slate-900/90 border border-white/10 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5 min-w-0">
+                                        ${isLive ? `<span class="text-xs font-black text-amber-400 bg-slate-950 px-1.5 py-0.5 rounded-md shrink-0">${oppScore ?? 0}</span>` : ''}
+                                        <span class="text-xs font-black text-white truncate flex-1 text-left" dir="auto">${myOpponent}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                    } else {
+                        bottomBox = `
+                            <div class="mt-3.5 bg-slate-950/70 border border-white/10 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2">
+                                <span class="text-[11px] text-emerald-300 font-bold truncate"><i class="fa-solid fa-check-circle ml-1"></i> ${roundName} — بانتظار تحديد خصمك</span>
+                                <span class="text-[10px] font-black text-amber-400 whitespace-nowrap shrink-0 flex items-center gap-1">الشجرة <i class="fa-solid fa-arrow-${isAr ? 'left' : 'right'} text-[9px]"></i></span>
+                            </div>`;
+                    }
+                } else {
+                    bottomBox = `
+                        <div class="mt-3.5 bg-slate-950/70 border border-white/10 rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3">
+                            <span class="text-[11px] text-slate-300 font-bold leading-snug">${hasCup ? 'استعرض شجرة المسارات والمواجهات المباشرة' : 'يتأهل أعلى 64 قناصاً من الجولة 13 تلقائياً'}</span>
+                            <span class="bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2.5 py-1 rounded-xl text-[10px] font-black whitespace-nowrap shrink-0 flex items-center gap-1 group-hover:bg-amber-500 group-hover:text-slate-950 transition-all">
+                                ${hasCup ? 'الشجرة' : 'التفاصيل'} <i class="fa-solid fa-arrow-${isAr ? 'left' : 'right'} text-[9px]"></i>
+                            </span>
+                        </div>`;
+                }
+
                 return `
-                <button onclick="switchTab('cup')" class="w-full text-right glass p-4 rounded-2xl border border-amber-500/40 bg-gradient-to-l from-amber-600/20 via-slate-900/80 to-yellow-600/10 flex items-center justify-between gap-3 hover:border-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.15)] group">
-                    <div class="flex items-center gap-3">
-                        <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl shrink-0 group-hover:scale-110 transition-transform">
-                            <i class="fa-solid fa-trophy"></i>
-                        </div>
-                        <div>
-                            <div class="text-sm font-black text-amber-400 flex items-center gap-2">
-                                كأس الدوري الإنجليزي (64 قناصاً)
-                                ${hasCup ? '<span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full animate-pulse">مشتعل الآن</span>' : '<span class="text-[9px] bg-amber-500/20 text-amber-200 px-2 py-0.5 rounded-full">الجولة 13</span>'}
+                <div onclick="switchTab('cup')" role="button" class="cursor-pointer relative overflow-hidden rounded-3xl border border-amber-500/40 bg-gradient-to-br from-[#1b150b] via-[#0e1526] to-[#080d18] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45),0_0_20px_rgba(245,158,11,0.12)] hover:border-amber-400 transition-all group">
+                    <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/70 to-transparent"></div>
+                    <div class="absolute -top-12 -${isAr ? 'left' : 'right'}-12 w-36 h-36 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+                    <i class="fa-solid fa-trophy absolute -bottom-3 ${isAr ? 'left-3' : 'right-3'} text-7xl text-amber-500/[0.06] -rotate-12 pointer-events-none"></i>
+
+                    <div class="relative z-10">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-300 via-amber-500 to-yellow-600 text-slate-950 flex items-center justify-center text-xl shrink-0 shadow-[0_0_16px_rgba(245,158,11,0.4)] group-hover:scale-105 transition-transform">
+                                    <i class="fa-solid fa-trophy"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 class="text-sm md:text-base font-black text-transparent bg-clip-text bg-gradient-to-l from-amber-200 via-amber-400 to-yellow-500 truncate">كأس الدوري الإنجليزي</h3>
+                                    <p class="text-[10px] text-slate-400 font-bold mt-0.5 truncate">خروج المغلوب • أفضل 64 قناصاً</p>
+                                </div>
                             </div>
-                            <div class="text-[11px] text-slate-300 font-bold mt-0.5">
-                                ${myOpponent && myOpponent !== 'BYE' ? `مواجهتك القادمة ضد <span class="text-white font-black">${myOpponent}</span> (GW ${myActiveCupMatch.gw})` : (hasCup ? 'اضغط لاستعراض شجرة المسارات والنتائج المباشرة' : 'تصفيات أول 64 قناصاً في الجولة 13 — اضغط للتفاصيل')}
-                            </div>
+                            ${statusBadge}
                         </div>
+                        ${bottomBox}
                     </div>
-                    <i class="fa-solid fa-chevron-${isAr ? 'left' : 'right'} text-amber-400 text-sm shrink-0"></i>
-                </button>`;
+                </div>`;
             })()}
             
             <div class="mt-2">
