@@ -931,6 +931,7 @@ setInterval(checkUpcomingMatches, 60 * 1000);
 // 🏆 محرك كأس الدوري الإنجليزي (64 لاعباً - أتمتة كاملة) 🏆
 // ==========================================
 const CUP_BIG_TEAMS = ['ARS', 'MCI', 'LIV', 'MUN', 'CHE', 'TOT'];
+const ENABLE_CUP_NOTIFICATIONS = false; // غيّرها إلى true عند النشر الرسمي
 const toBoolFlag = v => v === 1 || v === '1' || v === true || String(v).toLowerCase() === 'true';
 
 function calcEplPointsServer(homeCode, awayCode, predH, predA, actualH, actualA, isCaptain, isTripleCaptain, isMagnet) {
@@ -1113,7 +1114,7 @@ async function syncCupProgress(sendNotifs = true) {
                     await advanceCupWinner(m.cup_id, m.round_size, m.slot, result.winner);
                     finalized++;
 
-                    if (sendNotifs) {
+                    if (sendNotifs && ENABLE_CUP_NOTIFICATIONS) {
                         if (m.round_size === 2) {
                             sendFCMToAll('🏆 بطل كأس الدوري الإنجليزي!', `تُوج القناص [${result.winner}] بطلاً لكأس Goal Sniper بعد تفوقه على [${result.loser}]!`).catch(() => {});
                         } else {
@@ -1233,7 +1234,9 @@ app.post('/api/admin/cup/draw', authenticateToken, isAdmin, async (req, res) => 
         }
 
         await syncCupProgress(false);
-        sendFCMToAll('🏆 انطلاق كأس الدوري الإنجليزي!', `تم سحب قرعة أفضل ${ranked.length} قناصاً! ادخل الآن لمعرفة خصمك في دور الـ 64 (الجولة ${startGw}).`).catch(() => {});
+        if (ENABLE_CUP_NOTIFICATIONS) {
+            sendFCMToAll('🏆 انطلاق كأس الدوري الإنجليزي!', `تم سحب قرعة أفضل ${ranked.length} قناصاً! ادخل الآن لمعرفة خصمك في دور الـ 64 (الجولة ${startGw}).`).catch(() => {});
+        }
 
         res.json({ success: true, message: `تم سحب قرعة الكأس بنجاح لـ ${ranked.length} لاعباً وبناء الشجرة حتى النهائي!` });
     } catch (error) {
