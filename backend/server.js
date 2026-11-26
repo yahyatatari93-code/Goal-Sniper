@@ -362,16 +362,16 @@ app.post('/api/predict', authenticateToken, async (req, res) => {
     } catch (error) { res.status(500).json({ success: false, message: error.message }); }
 });
 
-// 🌟 مسار متجر التوكن (محدث لدعم الدروع المنفصلة للبطولات - EPL أو UCL) 🌟
+// 🌟 مسار متجر التوكن (محدث لدعم الدروع المنفصلة للبطولات وتخصيص رسائل الشراء) 🌟
 app.post('/api/store/purchase', authenticateToken, async (req, res) => {
-    const { username, item, leagueCode, targetComp } = req.body; 
+    const { username, item, leagueCode, targetComp } = req.body;
 
     if (req.user.username !== username) return res.status(403).json({ success: false, message: 'غير مصرح.' });
 
     let cost = 0;
-    if (item === 'shield') cost = 70; 
-    else if (item === 'sniper') cost = 120; 
-    else if (item === 'tshirt') cost = 500; 
+    if (item === 'shield') cost = 70;
+    else if (item === 'sniper') cost = 120;
+    else if (item === 'tshirt') cost = 500;
     else return res.status(400).json({ success: false, message: 'عنصر غير معروف.' });
 
     try {
@@ -382,25 +382,29 @@ app.post('/api/store/purchase', authenticateToken, async (req, res) => {
             return res.status(400).json({ success: false, message: 'رصيد التوكن غير كافٍ.' });
         }
 
+        let successMessage = 'تمت عملية الشراء بنجاح!';
+
         if (item === 'shield') {
             if (!leagueCode || !targetComp) return res.status(400).json({ success: false, message: 'يجب تحديد الدوري والبطولة.' });
-            
-            // تحديد عمود الدرع بناءً على البطولة المختارة
+
             const shieldCol = targetComp === 'UCL' ? 'active_shields_ucl' : 'active_shields_epl';
-            
-            // خصم التوكن
+            const compLabel = targetComp === 'UCL' ? 'أبطال أوروبا' : 'الدوري الإنجليزي';
+
             await pool.query('UPDATE users SET tokens = tokens - ? WHERE username = ?', [cost, username]);
-            // إضافة الدرع السري للبطولة المحددة
-            await pool.query(`UPDATE mini_league_members SET ${shieldCol} = ${shieldCol} + 1 WHERE league_code = ? AND username = ?`, [leagueCode, username]);
-            
+            await pool.query(`UPDATE mini_league_members SET ${shieldCol} = COALESCE(${shieldCol}, 0) + 1 WHERE league_code = ? AND username = ?`, [leagueCode, username]);
+            successMessage = `تم شراء الدرع وتفعيله سرياً لبطولة (${compLabel}) بنجاح!`;
+
         } else if (item === 'sniper') {
-            await pool.query('UPDATE users SET tokens = tokens - ?, extra_snipers = extra_snipers + 1 WHERE username = ?', [cost, username]);
+            await pool.query('UPDATE users SET tokens = tokens - ?, extra_snipers = COALESCE(extra_snipers, 0) + 1 WHERE username = ?', [cost, username]);
+            successMessage = 'تم شراء رصاصة قناص إضافية وإضافتها إلى مخزونك السري بنجاح!';
+
         } else if (item === 'tshirt') {
             await pool.query('UPDATE users SET tokens = tokens - ? WHERE username = ?', [cost, username]);
+            successMessage = 'تم شراء التيشيرت بنجاح! ستتواصل معك الإدارة لتأكيد التسليم.';
         }
 
         const [updatedUsers] = await pool.query('SELECT tokens FROM users WHERE username = ?', [username]);
-        res.json({ success: true, message: `تم شراء الدرع وتفعيله سرياً لبطولة (${targetComp}) بنجاح!`, newTokens: updatedUsers[0].tokens });
+        res.json({ success: true, message: successMessage, newTokens: updatedUsers[0].tokens });
 
     } catch (error) {
         console.error("Store Purchase Error:", error);
